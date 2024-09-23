@@ -1,0 +1,21 @@
+[project]
+name = "mphot"
+version = "0.0.1"
+authors = [
+  {name = "Peter Pedersen"},
+]
+repository = "https://github.com/ppp-one/mphot"
+readme = "README.md"
+license = { text = "MIT License" }
+requires-python = ">=3.11"
+dependencies = ["numpy", "pandas", "scipy", "matplotlib", "ipython"]
+
+[build-system]
+requires = ["hatchling", "hatch-vcs"]
+build-backend = "hatchling.build"
+
+[tool.hatch.version]
+source = "vcs"
+
+[project.optional-dependencies]
+dev = ["black", "pytest"]
