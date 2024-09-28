@@ -2,31 +2,35 @@ import math
 import os
 from pathlib import Path
 
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from IPython.display import clear_output, display
 from scipy.integrate import simpson as simps
 from scipy.interpolate import griddata
 
-gridFluxIngredientsName = "prePrecisionGrid_2400m_flux.pkl"
-gridRadianceIngredientsName = "prePrecisionGrid_2400m_radiance.pkl"
-pc = 3.0857e16
+# grid_flux_ingredients_name = "pre_grid_2400m_flux.pkl"
+grid_flux_ingredients_name = "pre_grid_03_to_3_microns_2400m_flux.pkl"
+# grid_radiance_ingredients_name = "pre_grid_2400m_radiance.pkl"
+grid_radiance_ingredients_name = "pre_grid_03_to_3_microns_2400m_radiance.pkl"
+# vega_file = "vega.csv"
+vega_file = "vega_03_to_3_microns.csv"
+
+pc = 3.0857e16  # parsec in meters
+
+# wavelengths = np.arange(0.5, 2, 0.0001)
+wavelengths = np.arange(0.3, 3, 0.0001)
 
 
-def interpolate_dfs(index, *data):
+def interpolate_dfs(index: list, *data: pd.DataFrame) -> pd.DataFrame:
     """
-    Interpolates panda dataframes onto an index, of same index type (e.g. wavelength in microns)
+    Interpolates multiple pandas DataFrames based on a given index.
 
-    Parameters
-    ----------
-    index: 1d array which data is to be interpolated onto
-    data:       Pandas dataframes
+    Parameters:
+    index (list): A list of index values to interpolate over.
+    *data (pd.DataFrame): Variable number of pandas DataFrames to be interpolated.
 
-    Returns
-    -------
-    df: Interpolated dataframe
-
+    Returns:
+    pd.DataFrame: A single DataFrame with interpolated values for the given index.
     """
 
     df = pd.DataFrame({"tmp": index}, index=index)
@@ -40,31 +44,75 @@ def interpolate_dfs(index, *data):
     return df
 
 
-def generateFluxBase(sResponse: str) -> tuple:
+def generate_system_response(
+    efficiency_file: str, filter_file: str
+) -> tuple[str, pd.Series]:
     """
-    Generates the flux grid base for Paranal, Chile. Takes a few minutes.
+    Generates a spectral response (SR) file by combining efficiency and filter data.
 
-    Generates a base grid for:
-    airmass: 1 - 3
-    pwv: 0.05 - 30 mm
-    Teff: 450 - 36500 K
+    Args:
+        efficiency_file (str): Path to the CSV file containing efficiency data.
+        filter_file (str): Path to the CSV file containing filter data.
 
-    See arrays for base resolutions
+    Returns:
+        tuple: A tuple containing:
+            - name (str): The name used to refer to the generated SR file.
+            - dfSR (pd.Series): The spectral response data.
+    """
 
-    Ref: ...
+    eff = pd.read_csv(efficiency_file, header=None)
+    filt = pd.read_csv(filter_file, header=None)
 
-    Parameters
-    ----------
-    sResponse:  csv file with two (unlabelled) columns, wavelength (in microns), system spectral response curves of telescope + filter + camera (as fraction).
+    # name to refer to the generated file
+    name = efficiency_file.split("/")[-1][:-4] + "_" + filter_file.split("/")[-1][:-4]
 
-    Returns
-    -------
-    coords, data: coordinates and data of base grid generated.
+    # generates a SR, saved locally as 'name1_instrumentSR.csv'
+    SRFile = Path(__file__).parent / "datafiles" / "SRs" / f"{name}_instrumentSR.csv"
 
+    effDF = pd.DataFrame({"eff": eff[1].values}, index=eff[0])
+
+    filtDF = pd.DataFrame({"filt": filt[1].values}, index=filt[0])
+
+    df = interpolate_dfs(wavelengths, effDF, filtDF)
+
+    dfSR = df["eff"] * df["filt"]
+
+    dfSR = dfSR[dfSR > 0]
+
+    dfSR.to_csv(SRFile, header=False)
+
+    # print(SRFile.name + " has been saved!")
+
+    return name, dfSR
+
+
+def generate_flux_grid(sResponse: str) -> tuple[np.ndarray, np.ndarray]:
+    """
+    Generates a base flux grid based on atmospheric parameters and response functions, with the following ranges:
+        airmass: 1 - 3
+        pwv: 0.05 - 30 mm
+        Teff: 450 - 36500 K
+
+    This function reads in a spectral response file and a precomputed grid of flux ingredients,
+    then interpolates and integrates these data to produce a grid of stellar flux responses
+    for various combinations of precipitable water vapor (PWV), airmass, and temperature values.
+
+    Args:
+        sResponse (str): Path to the CSV file containing the spectral response function.
+
+    Returns:
+        tuple: A tuple containing:
+            - coords (np.ndarray): A 4D array with shape
+              representing the coordinates of the grid points. The last dimension
+              contains the values of PWV, airmass, and temperature respectively.
+            - data (np.ndarray): A 3D array with shape
+              (len(pwv_values), len(airmass_values), len(temperature_values))
+              containing the computed flux values for each combination of PWV,
+              airmass, and temperature.
     """
 
     gridIngredients = pd.read_pickle(
-        Path(__file__).parent / "datafiles" / gridFluxIngredientsName
+        Path(__file__).parent / "datafiles" / grid_flux_ingredients_name
     )
     rsr = pd.read_csv(sResponse, header=None, index_col=0)
 
@@ -207,8 +255,6 @@ def generateFluxBase(sResponse: str) -> tuple:
             36500,
         ]
     )
-
-    wavelengths = np.arange(0.5, 2, 0.0001)
 
     gridSauce = interpolate_dfs(wavelengths, rsr, gridIngredients)
     gridSauce = gridSauce[(gridSauce[1] > 0)]
@@ -238,31 +284,30 @@ def generateFluxBase(sResponse: str) -> tuple:
     return coords, data
 
 
-def generateRadianceBase(sResponse):
+def generate_radiance_grid(sResponse: str) -> tuple[np.ndarray, np.ndarray]:
     """
-    Generates the sky radiance grid base for Paranal, Chile. Takes a few minutes.
+    Generates a radiance base grid for atmospheric parameters, with the following ranges:
+        airmass: 1 - 3
+        pwv: 0.05 - 30 mm
+        Teff: 450 - 36500 K
 
-    Generates a base grid for:
-    airmass: 1 - 3
-    pwv: 0.05 - 30 mm
-    Teff: 450 - 36500 K
+    This function reads in a spectral response file and a precomputed grid of radiance ingredients,
+    then interpolates and integrates these data to produce a grid of atmospheric flux responses
+    for various combinations of precipitable water vapor (PWV), airmass, and temperature values.
 
-    See arrays for base resolutions
+    Args:
+        sResponse (str): Path to the spectral response CSV file.
 
-    Ref: ...
-
-    Parameters
-    ----------
-    sResponse:  csv file with two (unlabelled) columns, wavelength (in microns), system spectral response curves of telescope + filter + camera (as fraction).
-
-    Returns
-    -------
-    coords, data: coordinates and data of base grid generated.
-
+    Returns:
+        tuple: A tuple containing:
+            - coords (np.ndarray): A 4D array of shape (len(pwv_values), len(airmass_values), len(temperature_values), 3)
+              containing the coordinates for PWV, airmass, and temperature.
+            - data (np.ndarray): A 3D array of shape (len(pwv_values), len(airmass_values), len(temperature_values))
+              containing the integrated atmospheric flux responses.
     """
 
     gridIngredients = pd.read_pickle(
-        Path(__file__).parent / "datafiles" / gridRadianceIngredientsName
+        Path(__file__).parent / "datafiles" / grid_radiance_ingredients_name
     )
     rsr = pd.read_csv(sResponse, header=None, index_col=0)
 
@@ -406,8 +451,6 @@ def generateRadianceBase(sResponse):
         ]
     )
 
-    wavelengths = np.arange(0.5, 2, 0.0001)
-
     gridSauce = interpolate_dfs(wavelengths, rsr, gridIngredients)
     gridSauce = gridSauce[(gridSauce[1] > 0)]
     atm_grid = []
@@ -433,42 +476,111 @@ def generateRadianceBase(sResponse):
     return coords, data
 
 
-def gaus(delta, sigma):
+def interpolate_grid(
+    coords: np.ndarray, data: np.ndarray, pwv: float, airmass: float, Teff: float
+) -> float:
     """
-    Generate Gaussian
-
-    Ref: ...
+    Interpolates between grid points, using a cubic method.
 
     Parameters
     ----------
-    delta: x/y variable
-    sigma: sigma of gaussian
+    coords : np.ndarray
+        Coordinates of base grid generated.
+    data : np.ndarray
+        Data of base grid generated.
+    pwv : float
+        Precipitable water vapour value at zenith.
+    airmass : float
+        Airmass of target/comparison star.
+    Teff : float
+        Effective temperature of target/comparison star.
 
     Returns
     -------
-    value: gaussian value
+    float
+        Interpolated value of grid.
+    """
 
+    method = "cubic"
+    Teffs = coords[..., 2][0, 0]
+    Teff_lower = np.max(Teffs[Teffs <= Teff])
+    Teff_upper = np.min(Teffs[Teffs >= Teff])
+
+    if Teff_lower == Teff_upper:
+        x = coords[..., 0][coords[..., 2] == Teff]  # pwv
+        y = coords[..., 1][coords[..., 2] == Teff]  # airmass
+        z = data[coords[..., 2] == Teff]  # effect
+
+        interp = griddata(
+            (x, y), z, (pwv, airmass), method=method
+        )  # interpolated value
+    else:
+        x_lower = coords[..., 0][coords[..., 2] == Teff_lower]  # pwv
+        y_lower = coords[..., 1][coords[..., 2] == Teff_lower]  # airmass
+        z_lower = data[coords[..., 2] == Teff_lower]  # effect
+        interp_lower = griddata(
+            (x_lower, y_lower), z_lower, (pwv, airmass), method=method
+        )  # interpolated value lower Teff
+
+        x_upper = coords[..., 0][coords[..., 2] == Teff_upper]  # pwv
+        y_upper = coords[..., 1][coords[..., 2] == Teff_upper]  # airmass
+        z_upper = data[coords[..., 2] == Teff_upper]  # effect
+        interp_upper = griddata(
+            (x_upper, y_upper), z_upper, (pwv, airmass), method=method
+        )  # interpolated value upper Teff
+
+        w_lower = (Teff_upper - Teff) / (Teff_upper - Teff_lower)  # lower weight
+        w_upper = (Teff - Teff_lower) / (Teff_upper - Teff_lower)  # upper weight
+
+        interp = (
+            w_lower * interp_lower + w_upper * interp_upper
+        )  # final interpolated value
+
+    return interp
+
+
+def gaussian(delta: float, sigma: float) -> float:
+    """
+    Calculate the value of a Gaussian function.
+
+    This function computes the value of a Gaussian (normal) distribution
+    for a given delta and sigma.
+
+    Parameters:
+    delta (float): The difference from the mean (x - mu).
+    sigma (float): The standard deviation of the distribution.
+
+    Returns:
+    float: The value of the Gaussian function at the given delta.
     """
 
     return (1.0 / (np.sqrt(2 * np.pi) * sigma)) * np.exp(-(delta**2) / (2 * sigma**2))
 
 
-def int_time(
-    fwhm, N_star, N_sky, N_dc, N_rn, plate_scale, well_depth, well_fill, bias_level
-):
+def integration_time(
+    fwhm: float,
+    N_star: float,
+    N_sky: float,
+    N_dc: float,
+    plate_scale: float,
+    well_depth: float,
+    well_fill: float,
+) -> float:
     """
-    Calculate integration time
+    Calculate the integration time for a given set of parameters.
 
-    Ref: ...
+    Parameters:
+    fwhm (float): Full width at half maximum of the point spread function.
+    N_star (float): Number of star counts.
+    N_sky (float): Number of sky counts.
+    N_dc (float): Number of dark current counts.
+    N_rn (float): Number of read noise counts.
+    plate_scale (float): Plate scale in arcseconds per pixel.
+    well_depth (float): Maximum well depth of the detector.
+    well_fill (float): Fraction of the well depth to be filled.
 
-    Parameters
-    ----------
-    Many detector properties
-
-    Returns
-    -------
-    time: integration time
-
+    Returns:
+    float: Calculated integration time.
     """
 
     sigma_IR = (fwhm / plate_scale) / 2.355  # in pix
@@ -476,33 +588,35 @@ def int_time(
     x = np.linspace(-0.5, 0.5, 100)
     y = x
 
-    t = (well_depth * well_fill - bias_level) / (
-        N_star * simps(y=gaus(y, sigma_IR), x=y) * simps(y=gaus(x, sigma_IR), x=x)
+    t = (well_depth * well_fill) / (
+        N_star
+        * simps(y=gaussian(y, sigma_IR), x=y)
+        * simps(y=gaussian(x, sigma_IR), x=x)
         + (N_sky + N_dc)
     )
 
     return t
 
 
-def scint(r, t, N_star, airmass=1.5):
+def scintillation_noise(
+    r: float, t: float, N_star: float, airmass: float = 1.1
+) -> float:
     """
-    Scintillation noise estimate
+    Calculate the scintillation noise for a given set of parameters.
 
-    Ref: ...
+    Parameters:
+    r (float): Aperture radius in meters.
+    t (float): Exposure time in seconds.
+    N_star (float): Number of stars.
+    airmass (float, optional): Airmass value. Default is 1.5.
 
-    Parameters
-    ----------
-    r: radius of telescope
-    t: integration time
-    N_star: Flux of star received
+    Returns:
+    float: The calculated scintillation noise.
 
-    Returns
-    -------
-    value: scintilation noise
-
+    Reference:
+    https://academic.oup.com/mnras/article/509/4/6111/6442285
     """
 
-    # https://academic.oup.com/mnras/article/509/4/6111/6442285
     return (
         np.sqrt(
             1e-5
@@ -518,31 +632,78 @@ def scint(r, t, N_star, airmass=1.5):
 
 
 def get_precision(
-    props,
-    props_sky,
-    Teff,
-    distance,
-    binning=10,
-    override=False,
-    fixed_exp=[False, 10],
-    SPCcorrection=True,
-    mapping=False,
-    sky_override=[False, None],
-):
+    props: dict,
+    props_sky: dict,
+    Teff: float,
+    distance: float,
+    binning: float = 10,
+    override_grid: bool = False,
+    SPCcorrection: bool = True,
+    N_sky: float | None = None,
+    N_star: float | None = None,
+    exp_time: float | None = None,
+) -> dict:
     """
-    Calculate precision
+    Calculate the precision of astronomical observations based on various parameters.
 
-    Ref: ...
+    Parameters:
+    -----------
+    props : dict
+        Dictionary containing properties of the instrument and observation.
+        Expected keys:
+        - "name": str, name of the instrument
+        - "plate_scale": float, plate scale of the instrument
+        - "N_dc": float, dark current noise
+        - "N_rn": float, read noise
+        - "well_depth": float, well depth of the detector
+        - "well_fill": float, well fill level
+        - "read_time": float, readout time of the detector
+        - "r0": float, inner radius for aperture
+        - "r1": float, outer radius for aperture
+        - "ap_rad": float, optional, aperture radius
 
-    Parameters
-    ----------
-    many
+    props_sky : dict
+        Dictionary containing properties of the sky.
+        Expected keys:
+        - "pwv": float, precipitable water vapor
+        - "airmass": float, airmass of the observation
+        - "seeing": float, full width at half maximum (FWHM) of the seeing
 
-    Returns
-    -------
-    many
+    Teff : float
+        Effective temperature of the star in Kelvin.
 
+    distance : float
+        Distance to the star in parsecs.
+
+    binning : float, optional
+        Binning time in minutes. Default is 10.
+
+    override_grid : bool, optional
+        If True, override existing grid files. Default is False.
+
+    SPCcorrection : bool, optional
+        If True, apply SPC correction based on the effective temperature. Default is True.
+
+    N_sky : float, optional
+        Number of sky counts, calculated if None. Default is None.
+
+    N_star : float, optional
+        Number of star counts, calculated if None. Default is None.
+
+    exp_time : float, optional
+        Exposure time in seconds, calculated if None. Default is None.
+
+    Returns:
+    --------
+    dict
+        A dictionary containing the precision of the observation, returns three dictionaries:
+        - image_precision: Precision of the image
+        - binned_precision: Precision of the binned image
+        - components: Various components used in the calculation
     """
+
+    props = props.copy()
+    props_sky = props_sky.copy()
 
     name = props["name"]
     plate_scale = props["plate_scale"]
@@ -550,8 +711,18 @@ def get_precision(
     N_rn = props["N_rn"]
     well_depth = props["well_depth"]
     well_fill = props["well_fill"]
-    bias_level = props["bias_level"]
     read_time = props["read_time"]
+
+    if "min_exp" in props:
+        min_exp = props["min_exp"]
+    else:
+        min_exp = 0
+
+    if "max_exp" in props:
+        max_exp = props["max_exp"]
+    else:
+        max_exp = np.inf
+
     r0 = props["r0"]
     r1 = props["r1"]
 
@@ -563,7 +734,7 @@ def get_precision(
         fwhm / plate_scale
     )  ## approx pixel radius around target star ## changed on to 3* 2022/04/26 from 10/2.355*
 
-    if props["ap_rad"]:
+    if "ap_rad" in props:
         ap = props["ap_rad"] * (fwhm / plate_scale)
 
     if (
@@ -571,9 +742,9 @@ def get_precision(
             Path(__file__).parent / "grids" / f"{name}_precisionGrid_flux_coords.npy"
         )
         is False
-    ) or (override):
-        # generate base of grid
-        coords, data = generateFluxBase(
+    ) or (override_grid):
+        # generate flux grid
+        coords, data = generate_flux_grid(
             Path(__file__).parent / "datafiles" / "SRs" / f"{name}_instrumentSR.csv"
         )
 
@@ -587,8 +758,8 @@ def get_precision(
             coords,
         )
 
-        # generate base of grid
-        coords, data = generateRadianceBase(
+        # generate radiance grid
+        coords, data = generate_radiance_grid(
             Path(__file__).parent / "datafiles" / "SRs" / f"{name}_instrumentSR.csv"
         )
 
@@ -604,6 +775,7 @@ def get_precision(
             data,
         )
 
+    # load grids
     coords = np.load(
         Path(__file__).parent / "grids" / f"{name}_precisionGrid_flux_coords.npy"
     )
@@ -614,79 +786,65 @@ def get_precision(
         Path(__file__).parent / "grids" / f"{name}_precisionGrid_radiance_data.npy"
     )
 
-    flux = interp(coords, data_flux, pwv, airmass, Teff)
-    radiance = interp(coords, data_radiance, pwv, airmass, Teff)
+    # get values from grids
+    flux = interpolate_grid(coords, data_flux, pwv, airmass, Teff)
+    radiance = interpolate_grid(coords, data_radiance, pwv, airmass, Teff)
 
+    # collecting area of telescope
     A = np.pi * (r0**2 - r1**2)
 
-    N_star = flux * A / ((distance * pc) ** 2)
-    N_sky = radiance * A * plate_scale**2
+    if N_star is None:
+        N_star = flux * A / ((distance * pc) ** 2)
+    else:
+        flux = N_star * ((distance * pc) ** 2) / A
 
-    if sky_override[0] and sky_override[1] is None:
-        fwhm = 0.3
-        N_sky = N_sky * ap / (3 * (fwhm / plate_scale))
-        ap = 3 * (fwhm / plate_scale)
+    if N_sky is None:
+        N_sky = radiance * A * plate_scale**2
+    else:
+        radiance = N_sky / (A * plate_scale**2)
 
     ## correction
     if SPCcorrection:
         if (Teff <= 3042) and (Teff >= 1278):
             poly = np.load(Path(__file__).parent / "datafiles" / "16_order_poly.npy")
-            # print(Teff,(2.512**np.polyval(poly, Teff)))
             N_star = N_star / (2.512 ** np.polyval(poly, Teff))
 
-    if fixed_exp[0]:
-        t = fixed_exp[1]
+    t = integration_time(
+        fwhm,
+        N_star,
+        N_sky,
+        N_dc,
+        plate_scale,
+        well_depth,
+        well_fill,
+    )
+
+    if exp_time is not None or (t < min_exp or t > max_exp):
+
+        if t < min_exp:
+            t = min_exp
+        elif t > max_exp:
+            t = max_exp
+
+        if exp_time is not None:
+            t = exp_time
 
         sigma_IR = (fwhm / plate_scale) / 2.355  # in pix
 
         x = np.linspace(-0.5, 0.5, 100)
         y = x
 
-        well_fill = (
-            t
-            * (
-                N_star
-                * simps(y=gaus(y, sigma_IR), x=y)
-                * simps(y=gaus(x, sigma_IR), x=x)
-                + (N_sky + N_dc)
-            )
-            + bias_level
+        well_fill_value = t * (
+            N_star
+            * simps(y=gaussian(y, sigma_IR), x=y)
+            * simps(y=gaussian(x, sigma_IR), x=x)
+            + (N_sky + N_dc)
         )
-        well_fill = well_fill / well_depth
-    else:
-        t = int_time(
-            fwhm,
-            N_star,
-            N_sky,
-            N_dc,
-            N_rn,
-            plate_scale,
-            well_depth,
-            well_fill,
-            bias_level,
-        )
-        if t > 120:
-            t = 120
-
-            sigma_IR = (fwhm / plate_scale) / 2.355  # in pix
-
-            x = np.linspace(-0.5, 0.5, 100)
-            y = x
-            well_fill = (
-                t
-                * (
-                    N_star
-                    * simps(y=gaus(y, sigma_IR), x=y)
-                    * simps(y=gaus(x, sigma_IR), x=x)
-                    + (N_sky + N_dc)
-                )
-                + bias_level
-            )
-            well_fill = well_fill / well_depth
+        well_fill = well_fill_value / well_depth
 
     npix = np.pi * ap**2
 
-    scn = scint(r0, t, N_star, airmass)
+    scn = scintillation_noise(r0, t, N_star, airmass)
 
     precision = np.sqrt(
         N_star * t + scn**2 + npix * (N_sky * t + N_dc * t + N_rn**2)
@@ -728,7 +886,7 @@ def get_precision(
         "npix": npix,
         "ap_radius [pix]": ap,
         "N_sky [e/pix/s]": N_sky,
-        "sky_radiance [e/m2/arcsec2/s]": radiance * 1,
+        "sky_radiance [e/m2/arcsec2/s]": radiance,
         'plate_scale ["/pix]': plate_scale,
         "N_dc [e/pix/s]": N_dc,
         "N_rn [e_rms/pix]": N_rn,  # not sure of units
@@ -736,8 +894,6 @@ def get_precision(
         "r0 [m]": r0,
         "r1 [m]": r1,
         "t [s]": t,
-        "preset_exp": fixed_exp[0],
-        "bias_level": bias_level,
         "well_depth [e/pix]": well_depth,
         "well_fill": well_fill,  # peak pixel
         "binning [mins]": binning,
@@ -745,45 +901,54 @@ def get_precision(
         "nImages": nImages,
     }
 
-    if mapping == False:
-        return image_precision, binned_precision, components
-    else:
-        return {
-            "image_precision": image_precision,
-            "binned_precision": binned_precision,
-            "components": components,
-        }
+    return image_precision, binned_precision, components
 
 
-def vega_mag(SRFile, props_sky, N_star, sky_radiance, A):
+def vega_mag(
+    SRFile: str, props_sky: dict, N_star: float, sky_radiance: float, A: float
+) -> dict:
     """
-    Calculate vega magnitude
-
-    Ref: ...
+    Calculate the Vega magnitude for a given spectral response file and sky properties.
 
     Parameters
     ----------
-    many
+    SRFile : str
+        Path to the spectral response CSV file.
+    props_sky : dict
+        Dictionary containing properties of the sky.
+        Expected keys:
+        - "pwv": float, precipitable water vapor
+        - "airmass": float, airmass of the observation
+    N_star : float
+        Number of star counts.
+    sky_radiance : float
+        Sky radiance value.
+    A : float
+        Aperture area in square meters.
 
     Returns
     -------
-    many
-
+    dict
+        A dictionary containing the Vega magnitude information:
+        - "star [mag]": Vega magnitude of the star.
+        - "sky [mag/arcsec2]": Vega magnitude of the sky per arcsecond squared.
+        - "vega_flux [e/s]": Vega flux in electrons per second.
     """
 
     gridIngredients = pd.read_pickle(
-        Path(__file__).parent / "datafiles" / gridFluxIngredientsName
+        Path(__file__).parent / "datafiles" / grid_flux_ingredients_name
     )
 
     rsr = pd.read_csv(SRFile, header=None, index_col=0)
     rsr = rsr[1].rename("rsr")
 
     vega = pd.read_csv(
-        Path(__file__).parent / "datafiles" / "vega.csv", header=None, index_col=0
+        Path(__file__).parent / "datafiles" / vega_file,
+        header=None,
+        index_col=0,
     )
     vega = vega[1].rename("vega")
 
-    wavelengths = np.arange(0.5, 2, 0.0001)
     gridSauce = interpolate_dfs(wavelengths, rsr, gridIngredients, vega)
     gridSauce = gridSauce[(gridSauce["rsr"] > 0)]
 
@@ -840,121 +1005,19 @@ def vega_mag(SRFile, props_sky, N_star, sky_radiance, A):
     return vega_dict
 
 
-def interp(coords, data, pwv, airmass, Teff):
+def update_progress(progress: float | int) -> None:
     """
-    Interpolates between water grid base points (waterGrid.generateBase(...)), using a cubic method.
+    Updates and displays a progress bar in the console.
 
-    Parameters
-    ----------
-    coords, data:   coordinates and data of base grid generated.
-    pwv:            precipitable water vapour value at zenith
-    airmass:        airmass of target/comparison star
-    Teff:           effective temperature of target/comparison star
+    Args:
+        progress (float or int): A number between 0 and 1 representing the progress percentage.
+                                 If an integer is provided, it will be converted to a float.
+                                 Values less than 0 will be treated as 0, and values greater than or equal to 1 will be treated as 1.
 
-    Returns
-    -------
-    interp: interpolated value of grid.
-
+    Returns:
+        None
     """
 
-    method = "cubic"
-    Teffs = coords[..., 2][0, 0]
-    Teff_lower = np.max(Teffs[Teffs <= Teff])
-    Teff_upper = np.min(Teffs[Teffs >= Teff])
-
-    if Teff_lower == Teff_upper:
-        x = coords[..., 0][coords[..., 2] == Teff]  # pwv
-        y = coords[..., 1][coords[..., 2] == Teff]  # airmass
-        z = data[coords[..., 2] == Teff]  # effect
-
-        interp = griddata(
-            (x, y), z, (pwv, airmass), method=method
-        )  # interpolated value
-    else:
-        x_lower = coords[..., 0][coords[..., 2] == Teff_lower]  # pwv
-        y_lower = coords[..., 1][coords[..., 2] == Teff_lower]  # airmass
-        z_lower = data[coords[..., 2] == Teff_lower]  # effect
-        interp_lower = griddata(
-            (x_lower, y_lower), z_lower, (pwv, airmass), method=method
-        )  # interpolated value lower Teff
-
-        x_upper = coords[..., 0][coords[..., 2] == Teff_upper]  # pwv
-        y_upper = coords[..., 1][coords[..., 2] == Teff_upper]  # airmass
-        z_upper = data[coords[..., 2] == Teff_upper]  # effect
-        interp_upper = griddata(
-            (x_upper, y_upper), z_upper, (pwv, airmass), method=method
-        )  # interpolated value upper Teff
-
-        w_lower = (Teff_upper - Teff) / (Teff_upper - Teff_lower)  # lower weight
-        w_upper = (Teff - Teff_lower) / (Teff_upper - Teff_lower)  # upper weight
-
-        interp = (
-            w_lower * interp_lower + w_upper * interp_upper
-        )  # final interpolated value
-
-    return interp
-
-
-def generateSR(efficiencyFile, filterFile):
-    """
-    Generate spectral response curve from QE and filter profiles
-    formatted as microns,fractional value
-
-    Ref: ...
-
-    Parameters
-    ----------
-    many
-
-    Returns
-    -------
-    many
-
-    """
-
-    wavelengths = np.arange(0.5, 2, 0.0001)
-
-    eff = pd.read_csv(efficiencyFile, header=None)
-    filt = pd.read_csv(filterFile, header=None)
-
-    # name to refer to the generated file
-    name = efficiencyFile.split("/")[-1][:-4] + "_" + filterFile.split("/")[-1][:-4]
-
-    # generates a SR, saved locally as 'name1_instrumentSR.csv'
-    SRFile = Path(__file__).parent / "datafiles" / "SRs" / f"{name}_instrumentSR.csv"
-
-    effDF = pd.DataFrame({"eff": eff[1].values}, index=eff[0])
-
-    filtDF = pd.DataFrame({"filt": filt[1].values}, index=filt[0])
-
-    df = interpolate_dfs(wavelengths, effDF, filtDF)
-
-    dfSR = df["eff"] * df["filt"]
-
-    dfSR = dfSR[dfSR > 0]
-
-    dfSR.to_csv(SRFile, header=False)
-
-    # print(SRFile.name + " has been saved!")
-
-    return name, dfSR
-
-
-def update_progress(progress):
-    """
-    Progress bar
-
-    Ref: ...
-
-    Parameters
-    ----------
-    many
-
-    Returns
-    -------
-    many
-
-    """
     bar_length = 20
     if isinstance(progress, int):
         progress = float(progress)
@@ -974,12 +1037,24 @@ def update_progress(progress):
     print(text)
 
 
-def to_precision(x, p=3):
+def to_precision(x: float, p: int = 3) -> str:
     """
-    returns a string representation of x formatted with a precision of p
+    Convert a number to a string with the given precision.
 
-    Based on the webkit javascript implementation taken from here:
-    https://code.google.com/p/webkit-mirror/source/browse/JavaScriptCore/kjs/number_object.cpp
+    Parameters:
+    x (float): The number to be converted.
+    p (int, optional): The precision (number of significant digits). Default is 3.
+
+    Returns:
+    str: The number represented as a string with the specified precision.
+
+    Examples:
+    >>> to_precision(123.456, 4)
+    '123.5'
+    >>> to_precision(0.00123456, 2)
+    '0.0012'
+    >>> to_precision(123456, 2)
+    '1.2e+05'
     """
 
     x = float(x)
@@ -1035,37 +1110,49 @@ def to_precision(x, p=3):
     return "".join(out)
 
 
-def display_results(props_sky, r1, r2):
+def display_results(props_sky: dict, r1: tuple, r2: tuple = None) -> None:
     """
-    Display results in a nice way
+    Display the results of the photometric analysis.
 
-    Ref: ...
+    Parameters:
+    -----------
+    props_sky : dict
+        Dictionary containing properties of the sky.
+    r1 : tuple
+        A tuple containing image precision, binned precision, and components for the first set of results.
+        - image_precision1 : dict
+            Dictionary containing image precision metrics for the first set.
+        - binned_precision1 : dict
+            Dictionary containing binned precision metrics for the first set.
+        - components1 : dict
+            Dictionary containing components for the first set.
+    r2 : tuple, optional
+        A tuple containing image precision, binned precision, and components for the second set of results.
+        - image_precision2 : dict
+            Dictionary containing image precision metrics for the second set.
+        - binned_precision2 : dict
+            Dictionary containing binned precision metrics for the second set.
+        - components2 : dict
+            Dictionary containing components for the second set.
 
-    Parameters
-    ----------
-    many
-
-    Returns
-    -------
-    many
-
+    Returns:
+    --------
+    None
+        This function displays the results using pandas DataFrames and does not return any value.
     """
+
+    pd.set_option("display.float_format", to_precision)
 
     image_precision1, binned_precision1, components1 = r1
-    image_precision2, binned_precision2, components2 = r2
 
-    SRFile1 = (
-        Path(__file__).parent
-        / "datafiles"
-        / "SRs"
-        / f"{components1['name']}_instrumentSR.csv"
-    )
-    SRFile2 = (
-        Path(__file__).parent
-        / "datafiles"
-        / "SRs"
-        / f"{components2['name']}_instrumentSR.csv"
-    )
+    # Copy the values to avoid directly editing the original dictionaries
+    image_precision1 = image_precision1.copy()
+    binned_precision1 = binned_precision1.copy()
+    components1 = components1.copy()
+    name1 = components1["name"]
+    components1.pop("name")
+
+    SRFile1 = Path(__file__).parent / "datafiles" / "SRs" / f"{name1}_instrumentSR.csv"
 
     vega1 = vega_mag(
         SRFile1,
@@ -1074,41 +1161,92 @@ def display_results(props_sky, r1, r2):
         components1["sky_radiance [e/m2/arcsec2/s]"],
         components1["A [m2]"],
     )
-    vega2 = vega_mag(
-        SRFile2,
-        props_sky,
-        components2["N_star [e/s]"],
-        components2["sky_radiance [e/m2/arcsec2/s]"],
-        components2["A [m2]"],
-    )
 
-    pd.set_option("display.float_format", to_precision)
+    if r2 is not None:
+        image_precision2, binned_precision2, components2 = r2
 
-    columns = [["single", "single", "binned", "binned"], ["1", "2", "1", "2"]]
-    values = (
-        np.c_[
-            list(image_precision1.values()),
-            list(image_precision2.values()),
-            list(binned_precision1.values()),
-            list(binned_precision2.values()),
+        # Copy the values to avoid directly editing the original dictionaries
+        image_precision2 = image_precision2.copy()
+        binned_precision2 = binned_precision2.copy()
+        components2 = components2.copy()
+        name2 = components2["name"]
+        components2.pop("name")
+
+        SRFile2 = (
+            Path(__file__).parent / "datafiles" / "SRs" / f"{name2}_instrumentSR.csv"
+        )
+
+        vega2 = vega_mag(
+            SRFile2,
+            props_sky,
+            components2["N_star [e/s]"],
+            components2["sky_radiance [e/m2/arcsec2/s]"],
+            components2["A [m2]"],
+        )
+
+        columns = [
+            [
+                "single frame [ppt]",
+                "single frame [ppt]",
+                f"{components1['binning [mins]']} minute binned [ppt]",
+                f"{components2['binning [mins]']} minute binned [ppt]",
+            ],
+            [name1, name2, name1, name2],
         ]
-        * 1000
-    )
-    display(pd.DataFrame(values, index=image_precision1.keys(), columns=columns))
+        values = (
+            np.c_[
+                list(image_precision1.values()),
+                list(image_precision2.values()),
+                list(binned_precision1.values()),
+                list(binned_precision2.values()),
+            ]
+            * 1000
+        )
+        display(pd.DataFrame(values, index=image_precision1.keys(), columns=columns))
 
-    columns = [["1", "2"]]
+        columns = [[name1, name2]]
 
-    for k, v in components1.items():
-        if (type(v) != str) and (type(v) != bool):
-            components1[k] = to_precision(v)
+        for k, v in components1.items():
+            if not isinstance(v, (str, bool)):
+                components1[k] = to_precision(v)
 
-    for k, v in components2.items():
-        if (type(v) != str) and (type(v) != bool):
-            components2[k] = to_precision(v)
+        for k, v in components2.items():
+            if not isinstance(v, (str, bool)):
+                components2[k] = to_precision(v)
 
-    values = np.c_[list(components1.values()), list(components2.values())]
-    display(pd.DataFrame(values, index=components1.keys(), columns=columns))
+        values = np.c_[list(components1.values()), list(components2.values())]
+        display(pd.DataFrame(values, index=components1.keys(), columns=columns))
 
-    columns = [["1", "2"]]
-    values = np.c_[list(vega1.values()), list(vega2.values())]
-    display(pd.DataFrame(values, index=vega1.keys(), columns=columns))
+        columns = [[name1, name2]]
+        values = np.c_[list(vega1.values()), list(vega2.values())]
+        display(pd.DataFrame(values, index=vega1.keys(), columns=columns))
+
+    else:
+        columns = [
+            [
+                "single frame [ppt]",
+                f"{components1['binning [mins]']} minute binned [ppt]",
+            ],
+            [name1, name1],
+        ]
+        values = (
+            np.c_[
+                list(image_precision1.values()),
+                list(binned_precision1.values()),
+            ]
+            * 1000
+        )
+        display(pd.DataFrame(values, index=image_precision1.keys(), columns=columns))
+
+        columns = [[name1]]
+
+        for k, v in components1.items():
+            if (type(v) != str) and (type(v) != bool):
+                components1[k] = to_precision(v)
+
+        values = np.c_[list(components1.values())]
+        display(pd.DataFrame(values, index=components1.keys(), columns=columns))
+
+        columns = [[name1]]
+        values = np.c_[list(vega1.values())]
+        display(pd.DataFrame(values, index=vega1.keys(), columns=columns))

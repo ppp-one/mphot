@@ -1,1 +1,7 @@
-from mphot.mphot import display_results, generateSR, get_precision
+from mphot.mphot import (
+    display_results,
+    generate_system_response,
+    get_precision,
+    integration_time,
+    interpolate_dfs,
+)
