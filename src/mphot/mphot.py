@@ -8,29 +8,28 @@ from IPython.display import clear_output, display
 from scipy.integrate import simpson as simps
 from scipy.interpolate import griddata
 
-# grid_flux_ingredients_name = "pre_grid_2400m_flux.pkl"
-grid_flux_ingredients_name = "pre_grid_03_to_3_microns_2400m_flux.pkl"
-# grid_radiance_ingredients_name = "pre_grid_2400m_radiance.pkl"
-grid_radiance_ingredients_name = "pre_grid_03_to_3_microns_2400m_radiance.pkl"
-# vega_file = "vega.csv"
-vega_file = "vega_03_to_3_microns.csv"
+grid_flux_ingredients_name = "pre_grid_2400m_flux.pkl"
+grid_flux_ingredients_name_extended = "pre_grid_03_to_3_microns_2400m_flux.pkl"
+grid_radiance_ingredients_name = "pre_grid_2400m_radiance.pkl"
+grid_radiance_ingredients_name_extended = "pre_grid_03_to_3_microns_2400m_radiance.pkl"
+vega_file = "vega.csv"
+vega_file_extended = "vega_03_to_3_microns.csv"
+wavelengths = np.arange(0.5, 2, 0.0001)
+wavelengths_extended = np.arange(0.3, 3, 0.0001)
 
 pc = 3.0857e16  # parsec in meters
-
-# wavelengths = np.arange(0.5, 2, 0.0001)
-wavelengths = np.arange(0.3, 3, 0.0001)
 
 
 def interpolate_dfs(index: list, *data: pd.DataFrame) -> pd.DataFrame:
     """
     Interpolates multiple pandas DataFrames based on a given index.
 
-    Parameters:
-    index (list): A list of index values to interpolate over.
-    *data (pd.DataFrame): Variable number of pandas DataFrames to be interpolated.
+    Args:
+        index (list): A list of index values to interpolate over.
+        *data (pd.DataFrame): Variable number of pandas DataFrames to be interpolated.
 
     Returns:
-    pd.DataFrame: A single DataFrame with interpolated values for the given index.
+        pd.DataFrame: A single DataFrame with interpolated values for the given index.
     """
 
     df = pd.DataFrame({"tmp": index}, index=index)
@@ -66,14 +65,19 @@ def generate_system_response(
     # name to refer to the generated file
     name = efficiency_file.split("/")[-1][:-4] + "_" + filter_file.split("/")[-1][:-4]
 
-    # generates a SR, saved locally as 'name1_instrumentSR.csv'
-    SRFile = Path(__file__).parent / "datafiles" / "SRs" / f"{name}_instrumentSR.csv"
+    # generates a SR, saved locally as 'name1_instrument_system_response.csv'
+    SRFile = (
+        Path(__file__).parent
+        / "datafiles"
+        / "system_responses"
+        / f"{name}_instrument_system_response.csv"
+    )
 
     effDF = pd.DataFrame({"eff": eff[1].values}, index=eff[0])
 
     filtDF = pd.DataFrame({"filt": filt[1].values}, index=filt[0])
 
-    df = interpolate_dfs(wavelengths, effDF, filtDF)
+    df = interpolate_dfs(wavelengths_extended, effDF, filtDF)
 
     dfSR = df["eff"] * df["filt"]
 
@@ -81,12 +85,14 @@ def generate_system_response(
 
     dfSR.to_csv(SRFile, header=False)
 
-    # print(SRFile.name + " has been saved!")
+    print(f"`{SRFile}` has been generated and saved!")
 
     return name, dfSR
 
 
-def generate_flux_grid(sResponse: str) -> tuple[np.ndarray, np.ndarray]:
+def generate_flux_grid(
+    sResponse: str, extended: bool = False
+) -> tuple[np.ndarray, np.ndarray]:
     """
     Generates a base flux grid based on atmospheric parameters and response functions, with the following ranges:
         airmass: 1 - 3
@@ -99,6 +105,7 @@ def generate_flux_grid(sResponse: str) -> tuple[np.ndarray, np.ndarray]:
 
     Args:
         sResponse (str): Path to the CSV file containing the spectral response function.
+        extended (bool, optional): If True, use 0.3 to 3.0 micron instead of 0.5 to 2 micron. Default is False.
 
     Returns:
         tuple: A tuple containing:
@@ -111,9 +118,15 @@ def generate_flux_grid(sResponse: str) -> tuple[np.ndarray, np.ndarray]:
               airmass, and temperature.
     """
 
-    gridIngredients = pd.read_pickle(
-        Path(__file__).parent / "datafiles" / grid_flux_ingredients_name
-    )
+    if extended:
+        gridIngredients = pd.read_pickle(
+            Path(__file__).parent / "datafiles" / grid_flux_ingredients_name_extended
+        )
+    else:
+        gridIngredients = pd.read_pickle(
+            Path(__file__).parent / "datafiles" / grid_flux_ingredients_name
+        )
+
     rsr = pd.read_csv(sResponse, header=None, index_col=0)
 
     pwv_values = np.array(
@@ -255,8 +268,11 @@ def generate_flux_grid(sResponse: str) -> tuple[np.ndarray, np.ndarray]:
             36500,
         ]
     )
+    if extended:
+        gridSauce = interpolate_dfs(wavelengths_extended, rsr, gridIngredients)
+    else:
+        gridSauce = interpolate_dfs(wavelengths, rsr, gridIngredients)
 
-    gridSauce = interpolate_dfs(wavelengths, rsr, gridIngredients)
     gridSauce = gridSauce[(gridSauce[1] > 0)]
     atm_grid = []
     for i, pwv in enumerate(pwv_values):
@@ -284,7 +300,9 @@ def generate_flux_grid(sResponse: str) -> tuple[np.ndarray, np.ndarray]:
     return coords, data
 
 
-def generate_radiance_grid(sResponse: str) -> tuple[np.ndarray, np.ndarray]:
+def generate_radiance_grid(
+    sResponse: str, extended: bool = False
+) -> tuple[np.ndarray, np.ndarray]:
     """
     Generates a radiance base grid for atmospheric parameters, with the following ranges:
         airmass: 1 - 3
@@ -297,6 +315,7 @@ def generate_radiance_grid(sResponse: str) -> tuple[np.ndarray, np.ndarray]:
 
     Args:
         sResponse (str): Path to the spectral response CSV file.
+        extended (bool, optional): If True, use 0.3 to 3.0 micron instead of 0.5 to 2 micron. Default is False.
 
     Returns:
         tuple: A tuple containing:
@@ -306,9 +325,16 @@ def generate_radiance_grid(sResponse: str) -> tuple[np.ndarray, np.ndarray]:
               containing the integrated atmospheric flux responses.
     """
 
-    gridIngredients = pd.read_pickle(
-        Path(__file__).parent / "datafiles" / grid_radiance_ingredients_name
-    )
+    if extended:
+        gridIngredients = pd.read_pickle(
+            Path(__file__).parent
+            / "datafiles"
+            / grid_radiance_ingredients_name_extended
+        )
+    else:
+        gridIngredients = pd.read_pickle(
+            Path(__file__).parent / "datafiles" / grid_radiance_ingredients_name
+        )
     rsr = pd.read_csv(sResponse, header=None, index_col=0)
 
     pwv_values = np.array(
@@ -450,8 +476,11 @@ def generate_radiance_grid(sResponse: str) -> tuple[np.ndarray, np.ndarray]:
             36500,
         ]
     )
+    if extended:
+        gridSauce = interpolate_dfs(wavelengths_extended, rsr, gridIngredients)
+    else:
+        gridSauce = interpolate_dfs(wavelengths, rsr, gridIngredients)
 
-    gridSauce = interpolate_dfs(wavelengths, rsr, gridIngredients)
     gridSauce = gridSauce[(gridSauce[1] > 0)]
     atm_grid = []
     for i, pwv in enumerate(pwv_values):
@@ -482,23 +511,15 @@ def interpolate_grid(
     """
     Interpolates between grid points, using a cubic method.
 
-    Parameters
-    ----------
-    coords : np.ndarray
-        Coordinates of base grid generated.
-    data : np.ndarray
-        Data of base grid generated.
-    pwv : float
-        Precipitable water vapour value at zenith.
-    airmass : float
-        Airmass of target/comparison star.
-    Teff : float
-        Effective temperature of target/comparison star.
+    Args:
+        coords (np.ndarray): Coordinates of base grid generated.
+        data (np.ndarray): Data of base grid generated.
+        pwv (float): Precipitable water vapour value at zenith.
+        airmass (float): Airmass of target/comparison star.
+        Teff (float): Effective temperature of target/comparison star.
 
-    Returns
-    -------
-    float
-        Interpolated value of grid.
+    Returns:
+        float: Interpolated value of grid.
     """
 
     method = "cubic"
@@ -546,12 +567,12 @@ def gaussian(delta: float, sigma: float) -> float:
     This function computes the value of a Gaussian (normal) distribution
     for a given delta and sigma.
 
-    Parameters:
-    delta (float): The difference from the mean (x - mu).
-    sigma (float): The standard deviation of the distribution.
+    Args:
+        delta (float): The difference from the mean (x - mu).
+        sigma (float): The standard deviation of the distribution.
 
     Returns:
-    float: The value of the Gaussian function at the given delta.
+        float: The value of the Gaussian function at the given delta.
     """
 
     return (1.0 / (np.sqrt(2 * np.pi) * sigma)) * np.exp(-(delta**2) / (2 * sigma**2))
@@ -569,18 +590,18 @@ def integration_time(
     """
     Calculate the integration time for a given set of parameters.
 
-    Parameters:
-    fwhm (float): Full width at half maximum of the point spread function.
-    N_star (float): Number of star counts.
-    N_sky (float): Number of sky counts.
-    N_dc (float): Number of dark current counts.
-    N_rn (float): Number of read noise counts.
-    plate_scale (float): Plate scale in arcseconds per pixel.
-    well_depth (float): Maximum well depth of the detector.
-    well_fill (float): Fraction of the well depth to be filled.
+    Args:
+        fwhm (float): Full width at half maximum of the point spread function.
+        N_star (float): Number of star counts.
+        N_sky (float): Number of sky counts.
+        N_dc (float): Number of dark current counts.
+        N_rn (float): Number of read noise counts.
+        plate_scale (float): Plate scale in arcseconds per pixel.
+        well_depth (float): Maximum well depth of the detector.
+        well_fill (float): Fraction of the well depth to be filled.
 
     Returns:
-    float: Calculated integration time.
+        float: Calculated integration time.
     """
 
     sigma_IR = (fwhm / plate_scale) / 2.355  # in pix
@@ -604,17 +625,17 @@ def scintillation_noise(
     """
     Calculate the scintillation noise for a given set of parameters.
 
-    Parameters:
-    r (float): Aperture radius in meters.
-    t (float): Exposure time in seconds.
-    N_star (float): Number of stars.
-    airmass (float, optional): Airmass value. Default is 1.5.
+    Args:
+        r (float): Aperture radius in meters.
+        t (float): Exposure time in seconds.
+        N_star (float): Number of stars.
+        airmass (float, optional): Airmass value. Default is 1.5.
 
     Returns:
-    float: The calculated scintillation noise.
+        float: The calculated scintillation noise.
 
     Reference:
-    https://academic.oup.com/mnras/article/509/4/6111/6442285
+        https://academic.oup.com/mnras/article/509/4/6111/6442285
     """
 
     return (
@@ -642,65 +663,74 @@ def get_precision(
     N_sky: float | None = None,
     N_star: float | None = None,
     exp_time: float | None = None,
+    extended: bool = False,
 ) -> dict:
     """
     Calculate the precision of astronomical observations based on various parameters.
 
-    Parameters:
-    -----------
-    props : dict
-        Dictionary containing properties of the instrument and observation.
-        Expected keys:
-        - "name": str, name of the instrument
-        - "plate_scale": float, plate scale of the instrument
-        - "N_dc": float, dark current noise
-        - "N_rn": float, read noise
-        - "well_depth": float, well depth of the detector
-        - "well_fill": float, well fill level
-        - "read_time": float, readout time of the detector
-        - "r0": float, inner radius for aperture
-        - "r1": float, outer radius for aperture
-        - "ap_rad": float, optional, aperture radius
+    Args:
+        props (dict):
+            Dictionary containing properties of the instrument and observation.
+            Expected keys:
+            - "name": str, name of the instrument
+            - "plate_scale": float, plate scale of the instrument
+            - "N_dc": float, dark current noise
+            - "N_rn": float, read noise
+            - "well_depth": float, well depth of the detector
+            - "well_fill": float, well fill level
+            - "read_time": float, readout time of the detector
+            - "r0": float, inner radius for aperture
+            - "r1": float, outer radius for aperture
+            - "ap_rad": float, optional, aperture radius
 
-    props_sky : dict
-        Dictionary containing properties of the sky.
-        Expected keys:
-        - "pwv": float, precipitable water vapor
-        - "airmass": float, airmass of the observation
-        - "seeing": float, full width at half maximum (FWHM) of the seeing
+        props_sky (dict):
+            Dictionary containing properties of the sky.
+            Expected keys:
+            - "pwv": float, precipitable water vapor
+            - "airmass": float, airmass of the observation
+            - "seeing": float, full width at half maximum (FWHM) of the seeing
 
-    Teff : float
-        Effective temperature of the star in Kelvin.
+        Teff (float):
+            Effective temperature of the star in Kelvin.
 
-    distance : float
-        Distance to the star in parsecs.
+        distance (float):
+            Distance to the star in parsecs.
 
-    binning : float, optional
-        Binning time in minutes. Default is 10.
+        binning (float, optional):
+            Binning time in minutes. Default is 10.
 
-    override_grid : bool, optional
-        If True, override existing grid files. Default is False.
+        override_grid (bool, optional):
+            If True, override existing grid files. Default is False.
 
-    SPCcorrection : bool, optional
-        If True, apply SPC correction based on the effective temperature. Default is True.
+        SPCcorrection (bool, optional):
+            If True, apply SPC correction based on the effective temperature. Default is True.
 
-    N_sky : float, optional
-        Number of sky counts, calculated if None. Default is None.
+        N_sky (float, optional):
+            Number of sky counts, calculated if None. Default is None.
 
-    N_star : float, optional
-        Number of star counts, calculated if None. Default is None.
+        N_star (float, optional):
+            Number of star counts, calculated if None. Default is None.
 
-    exp_time : float, optional
-        Exposure time in seconds, calculated if None. Default is None.
+        exp_time (float, optional):
+            Exposure time in seconds, calculated if None. Default is None.
+
+        extended (bool, optional):
+            If True, use 0.3 to 3.0 micron instead of 0.5 to 2 micron. Default is False.
 
     Returns:
-    --------
-    dict
-        A dictionary containing the precision of the observation, returns three dictionaries:
-        - image_precision: Precision of the image
-        - binned_precision: Precision of the binned image
-        - components: Various components used in the calculation
+        tuple: A tuple containing:
+            image_precision : dict
+                Precision of the image
+            binned_precision : dict
+                Precision of the binned image
+            components : dict
+                Various components used in the calculation
     """
+
+    if extended:
+        extended_str = "extended"
+    else:
+        extended_str = "normal"
 
     props = props.copy()
     props_sky = props_sky.copy()
@@ -739,51 +769,73 @@ def get_precision(
 
     if (
         os.path.isfile(
-            Path(__file__).parent / "grids" / f"{name}_precisionGrid_flux_coords.npy"
+            Path(__file__).parent
+            / "grids"
+            / f"{name}_precisionGrid_flux_coords_{extended_str}.npy"
         )
         is False
     ) or (override_grid):
         # generate flux grid
         coords, data = generate_flux_grid(
-            Path(__file__).parent / "datafiles" / "SRs" / f"{name}_instrumentSR.csv"
-        )
-
-        # save output
-        np.save(
-            Path(__file__).parent / "grids" / f"{name}_precisionGrid_flux_data.npy",
-            data,
-        )
-        np.save(
-            Path(__file__).parent / "grids" / f"{name}_precisionGrid_flux_coords.npy",
-            coords,
-        )
-
-        # generate radiance grid
-        coords, data = generate_radiance_grid(
-            Path(__file__).parent / "datafiles" / "SRs" / f"{name}_instrumentSR.csv"
+            Path(__file__).parent
+            / "datafiles"
+            / "system_responses"
+            / f"{name}_instrument_system_response.csv",
+            extended=extended,
         )
 
         # save output
         np.save(
             Path(__file__).parent
             / "grids"
-            / f"{name}_precisionGrid_radiance_coords.npy",
+            / f"{name}_precisionGrid_flux_data_{extended_str}.npy",
+            data,
+        )
+        np.save(
+            Path(__file__).parent
+            / "grids"
+            / f"{name}_precisionGrid_flux_coords_{extended_str}.npy",
+            coords,
+        )
+
+        # generate radiance grid
+        coords, data = generate_radiance_grid(
+            Path(__file__).parent
+            / "datafiles"
+            / "system_responses"
+            / f"{name}_instrument_system_response.csv",
+            extended=extended,
+        )
+
+        # save output
+        np.save(
+            Path(__file__).parent
+            / "grids"
+            / f"{name}_precisionGrid_radiance_coords_{extended_str}.npy",
             coords,
         )
         np.save(
-            Path(__file__).parent / "grids" / f"{name}_precisionGrid_radiance_data.npy",
+            Path(__file__).parent
+            / "grids"
+            / f"{name}_precisionGrid_radiance_data_{extended_str}.npy",
             data,
         )
 
     # load grids
     coords = np.load(
-        Path(__file__).parent / "grids" / f"{name}_precisionGrid_flux_coords.npy"
+        Path(__file__).parent
+        / "grids"
+        / f"{name}_precisionGrid_flux_coords_{extended_str}.npy"
     )
     data_flux = np.load(
-        Path(__file__).parent / "grids" / f"{name}_precisionGrid_flux_data.npy"
+        Path(__file__).parent
+        / "grids"
+        / f"{name}_precisionGrid_flux_data_{extended_str}.npy"
     )
     data_radiance = np.load(
-        Path(__file__).parent / "grids" / f"{name}_precisionGrid_radiance_data.npy"
+        Path(__file__).parent
+        / "grids"
+        / f"{name}_precisionGrid_radiance_data_{extended_str}.npy"
     )
 
     # get values from grids
@@ -883,10 +935,13 @@ def get_precision(
         "N_star [e/s]": N_star,
         "star_flux [e/m2/s]": flux / ((distance * pc) ** 2),
         "scn [e_rms]": scn,  # not sure of units
-        "npix": npix,
+        "pixels in aperture [pix]": npix,
         "ap_radius [pix]": ap,
         "N_sky [e/pix/s]": N_sky,
         "sky_radiance [e/m2/arcsec2/s]": radiance,
+        "seeing [arcsec]": fwhm,
+        "pwv [mm]": pwv,
+        "airmass": airmass,
         'plate_scale ["/pix]': plate_scale,
         "N_dc [e/pix/s]": N_dc,
         "N_rn [e_rms/pix]": N_rn,  # not sure of units
@@ -895,61 +950,81 @@ def get_precision(
         "r1 [m]": r1,
         "t [s]": t,
         "well_depth [e/pix]": well_depth,
-        "well_fill": well_fill,  # peak pixel
+        "peak well_fill": well_fill,  # peak pixel
         "binning [mins]": binning,
         "read_time [s]": read_time,
-        "nImages": nImages,
+        "binned images": nImages,
     }
 
     return image_precision, binned_precision, components
 
 
 def vega_mag(
-    SRFile: str, props_sky: dict, N_star: float, sky_radiance: float, A: float
+    SRFile: str,
+    props_sky: dict,
+    N_star: float,
+    sky_radiance: float,
+    A: float,
+    extended: bool = False,
 ) -> dict:
     """
     Calculate the Vega magnitude for a given spectral response file and sky properties.
 
-    Parameters
-    ----------
-    SRFile : str
-        Path to the spectral response CSV file.
-    props_sky : dict
-        Dictionary containing properties of the sky.
-        Expected keys:
-        - "pwv": float, precipitable water vapor
-        - "airmass": float, airmass of the observation
-    N_star : float
-        Number of star counts.
-    sky_radiance : float
-        Sky radiance value.
-    A : float
-        Aperture area in square meters.
+    Args:
+        SRFile (str):
+            Path to the spectral response CSV file.
+        props_sky (dict):
+            Dictionary containing properties of the sky.
+            Expected keys:
+            - "pwv": float, precipitable water vapor
+            - "airmass": float, airmass of the observation
+        N_star (float):
+            Number of star counts.
+        sky_radiance (float):
+            Sky radiance value.
+        A (float):
+            Aperture area in square meters.
+        extended (bool, optional):
+            If True, use 0.3 to 3.0 micron instead of 0.5 to 2 micron. Default is False.
 
-    Returns
-    -------
-    dict
-        A dictionary containing the Vega magnitude information:
-        - "star [mag]": Vega magnitude of the star.
-        - "sky [mag/arcsec2]": Vega magnitude of the sky per arcsecond squared.
-        - "vega_flux [e/s]": Vega flux in electrons per second.
+    Returns:
+        dict:
+            A dictionary containing the Vega magnitude information:
+            - "star [mag]": Vega magnitude of the star.
+            - "sky [mag/arcsec2]": Vega magnitude of the sky per arcsecond squared.
+            - "vega_flux [e/s]": Vega flux in electrons per second.
     """
 
-    gridIngredients = pd.read_pickle(
-        Path(__file__).parent / "datafiles" / grid_flux_ingredients_name
-    )
+    if extended:
+        gridIngredients = pd.read_pickle(
+            Path(__file__).parent / "datafiles" / grid_flux_ingredients_name_extended
+        )
+        vega = pd.read_csv(
+            Path(__file__).parent / "datafiles" / vega_file_extended,
+            header=None,
+            index_col=0,
+        )
+    else:
+        gridIngredients = pd.read_pickle(
+            Path(__file__).parent / "datafiles" / grid_flux_ingredients_name
+        )
+
+        vega = pd.read_csv(
+            Path(__file__).parent / "datafiles" / vega_file,
+            header=None,
+            index_col=0,
+        )
 
     rsr = pd.read_csv(SRFile, header=None, index_col=0)
     rsr = rsr[1].rename("rsr")
 
-    vega = pd.read_csv(
-        Path(__file__).parent / "datafiles" / vega_file,
-        header=None,
-        index_col=0,
-    )
     vega = vega[1].rename("vega")
 
-    gridSauce = interpolate_dfs(wavelengths, rsr, gridIngredients, vega)
+    if extended:
+        gridSauce = interpolate_dfs(wavelengths_extended, rsr, gridIngredients, vega)
+    else:
+        gridSauce = interpolate_dfs(wavelengths, rsr, gridIngredients, vega)
+
     gridSauce = gridSauce[(gridSauce["rsr"] > 0)]
 
     pwv_values = np.array(
@@ -1041,12 +1116,12 @@ def to_precision(x: float, p: int = 3) -> str:
     """
     Convert a number to a string with the given precision.
 
-    Parameters:
-    x (float): The number to be converted.
-    p (int, optional): The precision (number of significant digits). Default is 3.
+    Args:
+        x (float): The number to be converted.
+        p (int, optional): The precision (number of significant digits). Default is 3.
 
     Returns:
-    str: The number represented as a string with the specified precision.
+        str: The number represented as a string with the specified precision.
 
     Examples:
     >>> to_precision(123.456, 4)
@@ -1110,35 +1185,33 @@ def to_precision(x: float, p: int = 3) -> str:
     return "".join(out)
 
 
-def display_results(props_sky: dict, r1: tuple, r2: tuple = None) -> None:
+def display_results(r1: tuple, r2: tuple = None) -> None:
     """
     Display the results of the photometric analysis.
 
     Parameters:
-    -----------
-    props_sky : dict
-        Dictionary containing properties of the sky.
-    r1 : tuple
-        A tuple containing image precision, binned precision, and components for the first set of results.
-        - image_precision1 : dict
-            Dictionary containing image precision metrics for the first set.
-        - binned_precision1 : dict
-            Dictionary containing binned precision metrics for the first set.
-        - components1 : dict
-            Dictionary containing components for the first set.
-    r2 : tuple, optional
-        A tuple containing image precision, binned precision, and components for the second set of results.
-        - image_precision2 : dict
-            Dictionary containing image precision metrics for the second set.
-        - binned_precision2 : dict
-            Dictionary containing binned precision metrics for the second set.
-        - components2 : dict
-            Dictionary containing components for the second set.
+        props_sky (dict):
+            Dictionary containing properties of the sky.
+        r1 (tuple):
+            A tuple containing image precision, binned precision, and components for the first set of results.
+            - image_precision1 : dict
+                Dictionary containing image precision metrics for the first set.
+            - binned_precision1 : dict
+                Dictionary containing binned precision metrics for the first set.
+            - components1 : dict
+                Dictionary containing components for the first set.
+        r2 (tuple, optional):
+            A tuple containing image precision, binned precision, and components for the second set of results.
+            - image_precision2 : dict
+                Dictionary containing image precision metrics for the second set.
+            - binned_precision2 : dict
+                Dictionary containing binned precision metrics for the second set.
+            - components2 : dict
+                Dictionary containing components for the second set.
 
     Returns:
-    --------
-    None
-        This function displays the results using pandas DataFrames and does not return any value.
+        None
+            This function displays the results using pandas DataFrames and does not return any value.
     """
 
     pd.set_option("display.float_format", to_precision)
@@ -1152,11 +1225,22 @@ def display_results(props_sky: dict, r1: tuple, r2: tuple = None) -> None:
     name1 = components1["name"]
     components1.pop("name")
 
-    SRFile1 = Path(__file__).parent / "datafiles" / "SRs" / f"{name1}_instrumentSR.csv"
+    props_sky1 = {
+        "pwv": components1["pwv [mm]"],
+        "airmass": components1["airmass"],
+        "seeing": components1["seeing [arcsec]"],
+    }
+
+    SRFile1 = (
+        Path(__file__).parent
+        / "datafiles"
+        / "system_responses"
+        / f"{name1}_instrument_system_response.csv"
+    )
 
     vega1 = vega_mag(
         SRFile1,
-        props_sky,
+        props_sky1,
         components1["N_star [e/s]"],
         components1["sky_radiance [e/m2/arcsec2/s]"],
         components1["A [m2]"],
@@ -1172,13 +1256,22 @@ def display_results(props_sky: dict, r1: tuple, r2: tuple = None) -> None:
         name2 = components2["name"]
         components2.pop("name")
 
+        props_sky2 = {
+            "pwv": components2["pwv [mm]"],
+            "airmass": components2["airmass"],
+            "seeing": components2["seeing [arcsec]"],
+        }
+
         SRFile2 = (
-            Path(__file__).parent / "datafiles" / "SRs" / f"{name2}_instrumentSR.csv"
+            Path(__file__).parent
+            / "datafiles"
+            / "system_responses"
+            / f"{name2}_instrument_system_response.csv"
         )
 
         vega2 = vega_mag(
             SRFile2,
-            props_sky,
+            props_sky2,
             components2["N_star [e/s]"],
             components2["sky_radiance [e/m2/arcsec2/s]"],
             components2["A [m2]"],
@@ -1200,7 +1293,7 @@ def display_results(props_sky: dict, r1: tuple, r2: tuple = None) -> None:
                 list(binned_precision1.values()),
                 list(binned_precision2.values()),
             ]
-            * 1000
+            * 1000  # convert to ppt
         )
         display(pd.DataFrame(values, index=image_precision1.keys(), columns=columns))
 
@@ -1234,7 +1327,7 @@ def display_results(props_sky: dict, r1: tuple, r2: tuple = None) -> None:
                 list(image_precision1.values()),
                 list(binned_precision1.values()),
             ]
-            * 1000
+            * 1000  # convert to ppt
         )
         display(pd.DataFrame(values, index=image_precision1.keys(), columns=columns))
 
