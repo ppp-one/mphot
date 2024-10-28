@@ -26,7 +26,7 @@ def interpolate_dfs(index: list, *data: pd.DataFrame) -> pd.DataFrame:
 
     Args:
         index (list): A list of index values to interpolate over.
-        *data (pd.DataFrame): Variable number of pandas DataFrames to be interpolated.
+        data (pd.DataFrame): Variable number of pandas DataFrames to be interpolated.
 
     Returns:
         pd.DataFrame: A single DataFrame with interpolated values for the given index.
@@ -105,7 +105,7 @@ def generate_flux_grid(
 
     Args:
         sResponse (str): Path to the CSV file containing the spectral response function.
-        extended (bool, optional): If True, use 0.3 to 3.0 micron instead of 0.5 to 2 micron. Default is False.
+        extended (bool, optional): If True, use 0.3 to 3.0 micron grid instead of 0.5 to 2.0 micron grid. Default is False.
 
     Returns:
         tuple: A tuple containing:
@@ -315,7 +315,7 @@ def generate_radiance_grid(
 
     Args:
         sResponse (str): Path to the spectral response CSV file.
-        extended (bool, optional): If True, use 0.3 to 3.0 micron instead of 0.5 to 2 micron. Default is False.
+        extended (bool, optional): If True, use 0.3 to 3.0 micron grid instead of 0.5 to 2.0 micron grid. Default is False.
 
     Returns:
         tuple: A tuple containing:
@@ -715,7 +715,7 @@ def get_precision(
             Exposure time in seconds, calculated if None. Default is None.
 
         extended (bool, optional):
-            If True, use 0.3 to 3.0 micron instead of 0.5 to 2 micron. Default is False.
+            If True, use 0.3 to 3.0 micron grid instead of 0.5 to 2.0 micron grid. Default is False.
 
     Returns:
         tuple: A tuple containing:
@@ -985,7 +985,7 @@ def vega_mag(
         A (float):
             Aperture area in square meters.
         extended (bool, optional):
-            If True, use 0.3 to 3.0 micron instead of 0.5 to 2 micron. Default is False.
+            If True, use 0.3 to 3.0 micron grid instead of 0.5 to 2.0 micron grid. Default is False.
 
     Returns:
         dict:
@@ -1189,25 +1189,25 @@ def display_results(r1: tuple, r2: tuple = None) -> None:
     """
     Display the results of the photometric analysis.
 
-    Parameters:
+    Args:
         props_sky (dict):
             Dictionary containing properties of the sky.
         r1 (tuple):
             A tuple containing image precision, binned precision, and components for the first set of results.
-            - image_precision1 : dict
-                Dictionary containing image precision metrics for the first set.
-            - binned_precision1 : dict
-                Dictionary containing binned precision metrics for the first set.
-            - components1 : dict
-                Dictionary containing components for the first set.
+                - image_precision1 (dict):
+                    Dictionary containing image precision metrics for the first set.
+                - binned_precision1 (dict):
+                    Dictionary containing binned precision metrics for the first set.
+                - components1 (dict):
+                    Dictionary containing components for the first set.
         r2 (tuple, optional):
             A tuple containing image precision, binned precision, and components for the second set of results.
-            - image_precision2 : dict
-                Dictionary containing image precision metrics for the second set.
-            - binned_precision2 : dict
-                Dictionary containing binned precision metrics for the second set.
-            - components2 : dict
-                Dictionary containing components for the second set.
+                - image_precision2 (dict):
+                    Dictionary containing image precision metrics for the second set.
+                - binned_precision2 (dict):
+                    Dictionary containing binned precision metrics for the second set.
+                - components2 (dict):
+                    Dictionary containing components for the second set.
 
     Returns:
         None

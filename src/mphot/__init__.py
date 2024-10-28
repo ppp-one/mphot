@@ -1,4 +1,4 @@
-from mphot.mphot import (
+from mphot.core import (
     display_results,
     generate_system_response,
     get_precision,
