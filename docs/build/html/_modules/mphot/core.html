@@ -1,0 +1,1715 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../" data-theme="light">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>mphot.core &#8212; mphot</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "light";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../../_static/styles/sphinx-book-theme.css?v=a3416100" />
+    <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script src="../../_static/documentation_options.js?v=e645c8fa"></script>
+    <script src="../../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../_static/copybutton.js?v=f281be69"></script>
+    <script src="../../_static/scripts/sphinx-book-theme.js?v=887ef09a"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/mphot/core';</script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="light">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search..."
+         aria-label="Search..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../index.html">
+  
+  
+  
+  
+  
+  
+    <p class="title logo__title">mphot</p>
+  
+</a></div>
+        <div class="sidebar-primary-item">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script></div>
+        <div class="sidebar-primary-item"><nav class="bd-links bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item navbar-nav active">
+        <ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../../mphot.html">mphot package</a></li>
+</ul>
+
+    </div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+
+<div class="sbt-scroll-pixel-helper"></div>
+
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item"><button class="sidebar-toggle primary-toggle btn btn-sm" title="Toggle primary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <span class="fa-solid fa-bars"></span>
+</button></div>
+      
+    </div>
+  
+  
+    <div class="header-article-items__end">
+      
+        <div class="header-article-item">
+
+<div class="article-header-buttons">
+
+
+
+<button onclick="toggleFullScreen()"
+  class="btn btn-sm btn-fullscreen-button"
+  title="Fullscreen mode"
+  data-bs-placement="bottom" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-expand"></i>
+  </span>
+
+</button>
+
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script>
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm pst-navbar-icon search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+  </button>
+`);
+</script>
+
+</div></div>
+      
+    </div>
+  
+</div>
+</div>
+              
+              
+
+<div id="jb-print-docs-body" class="onlyprint">
+    <h1></h1>
+    <!-- Table of contents -->
+    <div id="print-main-content">
+        <div id="jb-print-toc">
+            
+        </div>
+    </div>
+</div>
+
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <h1>Source code for mphot.core</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">math</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">from</span> <span class="nn">IPython.display</span> <span class="kn">import</span> <span class="n">clear_output</span><span class="p">,</span> <span class="n">display</span>
+<span class="kn">from</span> <span class="nn">scipy.integrate</span> <span class="kn">import</span> <span class="n">simpson</span> <span class="k">as</span> <span class="n">simps</span>
+<span class="kn">from</span> <span class="nn">scipy.interpolate</span> <span class="kn">import</span> <span class="n">griddata</span>
+
+<span class="n">grid_flux_ingredients_name</span> <span class="o">=</span> <span class="s2">&quot;pre_grid_2400m_flux.pkl&quot;</span>
+<span class="n">grid_flux_ingredients_name_extended</span> <span class="o">=</span> <span class="s2">&quot;pre_grid_03_to_3_microns_2400m_flux.pkl&quot;</span>
+<span class="n">grid_radiance_ingredients_name</span> <span class="o">=</span> <span class="s2">&quot;pre_grid_2400m_radiance.pkl&quot;</span>
+<span class="n">grid_radiance_ingredients_name_extended</span> <span class="o">=</span> <span class="s2">&quot;pre_grid_03_to_3_microns_2400m_radiance.pkl&quot;</span>
+<span class="n">vega_file</span> <span class="o">=</span> <span class="s2">&quot;vega.csv&quot;</span>
+<span class="n">vega_file_extended</span> <span class="o">=</span> <span class="s2">&quot;vega_03_to_3_microns.csv&quot;</span>
+<span class="n">wavelengths</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mf">0.5</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mf">0.0001</span><span class="p">)</span>
+<span class="n">wavelengths_extended</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mf">0.3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mf">0.0001</span><span class="p">)</span>
+
+<span class="n">pc</span> <span class="o">=</span> <span class="mf">3.0857e16</span>  <span class="c1"># parsec in meters</span>
+
+
+<div class="viewcode-block" id="interpolate_dfs">
+<a class="viewcode-back" href="../../mphot.html#mphot.core.interpolate_dfs">[docs]</a>
+<span class="k">def</span> <span class="nf">interpolate_dfs</span><span class="p">(</span><span class="n">index</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span> <span class="o">*</span><span class="n">data</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Interpolates multiple pandas DataFrames based on a given index.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        index (list): A list of index values to interpolate over.</span>
+<span class="sd">        data (pd.DataFrame): Variable number of pandas DataFrames to be interpolated.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        pd.DataFrame: A single DataFrame with interpolated values for the given index.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s2">&quot;tmp&quot;</span><span class="p">:</span> <span class="n">index</span><span class="p">},</span> <span class="n">index</span><span class="o">=</span><span class="n">index</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">dat</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
+        <span class="n">dat</span> <span class="o">=</span> <span class="n">dat</span><span class="p">[</span><span class="o">~</span><span class="n">dat</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">duplicated</span><span class="p">(</span><span class="n">keep</span><span class="o">=</span><span class="s2">&quot;first&quot;</span><span class="p">)]</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">df</span><span class="p">,</span> <span class="n">dat</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">sort_index</span><span class="p">()</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">interpolate</span><span class="p">(</span><span class="s2">&quot;index&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">reindex</span><span class="p">(</span><span class="n">index</span><span class="p">)</span>
+    <span class="n">df</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="s2">&quot;tmp&quot;</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">df</span></div>
+
+
+
+<div class="viewcode-block" id="generate_system_response">
+<a class="viewcode-back" href="../../mphot.html#mphot.core.generate_system_response">[docs]</a>
+<span class="k">def</span> <span class="nf">generate_system_response</span><span class="p">(</span>
+    <span class="n">efficiency_file</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">filter_file</span><span class="p">:</span> <span class="nb">str</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Generates a spectral response (SR) file by combining efficiency and filter data.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        efficiency_file (str): Path to the CSV file containing efficiency data.</span>
+<span class="sd">        filter_file (str): Path to the CSV file containing filter data.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        tuple: A tuple containing:</span>
+<span class="sd">            - name (str): The name used to refer to the generated SR file.</span>
+<span class="sd">            - dfSR (pd.Series): The spectral response data.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">eff</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">efficiency_file</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+    <span class="n">filt</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">filter_file</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+
+    <span class="c1"># name to refer to the generated file</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="n">efficiency_file</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">][:</span><span class="o">-</span><span class="mi">4</span><span class="p">]</span> <span class="o">+</span> <span class="s2">&quot;_&quot;</span> <span class="o">+</span> <span class="n">filter_file</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">][:</span><span class="o">-</span><span class="mi">4</span><span class="p">]</span>
+
+    <span class="c1"># generates a SR, saved locally as &#39;name1_instrument_system_response.csv&#39;</span>
+    <span class="n">SRFile</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">Path</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span><span class="o">.</span><span class="n">parent</span>
+        <span class="o">/</span> <span class="s2">&quot;datafiles&quot;</span>
+        <span class="o">/</span> <span class="s2">&quot;system_responses&quot;</span>
+        <span class="o">/</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">_instrument_system_response.csv&quot;</span>
+    <span class="p">)</span>
+
+    <span class="n">effDF</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s2">&quot;eff&quot;</span><span class="p">:</span> <span class="n">eff</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">},</span> <span class="n">index</span><span class="o">=</span><span class="n">eff</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+    <span class="n">filtDF</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s2">&quot;filt&quot;</span><span class="p">:</span> <span class="n">filt</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">},</span> <span class="n">index</span><span class="o">=</span><span class="n">filt</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+    <span class="n">df</span> <span class="o">=</span> <span class="n">interpolate_dfs</span><span class="p">(</span><span class="n">wavelengths_extended</span><span class="p">,</span> <span class="n">effDF</span><span class="p">,</span> <span class="n">filtDF</span><span class="p">)</span>
+
+    <span class="n">dfSR</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s2">&quot;eff&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="n">df</span><span class="p">[</span><span class="s2">&quot;filt&quot;</span><span class="p">]</span>
+
+    <span class="n">dfSR</span> <span class="o">=</span> <span class="n">dfSR</span><span class="p">[</span><span class="n">dfSR</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">]</span>
+
+    <span class="n">dfSR</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="n">SRFile</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;`</span><span class="si">{</span><span class="n">SRFile</span><span class="si">}</span><span class="s2">` has been generated and saved!&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">name</span><span class="p">,</span> <span class="n">dfSR</span></div>
+
+
+
+<div class="viewcode-block" id="generate_flux_grid">
+<a class="viewcode-back" href="../../mphot.html#mphot.core.generate_flux_grid">[docs]</a>
+<span class="k">def</span> <span class="nf">generate_flux_grid</span><span class="p">(</span>
+    <span class="n">sResponse</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">extended</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Generates a base flux grid based on atmospheric parameters and response functions, with the following ranges:</span>
+<span class="sd">        airmass: 1 - 3</span>
+<span class="sd">        pwv: 0.05 - 30 mm</span>
+<span class="sd">        Teff: 450 - 36500 K</span>
+
+<span class="sd">    This function reads in a spectral response file and a precomputed grid of flux ingredients,</span>
+<span class="sd">    then interpolates and integrates these data to produce a grid of stellar flux responses</span>
+<span class="sd">    for various combinations of precipitable water vapor (PWV), airmass, and temperature values.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        sResponse (str): Path to the CSV file containing the spectral response function.</span>
+<span class="sd">        extended (bool, optional): If True, use 0.3 to 3.0 micron grid instead of 0.5 to 2.0 micron grid. Default is False.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        tuple: A tuple containing:</span>
+<span class="sd">            - coords (np.ndarray): A 4D array with shape</span>
+<span class="sd">              representing the coordinates of the grid points. The last dimension</span>
+<span class="sd">              contains the values of PWV, airmass, and temperature respectively.</span>
+<span class="sd">            - data (np.ndarray): A 3D array with shape</span>
+<span class="sd">              (len(pwv_values), len(airmass_values), len(temperature_values))</span>
+<span class="sd">              containing the computed flux values for each combination of PWV,</span>
+<span class="sd">              airmass, and temperature.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="n">extended</span><span class="p">:</span>
+        <span class="n">gridIngredients</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_pickle</span><span class="p">(</span>
+            <span class="n">Path</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span><span class="o">.</span><span class="n">parent</span> <span class="o">/</span> <span class="s2">&quot;datafiles&quot;</span> <span class="o">/</span> <span class="n">grid_flux_ingredients_name_extended</span>
+        <span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">gridIngredients</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_pickle</span><span class="p">(</span>
+            <span class="n">Path</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span><span class="o">.</span><span class="n">parent</span> <span class="o">/</span> <span class="s2">&quot;datafiles&quot;</span> <span class="o">/</span> <span class="n">grid_flux_ingredients_name</span>
+        <span class="p">)</span>
+
+    <span class="n">rsr</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">sResponse</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">index_col</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+    <span class="n">pwv_values</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+        <span class="p">[</span><span class="mf">0.05</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.25</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.5</span><span class="p">,</span> <span class="mf">2.5</span><span class="p">,</span> <span class="mf">3.5</span><span class="p">,</span> <span class="mf">5.0</span><span class="p">,</span> <span class="mf">7.5</span><span class="p">,</span> <span class="mf">10.0</span><span class="p">,</span> <span class="mf">20.0</span><span class="p">,</span> <span class="mf">30.0</span><span class="p">]</span>
+    <span class="p">)</span>
+    <span class="n">airmass_values</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+        <span class="p">[</span>
+            <span class="mf">1.0</span><span class="p">,</span>
+            <span class="mf">1.1</span><span class="p">,</span>
+            <span class="mf">1.2</span><span class="p">,</span>
+            <span class="mf">1.3</span><span class="p">,</span>
+            <span class="mf">1.4</span><span class="p">,</span>
+            <span class="mf">1.5</span><span class="p">,</span>
+            <span class="mf">1.6</span><span class="p">,</span>
+            <span class="mf">1.7</span><span class="p">,</span>
+            <span class="mf">1.8</span><span class="p">,</span>
+            <span class="mf">1.9</span><span class="p">,</span>
+            <span class="mf">2.0</span><span class="p">,</span>
+            <span class="mf">2.1</span><span class="p">,</span>
+            <span class="mf">2.2</span><span class="p">,</span>
+            <span class="mf">2.3</span><span class="p">,</span>
+            <span class="mf">2.4</span><span class="p">,</span>
+            <span class="mf">2.5</span><span class="p">,</span>
+            <span class="mf">2.6</span><span class="p">,</span>
+            <span class="mf">2.7</span><span class="p">,</span>
+            <span class="mf">2.8</span><span class="p">,</span>
+            <span class="mf">2.9</span><span class="p">,</span>
+            <span class="mf">3.0</span><span class="p">,</span>
+        <span class="p">]</span>
+    <span class="p">)</span>
+    <span class="n">temperature_values</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+        <span class="p">[</span>
+            <span class="mi">450</span><span class="p">,</span>
+            <span class="mi">500</span><span class="p">,</span>
+            <span class="mi">550</span><span class="p">,</span>
+            <span class="mi">600</span><span class="p">,</span>
+            <span class="mi">700</span><span class="p">,</span>
+            <span class="mi">800</span><span class="p">,</span>
+            <span class="mi">900</span><span class="p">,</span>
+            <span class="mi">1000</span><span class="p">,</span>
+            <span class="mi">1100</span><span class="p">,</span>
+            <span class="mi">1200</span><span class="p">,</span>
+            <span class="mi">1300</span><span class="p">,</span>
+            <span class="mi">1400</span><span class="p">,</span>
+            <span class="mi">1500</span><span class="p">,</span>
+            <span class="mi">1600</span><span class="p">,</span>
+            <span class="mi">1700</span><span class="p">,</span>
+            <span class="mi">1800</span><span class="p">,</span>
+            <span class="mi">2000</span><span class="p">,</span>
+            <span class="mi">2100</span><span class="p">,</span>
+            <span class="mi">2250</span><span class="p">,</span>
+            <span class="mi">2320</span><span class="p">,</span>
+            <span class="mi">2400</span><span class="p">,</span>
+            <span class="mi">2440</span><span class="p">,</span>
+            <span class="mi">2500</span><span class="p">,</span>
+            <span class="mi">2600</span><span class="p">,</span>
+            <span class="mi">2650</span><span class="p">,</span>
+            <span class="mi">2710</span><span class="p">,</span>
+            <span class="mi">2850</span><span class="p">,</span>
+            <span class="mi">3000</span><span class="p">,</span>
+            <span class="mi">3030</span><span class="p">,</span>
+            <span class="mi">3100</span><span class="p">,</span>
+            <span class="mi">3200</span><span class="p">,</span>
+            <span class="mi">3250</span><span class="p">,</span>
+            <span class="mi">3410</span><span class="p">,</span>
+            <span class="mi">3500</span><span class="p">,</span>
+            <span class="mi">3550</span><span class="p">,</span>
+            <span class="mi">3650</span><span class="p">,</span>
+            <span class="mi">3700</span><span class="p">,</span>
+            <span class="mi">3800</span><span class="p">,</span>
+            <span class="mi">3870</span><span class="p">,</span>
+            <span class="mi">3940</span><span class="p">,</span>
+            <span class="mi">4000</span><span class="p">,</span>
+            <span class="mi">4070</span><span class="p">,</span>
+            <span class="mi">4190</span><span class="p">,</span>
+            <span class="mi">4230</span><span class="p">,</span>
+            <span class="mi">4330</span><span class="p">,</span>
+            <span class="mi">4410</span><span class="p">,</span>
+            <span class="mi">4540</span><span class="p">,</span>
+            <span class="mi">4600</span><span class="p">,</span>
+            <span class="mi">4700</span><span class="p">,</span>
+            <span class="mi">4830</span><span class="p">,</span>
+            <span class="mi">4990</span><span class="p">,</span>
+            <span class="mi">5040</span><span class="p">,</span>
+            <span class="mi">5140</span><span class="p">,</span>
+            <span class="mi">5170</span><span class="p">,</span>
+            <span class="mi">5240</span><span class="p">,</span>
+            <span class="mi">5280</span><span class="p">,</span>
+            <span class="mi">5340</span><span class="p">,</span>
+            <span class="mi">5490</span><span class="p">,</span>
+            <span class="mi">5530</span><span class="p">,</span>
+            <span class="mi">5590</span><span class="p">,</span>
+            <span class="mi">5660</span><span class="p">,</span>
+            <span class="mi">5680</span><span class="p">,</span>
+            <span class="mi">5720</span><span class="p">,</span>
+            <span class="mi">5770</span><span class="p">,</span>
+            <span class="mi">5880</span><span class="p">,</span>
+            <span class="mi">5920</span><span class="p">,</span>
+            <span class="mi">6000</span><span class="p">,</span>
+            <span class="mi">6060</span><span class="p">,</span>
+            <span class="mi">6170</span><span class="p">,</span>
+            <span class="mi">6240</span><span class="p">,</span>
+            <span class="mi">6340</span><span class="p">,</span>
+            <span class="mi">6510</span><span class="p">,</span>
+            <span class="mi">6640</span><span class="p">,</span>
+            <span class="mi">6720</span><span class="p">,</span>
+            <span class="mi">6810</span><span class="p">,</span>
+            <span class="mi">7030</span><span class="p">,</span>
+            <span class="mi">7220</span><span class="p">,</span>
+            <span class="mi">7440</span><span class="p">,</span>
+            <span class="mi">7500</span><span class="p">,</span>
+            <span class="mi">7800</span><span class="p">,</span>
+            <span class="mi">8000</span><span class="p">,</span>
+            <span class="mi">8080</span><span class="p">,</span>
+            <span class="mi">8270</span><span class="p">,</span>
+            <span class="mi">8550</span><span class="p">,</span>
+            <span class="mi">8840</span><span class="p">,</span>
+            <span class="mi">9200</span><span class="p">,</span>
+            <span class="mi">9700</span><span class="p">,</span>
+            <span class="mi">10400</span><span class="p">,</span>
+            <span class="mi">10700</span><span class="p">,</span>
+            <span class="mi">12500</span><span class="p">,</span>
+            <span class="mi">14000</span><span class="p">,</span>
+            <span class="mi">14500</span><span class="p">,</span>
+            <span class="mi">15700</span><span class="p">,</span>
+            <span class="mi">16700</span><span class="p">,</span>
+            <span class="mi">17000</span><span class="p">,</span>
+            <span class="mi">18500</span><span class="p">,</span>
+            <span class="mi">20600</span><span class="p">,</span>
+            <span class="mi">24500</span><span class="p">,</span>
+            <span class="mi">26000</span><span class="p">,</span>
+            <span class="mi">29000</span><span class="p">,</span>
+            <span class="mi">31500</span><span class="p">,</span>
+            <span class="mi">32000</span><span class="p">,</span>
+            <span class="mi">32500</span><span class="p">,</span>
+            <span class="mi">33000</span><span class="p">,</span>
+            <span class="mi">34500</span><span class="p">,</span>
+            <span class="mi">35000</span><span class="p">,</span>
+            <span class="mi">36500</span><span class="p">,</span>
+        <span class="p">]</span>
+    <span class="p">)</span>
+    <span class="k">if</span> <span class="n">extended</span><span class="p">:</span>
+        <span class="n">gridSauce</span> <span class="o">=</span> <span class="n">interpolate_dfs</span><span class="p">(</span><span class="n">wavelengths_extended</span><span class="p">,</span> <span class="n">rsr</span><span class="p">,</span> <span class="n">gridIngredients</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">gridSauce</span> <span class="o">=</span> <span class="n">interpolate_dfs</span><span class="p">(</span><span class="n">wavelengths</span><span class="p">,</span> <span class="n">rsr</span><span class="p">,</span> <span class="n">gridIngredients</span><span class="p">)</span>
+
+    <span class="n">gridSauce</span> <span class="o">=</span> <span class="n">gridSauce</span><span class="p">[(</span><span class="n">gridSauce</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)]</span>
+    <span class="n">atm_grid</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">pwv</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">pwv_values</span><span class="p">):</span>
+        <span class="n">update_progress</span><span class="p">(</span><span class="n">i</span> <span class="o">/</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">pwv_values</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">airmass</span> <span class="ow">in</span> <span class="n">airmass_values</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">temperature</span> <span class="ow">in</span> <span class="n">temperature_values</span><span class="p">:</span>
+                <span class="n">atmosphere_trans</span> <span class="o">=</span> <span class="n">gridSauce</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">pwv</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;_&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">airmass</span><span class="p">)]</span>
+                <span class="n">simStar</span> <span class="o">=</span> <span class="n">gridSauce</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">temperature</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;K&quot;</span><span class="p">]</span>
+                <span class="n">response</span> <span class="o">=</span> <span class="n">simps</span><span class="p">(</span>
+                    <span class="n">y</span><span class="o">=</span><span class="n">gridSauce</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">atmosphere_trans</span> <span class="o">*</span> <span class="n">simStar</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="n">gridSauce</span><span class="o">.</span><span class="n">index</span>
+                <span class="p">)</span>
+
+                <span class="n">atm_grid</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">pwv</span><span class="p">,</span> <span class="n">airmass</span><span class="p">,</span> <span class="n">temperature</span><span class="p">,</span> <span class="n">response</span><span class="p">))</span>
+
+    <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">x</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">atm_grid</span><span class="p">])</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">pwv_values</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">airmass_values</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">temperature_values</span><span class="p">)))</span>
+
+    <span class="n">coords</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span>
+        <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">pwv_values</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">airmass_values</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">temperature_values</span><span class="p">),</span> <span class="mi">3</span><span class="p">)</span>
+    <span class="p">)</span>
+    <span class="n">coords</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">pwv_values</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">pwv_values</span><span class="p">),</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+    <span class="n">coords</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">airmass_values</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">airmass_values</span><span class="p">),</span> <span class="mi">1</span><span class="p">))</span>
+    <span class="n">coords</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">temperature_values</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">temperature_values</span><span class="p">)))</span>
+
+    <span class="k">return</span> <span class="n">coords</span><span class="p">,</span> <span class="n">data</span></div>
+
+
+
+<div class="viewcode-block" id="generate_radiance_grid">
+<a class="viewcode-back" href="../../mphot.html#mphot.core.generate_radiance_grid">[docs]</a>
+<span class="k">def</span> <span class="nf">generate_radiance_grid</span><span class="p">(</span>
+    <span class="n">sResponse</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">extended</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Generates a radiance base grid for atmospheric parameters, with the following ranges:</span>
+<span class="sd">        airmass: 1 - 3</span>
+<span class="sd">        pwv: 0.05 - 30 mm</span>
+<span class="sd">        Teff: 450 - 36500 K</span>
+
+<span class="sd">    This function reads in a spectral response file and a precomputed grid of radiance ingredients,</span>
+<span class="sd">    then interpolates and integrates these data to produce a grid of atmospheric flux responses</span>
+<span class="sd">    for various combinations of precipitable water vapor (PWV), airmass, and temperature values.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        sResponse (str): Path to the spectral response CSV file.</span>
+<span class="sd">        extended (bool, optional): If True, use 0.3 to 3.0 micron grid instead of 0.5 to 2.0 micron grid. Default is False.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        tuple: A tuple containing:</span>
+<span class="sd">            - coords (np.ndarray): A 4D array of shape (len(pwv_values), len(airmass_values), len(temperature_values), 3)</span>
+<span class="sd">              containing the coordinates for PWV, airmass, and temperature.</span>
+<span class="sd">            - data (np.ndarray): A 3D array of shape (len(pwv_values), len(airmass_values), len(temperature_values))</span>
+<span class="sd">              containing the integrated atmospheric flux responses.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="n">extended</span><span class="p">:</span>
+        <span class="n">gridIngredients</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_pickle</span><span class="p">(</span>
+            <span class="n">Path</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span><span class="o">.</span><span class="n">parent</span>
+            <span class="o">/</span> <span class="s2">&quot;datafiles&quot;</span>
+            <span class="o">/</span> <span class="n">grid_radiance_ingredients_name_extended</span>
+        <span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">gridIngredients</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_pickle</span><span class="p">(</span>
+            <span class="n">Path</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span><span class="o">.</span><span class="n">parent</span> <span class="o">/</span> <span class="s2">&quot;datafiles&quot;</span> <span class="o">/</span> <span class="n">grid_radiance_ingredients_name</span>
+        <span class="p">)</span>
+    <span class="n">rsr</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">sResponse</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">index_col</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+    <span class="n">pwv_values</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+        <span class="p">[</span><span class="mf">0.05</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.25</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.5</span><span class="p">,</span> <span class="mf">2.5</span><span class="p">,</span> <span class="mf">3.5</span><span class="p">,</span> <span class="mf">5.0</span><span class="p">,</span> <span class="mf">7.5</span><span class="p">,</span> <span class="mf">10.0</span><span class="p">,</span> <span class="mf">20.0</span><span class="p">,</span> <span class="mf">30.0</span><span class="p">]</span>
+    <span class="p">)</span>
+    <span class="n">airmass_values</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+        <span class="p">[</span>
+            <span class="mf">1.0</span><span class="p">,</span>
+            <span class="mf">1.1</span><span class="p">,</span>
+            <span class="mf">1.2</span><span class="p">,</span>
+            <span class="mf">1.3</span><span class="p">,</span>
+            <span class="mf">1.4</span><span class="p">,</span>
+            <span class="mf">1.5</span><span class="p">,</span>
+            <span class="mf">1.6</span><span class="p">,</span>
+            <span class="mf">1.7</span><span class="p">,</span>
+            <span class="mf">1.8</span><span class="p">,</span>
+            <span class="mf">1.9</span><span class="p">,</span>
+            <span class="mf">2.0</span><span class="p">,</span>
+            <span class="mf">2.1</span><span class="p">,</span>
+            <span class="mf">2.2</span><span class="p">,</span>
+            <span class="mf">2.3</span><span class="p">,</span>
+            <span class="mf">2.4</span><span class="p">,</span>
+            <span class="mf">2.5</span><span class="p">,</span>
+            <span class="mf">2.6</span><span class="p">,</span>
+            <span class="mf">2.7</span><span class="p">,</span>
+            <span class="mf">2.8</span><span class="p">,</span>
+            <span class="mf">2.9</span><span class="p">,</span>
+            <span class="mf">3.0</span><span class="p">,</span>
+        <span class="p">]</span>
+    <span class="p">)</span>
+    <span class="n">temperature_values</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+        <span class="p">[</span>
+            <span class="mi">450</span><span class="p">,</span>
+            <span class="mi">500</span><span class="p">,</span>
+            <span class="mi">550</span><span class="p">,</span>
+            <span class="mi">600</span><span class="p">,</span>
+            <span class="mi">700</span><span class="p">,</span>
+            <span class="mi">800</span><span class="p">,</span>
+            <span class="mi">900</span><span class="p">,</span>
+            <span class="mi">1000</span><span class="p">,</span>
+            <span class="mi">1100</span><span class="p">,</span>
+            <span class="mi">1200</span><span class="p">,</span>
+            <span class="mi">1300</span><span class="p">,</span>
+            <span class="mi">1400</span><span class="p">,</span>
+            <span class="mi">1500</span><span class="p">,</span>
+            <span class="mi">1600</span><span class="p">,</span>
+            <span class="mi">1700</span><span class="p">,</span>
+            <span class="mi">1800</span><span class="p">,</span>
+            <span class="mi">2000</span><span class="p">,</span>
+            <span class="mi">2100</span><span class="p">,</span>
+            <span class="mi">2250</span><span class="p">,</span>
+            <span class="mi">2320</span><span class="p">,</span>
+            <span class="mi">2400</span><span class="p">,</span>
+            <span class="mi">2440</span><span class="p">,</span>
+            <span class="mi">2500</span><span class="p">,</span>
+            <span class="mi">2600</span><span class="p">,</span>
+            <span class="mi">2650</span><span class="p">,</span>
+            <span class="mi">2710</span><span class="p">,</span>
+            <span class="mi">2850</span><span class="p">,</span>
+            <span class="mi">3000</span><span class="p">,</span>
+            <span class="mi">3030</span><span class="p">,</span>
+            <span class="mi">3100</span><span class="p">,</span>
+            <span class="mi">3200</span><span class="p">,</span>
+            <span class="mi">3250</span><span class="p">,</span>
+            <span class="mi">3410</span><span class="p">,</span>
+            <span class="mi">3500</span><span class="p">,</span>
+            <span class="mi">3550</span><span class="p">,</span>
+            <span class="mi">3650</span><span class="p">,</span>
+            <span class="mi">3700</span><span class="p">,</span>
+            <span class="mi">3800</span><span class="p">,</span>
+            <span class="mi">3870</span><span class="p">,</span>
+            <span class="mi">3940</span><span class="p">,</span>
+            <span class="mi">4000</span><span class="p">,</span>
+            <span class="mi">4070</span><span class="p">,</span>
+            <span class="mi">4190</span><span class="p">,</span>
+            <span class="mi">4230</span><span class="p">,</span>
+            <span class="mi">4330</span><span class="p">,</span>
+            <span class="mi">4410</span><span class="p">,</span>
+            <span class="mi">4540</span><span class="p">,</span>
+            <span class="mi">4600</span><span class="p">,</span>
+            <span class="mi">4700</span><span class="p">,</span>
+            <span class="mi">4830</span><span class="p">,</span>
+            <span class="mi">4990</span><span class="p">,</span>
+            <span class="mi">5040</span><span class="p">,</span>
+            <span class="mi">5140</span><span class="p">,</span>
+            <span class="mi">5170</span><span class="p">,</span>
+            <span class="mi">5240</span><span class="p">,</span>
+            <span class="mi">5280</span><span class="p">,</span>
+            <span class="mi">5340</span><span class="p">,</span>
+            <span class="mi">5490</span><span class="p">,</span>
+            <span class="mi">5530</span><span class="p">,</span>
+            <span class="mi">5590</span><span class="p">,</span>
+            <span class="mi">5660</span><span class="p">,</span>
+            <span class="mi">5680</span><span class="p">,</span>
+            <span class="mi">5720</span><span class="p">,</span>
+            <span class="mi">5770</span><span class="p">,</span>
+            <span class="mi">5880</span><span class="p">,</span>
+            <span class="mi">5920</span><span class="p">,</span>
+            <span class="mi">6000</span><span class="p">,</span>
+            <span class="mi">6060</span><span class="p">,</span>
+            <span class="mi">6170</span><span class="p">,</span>
+            <span class="mi">6240</span><span class="p">,</span>
+            <span class="mi">6340</span><span class="p">,</span>
+            <span class="mi">6510</span><span class="p">,</span>
+            <span class="mi">6640</span><span class="p">,</span>
+            <span class="mi">6720</span><span class="p">,</span>
+            <span class="mi">6810</span><span class="p">,</span>
+            <span class="mi">7030</span><span class="p">,</span>
+            <span class="mi">7220</span><span class="p">,</span>
+            <span class="mi">7440</span><span class="p">,</span>
+            <span class="mi">7500</span><span class="p">,</span>
+            <span class="mi">7800</span><span class="p">,</span>
+            <span class="mi">8000</span><span class="p">,</span>
+            <span class="mi">8080</span><span class="p">,</span>
+            <span class="mi">8270</span><span class="p">,</span>
+            <span class="mi">8550</span><span class="p">,</span>
+            <span class="mi">8840</span><span class="p">,</span>
+            <span class="mi">9200</span><span class="p">,</span>
+            <span class="mi">9700</span><span class="p">,</span>
+            <span class="mi">10400</span><span class="p">,</span>
+            <span class="mi">10700</span><span class="p">,</span>
+            <span class="mi">12500</span><span class="p">,</span>
+            <span class="mi">14000</span><span class="p">,</span>
+            <span class="mi">14500</span><span class="p">,</span>
+            <span class="mi">15700</span><span class="p">,</span>
+            <span class="mi">16700</span><span class="p">,</span>
+            <span class="mi">17000</span><span class="p">,</span>
+            <span class="mi">18500</span><span class="p">,</span>
+            <span class="mi">20600</span><span class="p">,</span>
+            <span class="mi">24500</span><span class="p">,</span>
+            <span class="mi">26000</span><span class="p">,</span>
+            <span class="mi">29000</span><span class="p">,</span>
+            <span class="mi">31500</span><span class="p">,</span>
+            <span class="mi">32000</span><span class="p">,</span>
+            <span class="mi">32500</span><span class="p">,</span>
+            <span class="mi">33000</span><span class="p">,</span>
+            <span class="mi">34500</span><span class="p">,</span>
+            <span class="mi">35000</span><span class="p">,</span>
+            <span class="mi">36500</span><span class="p">,</span>
+        <span class="p">]</span>
+    <span class="p">)</span>
+    <span class="k">if</span> <span class="n">extended</span><span class="p">:</span>
+        <span class="n">gridSauce</span> <span class="o">=</span> <span class="n">interpolate_dfs</span><span class="p">(</span><span class="n">wavelengths_extended</span><span class="p">,</span> <span class="n">rsr</span><span class="p">,</span> <span class="n">gridIngredients</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">gridSauce</span> <span class="o">=</span> <span class="n">interpolate_dfs</span><span class="p">(</span><span class="n">wavelengths</span><span class="p">,</span> <span class="n">rsr</span><span class="p">,</span> <span class="n">gridIngredients</span><span class="p">)</span>
+
+    <span class="n">gridSauce</span> <span class="o">=</span> <span class="n">gridSauce</span><span class="p">[(</span><span class="n">gridSauce</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)]</span>
+    <span class="n">atm_grid</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">pwv</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">pwv_values</span><span class="p">):</span>
+        <span class="n">update_progress</span><span class="p">(</span><span class="n">i</span> <span class="o">/</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">pwv_values</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">airmass</span> <span class="ow">in</span> <span class="n">airmass_values</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">temperature</span> <span class="ow">in</span> <span class="n">temperature_values</span><span class="p">:</span>
+                <span class="n">atmosphere_flux</span> <span class="o">=</span> <span class="n">gridSauce</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">pwv</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;_&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">airmass</span><span class="p">)]</span>
+                <span class="n">response</span> <span class="o">=</span> <span class="n">simps</span><span class="p">(</span><span class="n">y</span><span class="o">=</span><span class="n">gridSauce</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">atmosphere_flux</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="n">gridSauce</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
+
+                <span class="n">atm_grid</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">pwv</span><span class="p">,</span> <span class="n">airmass</span><span class="p">,</span> <span class="n">temperature</span><span class="p">,</span> <span class="n">response</span><span class="p">))</span>
+
+    <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">x</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">atm_grid</span><span class="p">])</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">pwv_values</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">airmass_values</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">temperature_values</span><span class="p">)))</span>
+
+    <span class="n">coords</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span>
+        <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">pwv_values</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">airmass_values</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">temperature_values</span><span class="p">),</span> <span class="mi">3</span><span class="p">)</span>
+    <span class="p">)</span>
+    <span class="n">coords</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">pwv_values</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">pwv_values</span><span class="p">),</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+    <span class="n">coords</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">airmass_values</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">airmass_values</span><span class="p">),</span> <span class="mi">1</span><span class="p">))</span>
+    <span class="n">coords</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">temperature_values</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">temperature_values</span><span class="p">)))</span>
+
+    <span class="k">return</span> <span class="n">coords</span><span class="p">,</span> <span class="n">data</span></div>
+
+
+
+<div class="viewcode-block" id="interpolate_grid">
+<a class="viewcode-back" href="../../mphot.html#mphot.core.interpolate_grid">[docs]</a>
+<span class="k">def</span> <span class="nf">interpolate_grid</span><span class="p">(</span>
+    <span class="n">coords</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">pwv</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">airmass</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">Teff</span><span class="p">:</span> <span class="nb">float</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Interpolates between grid points, using a cubic method.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        coords (np.ndarray): Coordinates of base grid generated.</span>
+<span class="sd">        data (np.ndarray): Data of base grid generated.</span>
+<span class="sd">        pwv (float): Precipitable water vapour value at zenith.</span>
+<span class="sd">        airmass (float): Airmass of target/comparison star.</span>
+<span class="sd">        Teff (float): Effective temperature of target/comparison star.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        float: Interpolated value of grid.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">method</span> <span class="o">=</span> <span class="s2">&quot;cubic&quot;</span>
+    <span class="n">Teffs</span> <span class="o">=</span> <span class="n">coords</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">2</span><span class="p">][</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+    <span class="n">Teff_lower</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">Teffs</span><span class="p">[</span><span class="n">Teffs</span> <span class="o">&lt;=</span> <span class="n">Teff</span><span class="p">])</span>
+    <span class="n">Teff_upper</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">Teffs</span><span class="p">[</span><span class="n">Teffs</span> <span class="o">&gt;=</span> <span class="n">Teff</span><span class="p">])</span>
+
+    <span class="k">if</span> <span class="n">Teff_lower</span> <span class="o">==</span> <span class="n">Teff_upper</span><span class="p">:</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">coords</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">0</span><span class="p">][</span><span class="n">coords</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">==</span> <span class="n">Teff</span><span class="p">]</span>  <span class="c1"># pwv</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="n">coords</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">1</span><span class="p">][</span><span class="n">coords</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">==</span> <span class="n">Teff</span><span class="p">]</span>  <span class="c1"># airmass</span>
+        <span class="n">z</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">coords</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">==</span> <span class="n">Teff</span><span class="p">]</span>  <span class="c1"># effect</span>
+
+        <span class="n">interp</span> <span class="o">=</span> <span class="n">griddata</span><span class="p">(</span>
+            <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">),</span> <span class="n">z</span><span class="p">,</span> <span class="p">(</span><span class="n">pwv</span><span class="p">,</span> <span class="n">airmass</span><span class="p">),</span> <span class="n">method</span><span class="o">=</span><span class="n">method</span>
+        <span class="p">)</span>  <span class="c1"># interpolated value</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">x_lower</span> <span class="o">=</span> <span class="n">coords</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">0</span><span class="p">][</span><span class="n">coords</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">==</span> <span class="n">Teff_lower</span><span class="p">]</span>  <span class="c1"># pwv</span>
+        <span class="n">y_lower</span> <span class="o">=</span> <span class="n">coords</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">1</span><span class="p">][</span><span class="n">coords</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">==</span> <span class="n">Teff_lower</span><span class="p">]</span>  <span class="c1"># airmass</span>
+        <span class="n">z_lower</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">coords</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">==</span> <span class="n">Teff_lower</span><span class="p">]</span>  <span class="c1"># effect</span>
+        <span class="n">interp_lower</span> <span class="o">=</span> <span class="n">griddata</span><span class="p">(</span>
+            <span class="p">(</span><span class="n">x_lower</span><span class="p">,</span> <span class="n">y_lower</span><span class="p">),</span> <span class="n">z_lower</span><span class="p">,</span> <span class="p">(</span><span class="n">pwv</span><span class="p">,</span> <span class="n">airmass</span><span class="p">),</span> <span class="n">method</span><span class="o">=</span><span class="n">method</span>
+        <span class="p">)</span>  <span class="c1"># interpolated value lower Teff</span>
+
+        <span class="n">x_upper</span> <span class="o">=</span> <span class="n">coords</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">0</span><span class="p">][</span><span class="n">coords</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">==</span> <span class="n">Teff_upper</span><span class="p">]</span>  <span class="c1"># pwv</span>
+        <span class="n">y_upper</span> <span class="o">=</span> <span class="n">coords</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">1</span><span class="p">][</span><span class="n">coords</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">==</span> <span class="n">Teff_upper</span><span class="p">]</span>  <span class="c1"># airmass</span>
+        <span class="n">z_upper</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">coords</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">==</span> <span class="n">Teff_upper</span><span class="p">]</span>  <span class="c1"># effect</span>
+        <span class="n">interp_upper</span> <span class="o">=</span> <span class="n">griddata</span><span class="p">(</span>
+            <span class="p">(</span><span class="n">x_upper</span><span class="p">,</span> <span class="n">y_upper</span><span class="p">),</span> <span class="n">z_upper</span><span class="p">,</span> <span class="p">(</span><span class="n">pwv</span><span class="p">,</span> <span class="n">airmass</span><span class="p">),</span> <span class="n">method</span><span class="o">=</span><span class="n">method</span>
+        <span class="p">)</span>  <span class="c1"># interpolated value upper Teff</span>
+
+        <span class="n">w_lower</span> <span class="o">=</span> <span class="p">(</span><span class="n">Teff_upper</span> <span class="o">-</span> <span class="n">Teff</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">Teff_upper</span> <span class="o">-</span> <span class="n">Teff_lower</span><span class="p">)</span>  <span class="c1"># lower weight</span>
+        <span class="n">w_upper</span> <span class="o">=</span> <span class="p">(</span><span class="n">Teff</span> <span class="o">-</span> <span class="n">Teff_lower</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">Teff_upper</span> <span class="o">-</span> <span class="n">Teff_lower</span><span class="p">)</span>  <span class="c1"># upper weight</span>
+
+        <span class="n">interp</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">w_lower</span> <span class="o">*</span> <span class="n">interp_lower</span> <span class="o">+</span> <span class="n">w_upper</span> <span class="o">*</span> <span class="n">interp_upper</span>
+        <span class="p">)</span>  <span class="c1"># final interpolated value</span>
+
+    <span class="k">return</span> <span class="n">interp</span></div>
+
+
+
+<div class="viewcode-block" id="gaussian">
+<a class="viewcode-back" href="../../mphot.html#mphot.core.gaussian">[docs]</a>
+<span class="k">def</span> <span class="nf">gaussian</span><span class="p">(</span><span class="n">delta</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">sigma</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Calculate the value of a Gaussian function.</span>
+
+<span class="sd">    This function computes the value of a Gaussian (normal) distribution</span>
+<span class="sd">    for a given delta and sigma.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        delta (float): The difference from the mean (x - mu).</span>
+<span class="sd">        sigma (float): The standard deviation of the distribution.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        float: The value of the Gaussian function at the given delta.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">return</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">/</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span> <span class="o">*</span> <span class="n">sigma</span><span class="p">))</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="p">(</span><span class="n">delta</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">sigma</span><span class="o">**</span><span class="mi">2</span><span class="p">))</span></div>
+
+
+
+<div class="viewcode-block" id="integration_time">
+<a class="viewcode-back" href="../../mphot.html#mphot.core.integration_time">[docs]</a>
+<span class="k">def</span> <span class="nf">integration_time</span><span class="p">(</span>
+    <span class="n">fwhm</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">N_star</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">N_sky</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">N_dc</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">plate_scale</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">well_depth</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">well_fill</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Calculate the integration time for a given set of parameters.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        fwhm (float): Full width at half maximum of the point spread function.</span>
+<span class="sd">        N_star (float): Number of star counts.</span>
+<span class="sd">        N_sky (float): Number of sky counts.</span>
+<span class="sd">        N_dc (float): Number of dark current counts.</span>
+<span class="sd">        N_rn (float): Number of read noise counts.</span>
+<span class="sd">        plate_scale (float): Plate scale in arcseconds per pixel.</span>
+<span class="sd">        well_depth (float): Maximum well depth of the detector.</span>
+<span class="sd">        well_fill (float): Fraction of the well depth to be filled.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        float: Calculated integration time.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">sigma_IR</span> <span class="o">=</span> <span class="p">(</span><span class="n">fwhm</span> <span class="o">/</span> <span class="n">plate_scale</span><span class="p">)</span> <span class="o">/</span> <span class="mf">2.355</span>  <span class="c1"># in pix</span>
+
+    <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span>
+    <span class="n">y</span> <span class="o">=</span> <span class="n">x</span>
+
+    <span class="n">t</span> <span class="o">=</span> <span class="p">(</span><span class="n">well_depth</span> <span class="o">*</span> <span class="n">well_fill</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span>
+        <span class="n">N_star</span>
+        <span class="o">*</span> <span class="n">simps</span><span class="p">(</span><span class="n">y</span><span class="o">=</span><span class="n">gaussian</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">sigma_IR</span><span class="p">),</span> <span class="n">x</span><span class="o">=</span><span class="n">y</span><span class="p">)</span>
+        <span class="o">*</span> <span class="n">simps</span><span class="p">(</span><span class="n">y</span><span class="o">=</span><span class="n">gaussian</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">sigma_IR</span><span class="p">),</span> <span class="n">x</span><span class="o">=</span><span class="n">x</span><span class="p">)</span>
+        <span class="o">+</span> <span class="p">(</span><span class="n">N_sky</span> <span class="o">+</span> <span class="n">N_dc</span><span class="p">)</span>
+    <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">t</span></div>
+
+
+
+<div class="viewcode-block" id="scintillation_noise">
+<a class="viewcode-back" href="../../mphot.html#mphot.core.scintillation_noise">[docs]</a>
+<span class="k">def</span> <span class="nf">scintillation_noise</span><span class="p">(</span>
+    <span class="n">r</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">t</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">N_star</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">airmass</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.1</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Calculate the scintillation noise for a given set of parameters.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        r (float): Aperture radius in meters.</span>
+<span class="sd">        t (float): Exposure time in seconds.</span>
+<span class="sd">        N_star (float): Number of stars.</span>
+<span class="sd">        airmass (float, optional): Airmass value. Default is 1.5.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        float: The calculated scintillation noise.</span>
+
+<span class="sd">    Reference:</span>
+<span class="sd">        https://academic.oup.com/mnras/article/509/4/6111/6442285</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">return</span> <span class="p">(</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span>
+            <span class="mf">1e-5</span>
+            <span class="o">*</span> <span class="mf">1.56</span><span class="o">**</span><span class="mi">2</span>
+            <span class="o">*</span> <span class="nb">pow</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">r</span><span class="p">,</span> <span class="o">-</span><span class="mi">4</span> <span class="o">/</span> <span class="mi">3</span><span class="p">)</span>
+            <span class="o">*</span> <span class="n">t</span><span class="o">**-</span><span class="mi">1</span>
+            <span class="o">*</span> <span class="n">airmass</span><span class="o">**</span><span class="mi">3</span>
+            <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span> <span class="o">*</span> <span class="mi">2440</span> <span class="o">/</span> <span class="mi">8000</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="o">*</span> <span class="n">N_star</span>
+        <span class="o">*</span> <span class="n">t</span>
+    <span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="get_precision">
+<a class="viewcode-back" href="../../mphot.html#mphot.core.get_precision">[docs]</a>
+<span class="k">def</span> <span class="nf">get_precision</span><span class="p">(</span>
+    <span class="n">props</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
+    <span class="n">props_sky</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
+    <span class="n">Teff</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">distance</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">binning</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span>
+    <span class="n">override_grid</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">SPCcorrection</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">N_sky</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">N_star</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">scn</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">exp_time</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">extended</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Calculate the precision of astronomical observations based on various parameters.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        props (dict):</span>
+<span class="sd">            Dictionary containing properties of the instrument and observation.</span>
+<span class="sd">            Expected keys:</span>
+<span class="sd">            - &quot;name&quot;: str, name of the instrument</span>
+<span class="sd">            - &quot;plate_scale&quot;: float, plate scale of the instrument</span>
+<span class="sd">            - &quot;N_dc&quot;: float, dark current noise</span>
+<span class="sd">            - &quot;N_rn&quot;: float, read noise</span>
+<span class="sd">            - &quot;well_depth&quot;: float, well depth of the detector</span>
+<span class="sd">            - &quot;well_fill&quot;: float, well fill level</span>
+<span class="sd">            - &quot;read_time&quot;: float, readout time of the detector</span>
+<span class="sd">            - &quot;r0&quot;: float, inner radius for aperture</span>
+<span class="sd">            - &quot;r1&quot;: float, outer radius for aperture</span>
+<span class="sd">            - &quot;ap_rad&quot;: float, optional, aperture radius</span>
+
+<span class="sd">        props_sky (dict):</span>
+<span class="sd">            Dictionary containing properties of the sky.</span>
+<span class="sd">            Expected keys:</span>
+<span class="sd">            - &quot;pwv&quot;: float, precipitable water vapor</span>
+<span class="sd">            - &quot;airmass&quot;: float, airmass of the observation</span>
+<span class="sd">            - &quot;seeing&quot;: float, full width at half maximum (FWHM) of the seeing</span>
+
+<span class="sd">        Teff (float):</span>
+<span class="sd">            Effective temperature of the star in Kelvin.</span>
+
+<span class="sd">        distance (float):</span>
+<span class="sd">            Distance to the star in parsecs.</span>
+
+<span class="sd">        binning (float, optional):</span>
+<span class="sd">            Binning time in minutes. Default is 10.</span>
+
+<span class="sd">        override_grid (bool, optional):</span>
+<span class="sd">            If True, override existing grid files. Default is False.</span>
+
+<span class="sd">        SPCcorrection (bool, optional):</span>
+<span class="sd">            If True, apply SPC correction based on the effective temperature. Default is True.</span>
+
+<span class="sd">        N_sky (float, optional):</span>
+<span class="sd">            Number of sky counts, calculated if None. Default is None.</span>
+
+<span class="sd">        N_star (float, optional):</span>
+<span class="sd">            Number of star counts, calculated if None. Default is None.</span>
+
+<span class="sd">        scn (float, optional):</span>
+<span class="sd">            Scintillation noise, calculated if None. Default is None.</span>
+
+<span class="sd">        exp_time (float, optional):</span>
+<span class="sd">            Exposure time in seconds, calculated if None. Default is None.</span>
+
+<span class="sd">        extended (bool, optional):</span>
+<span class="sd">            If True, use 0.3 to 3.0 micron grid instead of 0.5 to 2.0 micron grid. Default is False.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        tuple: A tuple containing:</span>
+<span class="sd">            image_precision : dict</span>
+<span class="sd">                Precision of the image</span>
+<span class="sd">            binned_precision : dict</span>
+<span class="sd">                Precision of the binned image</span>
+<span class="sd">            components : dict</span>
+<span class="sd">                Various components used in the calculation</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="n">extended</span><span class="p">:</span>
+        <span class="n">extended_str</span> <span class="o">=</span> <span class="s2">&quot;extended&quot;</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">extended_str</span> <span class="o">=</span> <span class="s2">&quot;normal&quot;</span>
+
+    <span class="n">props</span> <span class="o">=</span> <span class="n">props</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">props_sky</span> <span class="o">=</span> <span class="n">props_sky</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+    <span class="n">name</span> <span class="o">=</span> <span class="n">props</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]</span>
+    <span class="n">plate_scale</span> <span class="o">=</span> <span class="n">props</span><span class="p">[</span><span class="s2">&quot;plate_scale&quot;</span><span class="p">]</span>
+    <span class="n">N_dc</span> <span class="o">=</span> <span class="n">props</span><span class="p">[</span><span class="s2">&quot;N_dc&quot;</span><span class="p">]</span>
+    <span class="n">N_rn</span> <span class="o">=</span> <span class="n">props</span><span class="p">[</span><span class="s2">&quot;N_rn&quot;</span><span class="p">]</span>
+    <span class="n">well_depth</span> <span class="o">=</span> <span class="n">props</span><span class="p">[</span><span class="s2">&quot;well_depth&quot;</span><span class="p">]</span>
+    <span class="n">well_fill</span> <span class="o">=</span> <span class="n">props</span><span class="p">[</span><span class="s2">&quot;well_fill&quot;</span><span class="p">]</span>
+    <span class="n">read_time</span> <span class="o">=</span> <span class="n">props</span><span class="p">[</span><span class="s2">&quot;read_time&quot;</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="s2">&quot;min_exp&quot;</span> <span class="ow">in</span> <span class="n">props</span><span class="p">:</span>
+        <span class="n">min_exp</span> <span class="o">=</span> <span class="n">props</span><span class="p">[</span><span class="s2">&quot;min_exp&quot;</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">min_exp</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="k">if</span> <span class="s2">&quot;max_exp&quot;</span> <span class="ow">in</span> <span class="n">props</span><span class="p">:</span>
+        <span class="n">max_exp</span> <span class="o">=</span> <span class="n">props</span><span class="p">[</span><span class="s2">&quot;max_exp&quot;</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">max_exp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span>
+
+    <span class="n">r0</span> <span class="o">=</span> <span class="n">props</span><span class="p">[</span><span class="s2">&quot;r0&quot;</span><span class="p">]</span>
+    <span class="n">r1</span> <span class="o">=</span> <span class="n">props</span><span class="p">[</span><span class="s2">&quot;r1&quot;</span><span class="p">]</span>
+
+    <span class="n">pwv</span> <span class="o">=</span> <span class="n">props_sky</span><span class="p">[</span><span class="s2">&quot;pwv&quot;</span><span class="p">]</span>
+    <span class="n">airmass</span> <span class="o">=</span> <span class="n">props_sky</span><span class="p">[</span><span class="s2">&quot;airmass&quot;</span><span class="p">]</span>
+    <span class="n">fwhm</span> <span class="o">=</span> <span class="n">props_sky</span><span class="p">[</span><span class="s2">&quot;seeing&quot;</span><span class="p">]</span>
+
+    <span class="n">ap</span> <span class="o">=</span> <span class="mi">3</span> <span class="o">*</span> <span class="p">(</span>
+        <span class="n">fwhm</span> <span class="o">/</span> <span class="n">plate_scale</span>
+    <span class="p">)</span>  <span class="c1">## approx pixel radius around target star ## changed on to 3* 2022/04/26 from 10/2.355*</span>
+
+    <span class="k">if</span> <span class="s2">&quot;ap_rad&quot;</span> <span class="ow">in</span> <span class="n">props</span><span class="p">:</span>
+        <span class="n">ap</span> <span class="o">=</span> <span class="n">props</span><span class="p">[</span><span class="s2">&quot;ap_rad&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="n">fwhm</span> <span class="o">/</span> <span class="n">plate_scale</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="p">(</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span>
+            <span class="n">Path</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span><span class="o">.</span><span class="n">parent</span>
+            <span class="o">/</span> <span class="s2">&quot;grids&quot;</span>
+            <span class="o">/</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">_precisionGrid_flux_coords_</span><span class="si">{</span><span class="n">extended_str</span><span class="si">}</span><span class="s2">.npy&quot;</span>
+        <span class="p">)</span>
+        <span class="ow">is</span> <span class="kc">False</span>
+    <span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">override_grid</span><span class="p">):</span>
+        <span class="c1"># generate flux grid</span>
+        <span class="n">coords</span><span class="p">,</span> <span class="n">data</span> <span class="o">=</span> <span class="n">generate_flux_grid</span><span class="p">(</span>
+            <span class="n">Path</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span><span class="o">.</span><span class="n">parent</span>
+            <span class="o">/</span> <span class="s2">&quot;datafiles&quot;</span>
+            <span class="o">/</span> <span class="s2">&quot;system_responses&quot;</span>
+            <span class="o">/</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">_instrument_system_response.csv&quot;</span><span class="p">,</span>
+            <span class="n">extended</span><span class="o">=</span><span class="n">extended</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="c1"># save output</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">save</span><span class="p">(</span>
+            <span class="n">Path</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span><span class="o">.</span><span class="n">parent</span>
+            <span class="o">/</span> <span class="s2">&quot;grids&quot;</span>
+            <span class="o">/</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">_precisionGrid_flux_data_</span><span class="si">{</span><span class="n">extended_str</span><span class="si">}</span><span class="s2">.npy&quot;</span><span class="p">,</span>
+            <span class="n">data</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">save</span><span class="p">(</span>
+            <span class="n">Path</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span><span class="o">.</span><span class="n">parent</span>
+            <span class="o">/</span> <span class="s2">&quot;grids&quot;</span>
+            <span class="o">/</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">_precisionGrid_flux_coords_</span><span class="si">{</span><span class="n">extended_str</span><span class="si">}</span><span class="s2">.npy&quot;</span><span class="p">,</span>
+            <span class="n">coords</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="c1"># generate radiance grid</span>
+        <span class="n">coords</span><span class="p">,</span> <span class="n">data</span> <span class="o">=</span> <span class="n">generate_radiance_grid</span><span class="p">(</span>
+            <span class="n">Path</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span><span class="o">.</span><span class="n">parent</span>
+            <span class="o">/</span> <span class="s2">&quot;datafiles&quot;</span>
+            <span class="o">/</span> <span class="s2">&quot;system_responses&quot;</span>
+            <span class="o">/</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">_instrument_system_response.csv&quot;</span><span class="p">,</span>
+            <span class="n">extended</span><span class="o">=</span><span class="n">extended</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="c1"># save output</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">save</span><span class="p">(</span>
+            <span class="n">Path</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span><span class="o">.</span><span class="n">parent</span>
+            <span class="o">/</span> <span class="s2">&quot;grids&quot;</span>
+            <span class="o">/</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">_precisionGrid_radiance_coords_</span><span class="si">{</span><span class="n">extended_str</span><span class="si">}</span><span class="s2">.npy&quot;</span><span class="p">,</span>
+            <span class="n">coords</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">save</span><span class="p">(</span>
+            <span class="n">Path</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span><span class="o">.</span><span class="n">parent</span>
+            <span class="o">/</span> <span class="s2">&quot;grids&quot;</span>
+            <span class="o">/</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">_precisionGrid_radiance_data_</span><span class="si">{</span><span class="n">extended_str</span><span class="si">}</span><span class="s2">.npy&quot;</span><span class="p">,</span>
+            <span class="n">data</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="c1"># load grids</span>
+    <span class="n">coords</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span>
+        <span class="n">Path</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span><span class="o">.</span><span class="n">parent</span>
+        <span class="o">/</span> <span class="s2">&quot;grids&quot;</span>
+        <span class="o">/</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">_precisionGrid_flux_coords_</span><span class="si">{</span><span class="n">extended_str</span><span class="si">}</span><span class="s2">.npy&quot;</span>
+    <span class="p">)</span>
+    <span class="n">data_flux</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span>
+        <span class="n">Path</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span><span class="o">.</span><span class="n">parent</span>
+        <span class="o">/</span> <span class="s2">&quot;grids&quot;</span>
+        <span class="o">/</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">_precisionGrid_flux_data_</span><span class="si">{</span><span class="n">extended_str</span><span class="si">}</span><span class="s2">.npy&quot;</span>
+    <span class="p">)</span>
+    <span class="n">data_radiance</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span>
+        <span class="n">Path</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span><span class="o">.</span><span class="n">parent</span>
+        <span class="o">/</span> <span class="s2">&quot;grids&quot;</span>
+        <span class="o">/</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">_precisionGrid_radiance_data_</span><span class="si">{</span><span class="n">extended_str</span><span class="si">}</span><span class="s2">.npy&quot;</span>
+    <span class="p">)</span>
+
+    <span class="c1"># get values from grids</span>
+    <span class="n">flux</span> <span class="o">=</span> <span class="n">interpolate_grid</span><span class="p">(</span><span class="n">coords</span><span class="p">,</span> <span class="n">data_flux</span><span class="p">,</span> <span class="n">pwv</span><span class="p">,</span> <span class="n">airmass</span><span class="p">,</span> <span class="n">Teff</span><span class="p">)</span>
+    <span class="n">radiance</span> <span class="o">=</span> <span class="n">interpolate_grid</span><span class="p">(</span><span class="n">coords</span><span class="p">,</span> <span class="n">data_radiance</span><span class="p">,</span> <span class="n">pwv</span><span class="p">,</span> <span class="n">airmass</span><span class="p">,</span> <span class="n">Teff</span><span class="p">)</span>
+
+    <span class="c1"># collecting area of telescope</span>
+    <span class="n">A</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="p">(</span><span class="n">r0</span><span class="o">**</span><span class="mi">2</span> <span class="o">-</span> <span class="n">r1</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">N_star</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">N_star</span> <span class="o">=</span> <span class="n">flux</span> <span class="o">*</span> <span class="n">A</span> <span class="o">/</span> <span class="p">((</span><span class="n">distance</span> <span class="o">*</span> <span class="n">pc</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">flux</span> <span class="o">=</span> <span class="n">N_star</span> <span class="o">*</span> <span class="p">((</span><span class="n">distance</span> <span class="o">*</span> <span class="n">pc</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span> <span class="o">/</span> <span class="n">A</span>
+
+    <span class="k">if</span> <span class="n">N_sky</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">N_sky</span> <span class="o">=</span> <span class="n">radiance</span> <span class="o">*</span> <span class="n">A</span> <span class="o">*</span> <span class="n">plate_scale</span><span class="o">**</span><span class="mi">2</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">radiance</span> <span class="o">=</span> <span class="n">N_sky</span> <span class="o">/</span> <span class="p">(</span><span class="n">A</span> <span class="o">*</span> <span class="n">plate_scale</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+
+    <span class="c1">## correction</span>
+    <span class="k">if</span> <span class="n">SPCcorrection</span><span class="p">:</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">Teff</span> <span class="o">&lt;=</span> <span class="mi">3042</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">Teff</span> <span class="o">&gt;=</span> <span class="mi">1278</span><span class="p">):</span>
+            <span class="n">poly</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span><span class="o">.</span><span class="n">parent</span> <span class="o">/</span> <span class="s2">&quot;datafiles&quot;</span> <span class="o">/</span> <span class="s2">&quot;16_order_poly.npy&quot;</span><span class="p">)</span>
+            <span class="n">N_star</span> <span class="o">=</span> <span class="n">N_star</span> <span class="o">/</span> <span class="p">(</span><span class="mf">2.512</span> <span class="o">**</span> <span class="n">np</span><span class="o">.</span><span class="n">polyval</span><span class="p">(</span><span class="n">poly</span><span class="p">,</span> <span class="n">Teff</span><span class="p">))</span>
+
+    <span class="n">t</span> <span class="o">=</span> <span class="n">integration_time</span><span class="p">(</span>
+        <span class="n">fwhm</span><span class="p">,</span>
+        <span class="n">N_star</span><span class="p">,</span>
+        <span class="n">N_sky</span><span class="p">,</span>
+        <span class="n">N_dc</span><span class="p">,</span>
+        <span class="n">plate_scale</span><span class="p">,</span>
+        <span class="n">well_depth</span><span class="p">,</span>
+        <span class="n">well_fill</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">exp_time</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">or</span> <span class="p">(</span><span class="n">t</span> <span class="o">&lt;</span> <span class="n">min_exp</span> <span class="ow">or</span> <span class="n">t</span> <span class="o">&gt;</span> <span class="n">max_exp</span><span class="p">):</span>
+
+        <span class="k">if</span> <span class="n">t</span> <span class="o">&lt;</span> <span class="n">min_exp</span><span class="p">:</span>
+            <span class="n">t</span> <span class="o">=</span> <span class="n">min_exp</span>
+        <span class="k">elif</span> <span class="n">t</span> <span class="o">&gt;</span> <span class="n">max_exp</span><span class="p">:</span>
+            <span class="n">t</span> <span class="o">=</span> <span class="n">max_exp</span>
+
+        <span class="k">if</span> <span class="n">exp_time</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">t</span> <span class="o">=</span> <span class="n">exp_time</span>
+
+        <span class="n">sigma_IR</span> <span class="o">=</span> <span class="p">(</span><span class="n">fwhm</span> <span class="o">/</span> <span class="n">plate_scale</span><span class="p">)</span> <span class="o">/</span> <span class="mf">2.355</span>  <span class="c1"># in pix</span>
+
+        <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="n">x</span>
+
+        <span class="n">well_fill_value</span> <span class="o">=</span> <span class="n">t</span> <span class="o">*</span> <span class="p">(</span>
+            <span class="n">N_star</span>
+            <span class="o">*</span> <span class="n">simps</span><span class="p">(</span><span class="n">y</span><span class="o">=</span><span class="n">gaussian</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">sigma_IR</span><span class="p">),</span> <span class="n">x</span><span class="o">=</span><span class="n">y</span><span class="p">)</span>
+            <span class="o">*</span> <span class="n">simps</span><span class="p">(</span><span class="n">y</span><span class="o">=</span><span class="n">gaussian</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">sigma_IR</span><span class="p">),</span> <span class="n">x</span><span class="o">=</span><span class="n">x</span><span class="p">)</span>
+            <span class="o">+</span> <span class="p">(</span><span class="n">N_sky</span> <span class="o">+</span> <span class="n">N_dc</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="n">well_fill</span> <span class="o">=</span> <span class="n">well_fill_value</span> <span class="o">/</span> <span class="n">well_depth</span>
+
+    <span class="n">npix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">ap</span><span class="o">**</span><span class="mi">2</span>
+
+    <span class="k">if</span> <span class="n">scn</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">scn</span> <span class="o">=</span> <span class="n">scintillation_noise</span><span class="p">(</span><span class="n">r0</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">N_star</span><span class="p">,</span> <span class="n">airmass</span><span class="p">)</span>
+
+    <span class="n">precision</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span>
+        <span class="n">N_star</span> <span class="o">*</span> <span class="n">t</span> <span class="o">+</span> <span class="n">scn</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="n">npix</span> <span class="o">*</span> <span class="p">(</span><span class="n">N_sky</span> <span class="o">*</span> <span class="n">t</span> <span class="o">+</span> <span class="n">N_dc</span> <span class="o">*</span> <span class="n">t</span> <span class="o">+</span> <span class="n">N_rn</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+    <span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">N_star</span> <span class="o">*</span> <span class="n">t</span><span class="p">)</span>
+
+    <span class="n">precision_star</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">N_star</span> <span class="o">*</span> <span class="n">t</span><span class="p">)</span>
+    <span class="n">precision_scn</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">scn</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">N_star</span> <span class="o">*</span> <span class="n">t</span><span class="p">)</span>
+    <span class="n">precision_sky</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">npix</span> <span class="o">*</span> <span class="p">(</span><span class="n">N_sky</span> <span class="o">*</span> <span class="n">t</span><span class="p">))</span> <span class="o">/</span> <span class="p">(</span><span class="n">N_star</span> <span class="o">*</span> <span class="n">t</span><span class="p">)</span>
+    <span class="n">precision_dc</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">npix</span> <span class="o">*</span> <span class="p">(</span><span class="n">N_dc</span> <span class="o">*</span> <span class="n">t</span><span class="p">))</span> <span class="o">/</span> <span class="p">(</span><span class="n">N_star</span> <span class="o">*</span> <span class="n">t</span><span class="p">)</span>
+    <span class="n">precision_rn</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">npix</span> <span class="o">*</span> <span class="p">(</span><span class="n">N_rn</span><span class="o">**</span><span class="mi">2</span><span class="p">))</span> <span class="o">/</span> <span class="p">(</span><span class="n">N_star</span> <span class="o">*</span> <span class="n">t</span><span class="p">)</span>
+
+    <span class="n">image_precision</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;All&quot;</span><span class="p">:</span> <span class="n">precision</span><span class="p">,</span>
+        <span class="s2">&quot;Star&quot;</span><span class="p">:</span> <span class="n">precision_star</span><span class="p">,</span>
+        <span class="s2">&quot;Scintillation&quot;</span><span class="p">:</span> <span class="n">precision_scn</span><span class="p">,</span>
+        <span class="s2">&quot;Sky&quot;</span><span class="p">:</span> <span class="n">precision_sky</span><span class="p">,</span>
+        <span class="s2">&quot;Dark current&quot;</span><span class="p">:</span> <span class="n">precision_dc</span><span class="p">,</span>
+        <span class="s2">&quot;Read noise&quot;</span><span class="p">:</span> <span class="n">precision_rn</span><span class="p">,</span>
+    <span class="p">}</span>
+
+    <span class="n">nImages</span> <span class="o">=</span> <span class="p">(</span><span class="n">binning</span> <span class="o">*</span> <span class="mi">60</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">t</span> <span class="o">+</span> <span class="n">read_time</span><span class="p">)</span>
+
+    <span class="n">binned_precision</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;All&quot;</span><span class="p">:</span> <span class="n">precision</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">nImages</span><span class="p">),</span>
+        <span class="s2">&quot;Star&quot;</span><span class="p">:</span> <span class="n">precision_star</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">nImages</span><span class="p">),</span>
+        <span class="s2">&quot;Scintillation&quot;</span><span class="p">:</span> <span class="n">precision_scn</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">nImages</span><span class="p">),</span>
+        <span class="s2">&quot;Sky&quot;</span><span class="p">:</span> <span class="n">precision_sky</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">nImages</span><span class="p">),</span>
+        <span class="s2">&quot;Dark current&quot;</span><span class="p">:</span> <span class="n">precision_dc</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">nImages</span><span class="p">),</span>
+        <span class="s2">&quot;Read noise&quot;</span><span class="p">:</span> <span class="n">precision_rn</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">nImages</span><span class="p">),</span>
+    <span class="p">}</span>
+
+    <span class="n">components</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">name</span><span class="p">,</span>
+        <span class="s2">&quot;Teff [K]&quot;</span><span class="p">:</span> <span class="n">Teff</span><span class="p">,</span>
+        <span class="s2">&quot;distance [pc]&quot;</span><span class="p">:</span> <span class="n">distance</span><span class="p">,</span>
+        <span class="s2">&quot;N_star [e/s]&quot;</span><span class="p">:</span> <span class="n">N_star</span><span class="p">,</span>
+        <span class="s2">&quot;star_flux [e/m2/s]&quot;</span><span class="p">:</span> <span class="n">flux</span> <span class="o">/</span> <span class="p">((</span><span class="n">distance</span> <span class="o">*</span> <span class="n">pc</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">),</span>
+        <span class="s2">&quot;scn [e_rms]&quot;</span><span class="p">:</span> <span class="n">scn</span><span class="p">,</span>  <span class="c1"># not sure of units</span>
+        <span class="s2">&quot;pixels in aperture [pix]&quot;</span><span class="p">:</span> <span class="n">npix</span><span class="p">,</span>
+        <span class="s2">&quot;ap_radius [pix]&quot;</span><span class="p">:</span> <span class="n">ap</span><span class="p">,</span>
+        <span class="s2">&quot;N_sky [e/pix/s]&quot;</span><span class="p">:</span> <span class="n">N_sky</span><span class="p">,</span>
+        <span class="s2">&quot;sky_radiance [e/m2/arcsec2/s]&quot;</span><span class="p">:</span> <span class="n">radiance</span><span class="p">,</span>
+        <span class="s2">&quot;seeing [arcsec]&quot;</span><span class="p">:</span> <span class="n">fwhm</span><span class="p">,</span>
+        <span class="s2">&quot;pwv [mm]&quot;</span><span class="p">:</span> <span class="n">pwv</span><span class="p">,</span>
+        <span class="s2">&quot;airmass&quot;</span><span class="p">:</span> <span class="n">airmass</span><span class="p">,</span>
+        <span class="s1">&#39;plate_scale [&quot;/pix]&#39;</span><span class="p">:</span> <span class="n">plate_scale</span><span class="p">,</span>
+        <span class="s2">&quot;N_dc [e/pix/s]&quot;</span><span class="p">:</span> <span class="n">N_dc</span><span class="p">,</span>
+        <span class="s2">&quot;N_rn [e_rms/pix]&quot;</span><span class="p">:</span> <span class="n">N_rn</span><span class="p">,</span>  <span class="c1"># not sure of units</span>
+        <span class="s2">&quot;A [m2]&quot;</span><span class="p">:</span> <span class="n">A</span><span class="p">,</span>
+        <span class="s2">&quot;r0 [m]&quot;</span><span class="p">:</span> <span class="n">r0</span><span class="p">,</span>
+        <span class="s2">&quot;r1 [m]&quot;</span><span class="p">:</span> <span class="n">r1</span><span class="p">,</span>
+        <span class="s2">&quot;t [s]&quot;</span><span class="p">:</span> <span class="n">t</span><span class="p">,</span>
+        <span class="s2">&quot;well_depth [e/pix]&quot;</span><span class="p">:</span> <span class="n">well_depth</span><span class="p">,</span>
+        <span class="s2">&quot;peak well_fill&quot;</span><span class="p">:</span> <span class="n">well_fill</span><span class="p">,</span>  <span class="c1"># peak pixel</span>
+        <span class="s2">&quot;binning [mins]&quot;</span><span class="p">:</span> <span class="n">binning</span><span class="p">,</span>
+        <span class="s2">&quot;read_time [s]&quot;</span><span class="p">:</span> <span class="n">read_time</span><span class="p">,</span>
+        <span class="s2">&quot;binned images&quot;</span><span class="p">:</span> <span class="n">nImages</span><span class="p">,</span>
+    <span class="p">}</span>
+
+    <span class="k">return</span> <span class="n">image_precision</span><span class="p">,</span> <span class="n">binned_precision</span><span class="p">,</span> <span class="n">components</span></div>
+
+
+
+<div class="viewcode-block" id="vega_mag">
+<a class="viewcode-back" href="../../mphot.html#mphot.core.vega_mag">[docs]</a>
+<span class="k">def</span> <span class="nf">vega_mag</span><span class="p">(</span>
+    <span class="n">SRFile</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">props_sky</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
+    <span class="n">N_star</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">sky_radiance</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">A</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">extended</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Calculate the Vega magnitude for a given spectral response file and sky properties.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        SRFile (str):</span>
+<span class="sd">            Path to the spectral response CSV file.</span>
+<span class="sd">        props_sky (dict):</span>
+<span class="sd">            Dictionary containing properties of the sky.</span>
+<span class="sd">            Expected keys:</span>
+<span class="sd">            - &quot;pwv&quot;: float, precipitable water vapor</span>
+<span class="sd">            - &quot;airmass&quot;: float, airmass of the observation</span>
+<span class="sd">        N_star (float):</span>
+<span class="sd">            Number of star counts.</span>
+<span class="sd">        sky_radiance (float):</span>
+<span class="sd">            Sky radiance value.</span>
+<span class="sd">        A (float):</span>
+<span class="sd">            Aperture area in square meters.</span>
+<span class="sd">        extended (bool, optional):</span>
+<span class="sd">            If True, use 0.3 to 3.0 micron grid instead of 0.5 to 2.0 micron grid. Default is False.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        dict:</span>
+<span class="sd">            A dictionary containing the Vega magnitude information:</span>
+<span class="sd">            - &quot;star [mag]&quot;: Vega magnitude of the star.</span>
+<span class="sd">            - &quot;sky [mag/arcsec2]&quot;: Vega magnitude of the sky per arcsecond squared.</span>
+<span class="sd">            - &quot;vega_flux [e/s]&quot;: Vega flux in electrons per second.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="n">extended</span><span class="p">:</span>
+        <span class="n">gridIngredients</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_pickle</span><span class="p">(</span>
+            <span class="n">Path</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span><span class="o">.</span><span class="n">parent</span> <span class="o">/</span> <span class="s2">&quot;datafiles&quot;</span> <span class="o">/</span> <span class="n">grid_flux_ingredients_name_extended</span>
+        <span class="p">)</span>
+        <span class="n">vega</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span>
+            <span class="n">Path</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span><span class="o">.</span><span class="n">parent</span> <span class="o">/</span> <span class="s2">&quot;datafiles&quot;</span> <span class="o">/</span> <span class="n">vega_file_extended</span><span class="p">,</span>
+            <span class="n">header</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">index_col</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">gridIngredients</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_pickle</span><span class="p">(</span>
+            <span class="n">Path</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span><span class="o">.</span><span class="n">parent</span> <span class="o">/</span> <span class="s2">&quot;datafiles&quot;</span> <span class="o">/</span> <span class="n">grid_flux_ingredients_name</span>
+        <span class="p">)</span>
+
+        <span class="n">vega</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span>
+            <span class="n">Path</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span><span class="o">.</span><span class="n">parent</span> <span class="o">/</span> <span class="s2">&quot;datafiles&quot;</span> <span class="o">/</span> <span class="n">vega_file</span><span class="p">,</span>
+            <span class="n">header</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">index_col</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="n">rsr</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">SRFile</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">index_col</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">rsr</span> <span class="o">=</span> <span class="n">rsr</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="s2">&quot;rsr&quot;</span><span class="p">)</span>
+
+    <span class="n">vega</span> <span class="o">=</span> <span class="n">vega</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="s2">&quot;vega&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">extended</span><span class="p">:</span>
+        <span class="n">gridSauce</span> <span class="o">=</span> <span class="n">interpolate_dfs</span><span class="p">(</span><span class="n">wavelengths_extended</span><span class="p">,</span> <span class="n">rsr</span><span class="p">,</span> <span class="n">gridIngredients</span><span class="p">,</span> <span class="n">vega</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">gridSauce</span> <span class="o">=</span> <span class="n">interpolate_dfs</span><span class="p">(</span><span class="n">wavelengths</span><span class="p">,</span> <span class="n">rsr</span><span class="p">,</span> <span class="n">gridIngredients</span><span class="p">,</span> <span class="n">vega</span><span class="p">)</span>
+
+    <span class="n">gridSauce</span> <span class="o">=</span> <span class="n">gridSauce</span><span class="p">[(</span><span class="n">gridSauce</span><span class="p">[</span><span class="s2">&quot;rsr&quot;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)]</span>
+
+    <span class="n">pwv_values</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+        <span class="p">[</span><span class="mf">0.05</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.25</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.5</span><span class="p">,</span> <span class="mf">2.5</span><span class="p">,</span> <span class="mf">3.5</span><span class="p">,</span> <span class="mf">5.0</span><span class="p">,</span> <span class="mf">7.5</span><span class="p">,</span> <span class="mf">10.0</span><span class="p">,</span> <span class="mf">20.0</span><span class="p">,</span> <span class="mf">30.0</span><span class="p">]</span>
+    <span class="p">)</span>
+    <span class="n">airmass_values</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+        <span class="p">[</span>
+            <span class="mf">1.0</span><span class="p">,</span>
+            <span class="mf">1.1</span><span class="p">,</span>
+            <span class="mf">1.2</span><span class="p">,</span>
+            <span class="mf">1.3</span><span class="p">,</span>
+            <span class="mf">1.4</span><span class="p">,</span>
+            <span class="mf">1.5</span><span class="p">,</span>
+            <span class="mf">1.6</span><span class="p">,</span>
+            <span class="mf">1.7</span><span class="p">,</span>
+            <span class="mf">1.8</span><span class="p">,</span>
+            <span class="mf">1.9</span><span class="p">,</span>
+            <span class="mf">2.0</span><span class="p">,</span>
+            <span class="mf">2.1</span><span class="p">,</span>
+            <span class="mf">2.2</span><span class="p">,</span>
+            <span class="mf">2.3</span><span class="p">,</span>
+            <span class="mf">2.4</span><span class="p">,</span>
+            <span class="mf">2.5</span><span class="p">,</span>
+            <span class="mf">2.6</span><span class="p">,</span>
+            <span class="mf">2.7</span><span class="p">,</span>
+            <span class="mf">2.8</span><span class="p">,</span>
+            <span class="mf">2.9</span><span class="p">,</span>
+            <span class="mf">3.0</span><span class="p">,</span>
+        <span class="p">]</span>
+    <span class="p">)</span>
+
+    <span class="n">pwv</span> <span class="o">=</span> <span class="n">props_sky</span><span class="p">[</span><span class="s2">&quot;pwv&quot;</span><span class="p">]</span>
+    <span class="n">airmass</span> <span class="o">=</span> <span class="n">props_sky</span><span class="p">[</span><span class="s2">&quot;airmass&quot;</span><span class="p">]</span>
+
+    <span class="c1"># lazy way to get atmosphere profile</span>
+    <span class="n">pwv</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">pwv_values</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="nb">abs</span><span class="p">(</span><span class="n">x</span> <span class="o">-</span> <span class="n">pwv</span><span class="p">))</span>
+    <span class="n">airmass</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">airmass_values</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="nb">abs</span><span class="p">(</span><span class="n">x</span> <span class="o">-</span> <span class="n">airmass</span><span class="p">))</span>
+
+    <span class="n">atmosphere_trans</span> <span class="o">=</span> <span class="n">gridSauce</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">pwv</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;_&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">airmass</span><span class="p">)]</span>
+
+    <span class="n">simStar</span> <span class="o">=</span> <span class="n">gridSauce</span><span class="p">[</span><span class="s2">&quot;vega&quot;</span><span class="p">]</span>
+
+    <span class="n">vega</span> <span class="o">=</span> <span class="n">simps</span><span class="p">(</span>
+        <span class="n">y</span><span class="o">=</span><span class="n">gridSauce</span><span class="p">[</span><span class="s2">&quot;rsr&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="n">atmosphere_trans</span> <span class="o">*</span> <span class="n">simStar</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="n">gridSauce</span><span class="o">.</span><span class="n">index</span>
+    <span class="p">)</span>  <span class="c1"># e/s/m2</span>
+
+    <span class="n">vega_dict</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;star [mag]&quot;</span><span class="p">:</span> <span class="o">-</span><span class="mf">2.5</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">N_star</span> <span class="o">/</span> <span class="p">(</span><span class="n">vega</span> <span class="o">*</span> <span class="n">A</span><span class="p">)),</span>
+        <span class="s2">&quot;sky [mag/arcsec2]&quot;</span><span class="p">:</span> <span class="o">-</span><span class="mf">2.5</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">sky_radiance</span> <span class="o">/</span> <span class="n">vega</span><span class="p">),</span>
+        <span class="s2">&quot;vega_flux [e/s]&quot;</span><span class="p">:</span> <span class="n">vega</span> <span class="o">*</span> <span class="n">A</span><span class="p">,</span>
+    <span class="p">}</span>
+
+    <span class="k">return</span> <span class="n">vega_dict</span></div>
+
+
+
+<div class="viewcode-block" id="update_progress">
+<a class="viewcode-back" href="../../mphot.html#mphot.core.update_progress">[docs]</a>
+<span class="k">def</span> <span class="nf">update_progress</span><span class="p">(</span><span class="n">progress</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Updates and displays a progress bar in the console.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        progress (float or int): A number between 0 and 1 representing the progress percentage.</span>
+<span class="sd">                                 If an integer is provided, it will be converted to a float.</span>
+<span class="sd">                                 Values less than 0 will be treated as 0, and values greater than or equal to 1 will be treated as 1.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        None</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">bar_length</span> <span class="o">=</span> <span class="mi">20</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">progress</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+        <span class="n">progress</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">progress</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">progress</span><span class="p">,</span> <span class="nb">float</span><span class="p">):</span>
+        <span class="n">progress</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">if</span> <span class="n">progress</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">progress</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">if</span> <span class="n">progress</span> <span class="o">&gt;=</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">progress</span> <span class="o">=</span> <span class="mi">1</span>
+
+    <span class="n">block</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">bar_length</span> <span class="o">*</span> <span class="n">progress</span><span class="p">))</span>
+
+    <span class="n">clear_output</span><span class="p">(</span><span class="n">wait</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">text</span> <span class="o">=</span> <span class="s2">&quot;Progress: [</span><span class="si">{0}</span><span class="s2">] </span><span class="si">{1:.1f}</span><span class="s2">%&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+        <span class="s2">&quot;#&quot;</span> <span class="o">*</span> <span class="n">block</span> <span class="o">+</span> <span class="s2">&quot;-&quot;</span> <span class="o">*</span> <span class="p">(</span><span class="n">bar_length</span> <span class="o">-</span> <span class="n">block</span><span class="p">),</span> <span class="n">progress</span> <span class="o">*</span> <span class="mi">100</span>
+    <span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">text</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="display_number">
+<a class="viewcode-back" href="../../mphot.html#mphot.core.display_number">[docs]</a>
+<span class="k">def</span> <span class="nf">display_number</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">p</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">3</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Convert a number to a string with the given precision.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        x (float): The number to be converted.</span>
+<span class="sd">        p (int, optional): The precision (number of significant digits). Default is 3.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        str: The number represented as a string with the specified precision.</span>
+
+<span class="sd">    Examples:</span>
+<span class="sd">    &gt;&gt;&gt; display_number(123.456, 4)</span>
+<span class="sd">    &#39;123.5&#39;</span>
+<span class="sd">    &gt;&gt;&gt; display_number(0.00123456, 2)</span>
+<span class="sd">    &#39;0.0012&#39;</span>
+<span class="sd">    &gt;&gt;&gt; display_number(123456, 2)</span>
+<span class="sd">    &#39;1.2e+05&#39;</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">x</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">x</span> <span class="o">==</span> <span class="mf">0.0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s2">&quot;0.&quot;</span> <span class="o">+</span> <span class="s2">&quot;0&quot;</span> <span class="o">*</span> <span class="p">(</span><span class="n">p</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+
+    <span class="n">out</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">if</span> <span class="n">x</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;-&quot;</span><span class="p">)</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="o">-</span><span class="n">x</span>
+
+    <span class="n">e</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+    <span class="n">tens</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">pow</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="n">e</span> <span class="o">-</span> <span class="n">p</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="n">x</span> <span class="o">/</span> <span class="n">tens</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">n</span> <span class="o">&lt;</span> <span class="n">math</span><span class="o">.</span><span class="n">pow</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="n">p</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="n">e</span> <span class="o">=</span> <span class="n">e</span> <span class="o">-</span> <span class="mi">1</span>
+        <span class="n">tens</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">pow</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="n">e</span> <span class="o">-</span> <span class="n">p</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="n">x</span> <span class="o">/</span> <span class="n">tens</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="nb">abs</span><span class="p">((</span><span class="n">n</span> <span class="o">+</span> <span class="mf">1.0</span><span class="p">)</span> <span class="o">*</span> <span class="n">tens</span> <span class="o">-</span> <span class="n">x</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">n</span> <span class="o">*</span> <span class="n">tens</span> <span class="o">-</span> <span class="n">x</span><span class="p">):</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="n">n</span> <span class="o">+</span> <span class="mi">1</span>
+
+    <span class="k">if</span> <span class="n">n</span> <span class="o">&gt;=</span> <span class="n">math</span><span class="o">.</span><span class="n">pow</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="n">p</span><span class="p">):</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="n">n</span> <span class="o">/</span> <span class="mf">10.0</span>
+        <span class="n">e</span> <span class="o">=</span> <span class="n">e</span> <span class="o">+</span> <span class="mi">1</span>
+
+    <span class="n">m</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">%.*g</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">e</span> <span class="o">&lt;</span> <span class="o">-</span><span class="mi">2</span> <span class="ow">or</span> <span class="n">e</span> <span class="o">&gt;=</span> <span class="n">p</span><span class="p">:</span>
+        <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">m</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="k">if</span> <span class="n">p</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">)</span>
+            <span class="n">out</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">m</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="n">p</span><span class="p">])</span>
+        <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;e&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">e</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;+&quot;</span><span class="p">)</span>
+        <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
+    <span class="k">elif</span> <span class="n">e</span> <span class="o">==</span> <span class="p">(</span><span class="n">p</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">e</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">m</span><span class="p">[:</span> <span class="n">e</span> <span class="o">+</span> <span class="mi">1</span><span class="p">])</span>
+        <span class="k">if</span> <span class="n">e</span> <span class="o">+</span> <span class="mi">1</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">m</span><span class="p">):</span>
+            <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">)</span>
+            <span class="n">out</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">m</span><span class="p">[</span><span class="n">e</span> <span class="o">+</span> <span class="mi">1</span> <span class="p">:])</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;0.&quot;</span><span class="p">)</span>
+        <span class="n">out</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="s2">&quot;0&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="o">-</span><span class="p">(</span><span class="n">e</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span>
+        <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">out</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="display_results">
+<a class="viewcode-back" href="../../mphot.html#mphot.core.display_results">[docs]</a>
+<span class="k">def</span> <span class="nf">display_results</span><span class="p">(</span><span class="n">r1</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">,</span> <span class="n">r2</span><span class="p">:</span> <span class="nb">tuple</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Display the results of the photometric analysis.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        props_sky (dict):</span>
+<span class="sd">            Dictionary containing properties of the sky.</span>
+<span class="sd">        r1 (tuple):</span>
+<span class="sd">            A tuple containing image precision, binned precision, and components for the first set of results.</span>
+<span class="sd">                - image_precision1 (dict):</span>
+<span class="sd">                    Dictionary containing image precision metrics for the first set.</span>
+<span class="sd">                - binned_precision1 (dict):</span>
+<span class="sd">                    Dictionary containing binned precision metrics for the first set.</span>
+<span class="sd">                - components1 (dict):</span>
+<span class="sd">                    Dictionary containing components for the first set.</span>
+<span class="sd">        r2 (tuple, optional):</span>
+<span class="sd">            A tuple containing image precision, binned precision, and components for the second set of results.</span>
+<span class="sd">                - image_precision2 (dict):</span>
+<span class="sd">                    Dictionary containing image precision metrics for the second set.</span>
+<span class="sd">                - binned_precision2 (dict):</span>
+<span class="sd">                    Dictionary containing binned precision metrics for the second set.</span>
+<span class="sd">                - components2 (dict):</span>
+<span class="sd">                    Dictionary containing components for the second set.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        None</span>
+<span class="sd">            This function displays the results using pandas DataFrames and does not return any value.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">pd</span><span class="o">.</span><span class="n">set_option</span><span class="p">(</span><span class="s2">&quot;display.float_format&quot;</span><span class="p">,</span> <span class="n">display_number</span><span class="p">)</span>
+
+    <span class="n">image_precision1</span><span class="p">,</span> <span class="n">binned_precision1</span><span class="p">,</span> <span class="n">components1</span> <span class="o">=</span> <span class="n">r1</span>
+
+    <span class="c1"># Copy the values to avoid directly editing the original dictionaries</span>
+    <span class="n">image_precision1</span> <span class="o">=</span> <span class="n">image_precision1</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">binned_precision1</span> <span class="o">=</span> <span class="n">binned_precision1</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">components1</span> <span class="o">=</span> <span class="n">components1</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">name1</span> <span class="o">=</span> <span class="n">components1</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]</span>
+    <span class="n">components1</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;name&quot;</span><span class="p">)</span>
+
+    <span class="n">props_sky1</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;pwv&quot;</span><span class="p">:</span> <span class="n">components1</span><span class="p">[</span><span class="s2">&quot;pwv [mm]&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;airmass&quot;</span><span class="p">:</span> <span class="n">components1</span><span class="p">[</span><span class="s2">&quot;airmass&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;seeing&quot;</span><span class="p">:</span> <span class="n">components1</span><span class="p">[</span><span class="s2">&quot;seeing [arcsec]&quot;</span><span class="p">],</span>
+    <span class="p">}</span>
+
+    <span class="n">SRFile1</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">Path</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span><span class="o">.</span><span class="n">parent</span>
+        <span class="o">/</span> <span class="s2">&quot;datafiles&quot;</span>
+        <span class="o">/</span> <span class="s2">&quot;system_responses&quot;</span>
+        <span class="o">/</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">name1</span><span class="si">}</span><span class="s2">_instrument_system_response.csv&quot;</span>
+    <span class="p">)</span>
+
+    <span class="n">vega1</span> <span class="o">=</span> <span class="n">vega_mag</span><span class="p">(</span>
+        <span class="n">SRFile1</span><span class="p">,</span>
+        <span class="n">props_sky1</span><span class="p">,</span>
+        <span class="n">components1</span><span class="p">[</span><span class="s2">&quot;N_star [e/s]&quot;</span><span class="p">],</span>
+        <span class="n">components1</span><span class="p">[</span><span class="s2">&quot;sky_radiance [e/m2/arcsec2/s]&quot;</span><span class="p">],</span>
+        <span class="n">components1</span><span class="p">[</span><span class="s2">&quot;A [m2]&quot;</span><span class="p">],</span>
+    <span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">r2</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">image_precision2</span><span class="p">,</span> <span class="n">binned_precision2</span><span class="p">,</span> <span class="n">components2</span> <span class="o">=</span> <span class="n">r2</span>
+
+        <span class="c1"># Copy the values to avoid directly editing the original dictionaries</span>
+        <span class="n">image_precision2</span> <span class="o">=</span> <span class="n">image_precision2</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">binned_precision2</span> <span class="o">=</span> <span class="n">binned_precision2</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">components2</span> <span class="o">=</span> <span class="n">components2</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">name2</span> <span class="o">=</span> <span class="n">components2</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]</span>
+        <span class="n">components2</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;name&quot;</span><span class="p">)</span>
+
+        <span class="n">props_sky2</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;pwv&quot;</span><span class="p">:</span> <span class="n">components2</span><span class="p">[</span><span class="s2">&quot;pwv [mm]&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;airmass&quot;</span><span class="p">:</span> <span class="n">components2</span><span class="p">[</span><span class="s2">&quot;airmass&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;seeing&quot;</span><span class="p">:</span> <span class="n">components2</span><span class="p">[</span><span class="s2">&quot;seeing [arcsec]&quot;</span><span class="p">],</span>
+        <span class="p">}</span>
+
+        <span class="n">SRFile2</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">Path</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span><span class="o">.</span><span class="n">parent</span>
+            <span class="o">/</span> <span class="s2">&quot;datafiles&quot;</span>
+            <span class="o">/</span> <span class="s2">&quot;system_responses&quot;</span>
+            <span class="o">/</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">name2</span><span class="si">}</span><span class="s2">_instrument_system_response.csv&quot;</span>
+        <span class="p">)</span>
+
+        <span class="n">vega2</span> <span class="o">=</span> <span class="n">vega_mag</span><span class="p">(</span>
+            <span class="n">SRFile2</span><span class="p">,</span>
+            <span class="n">props_sky2</span><span class="p">,</span>
+            <span class="n">components2</span><span class="p">[</span><span class="s2">&quot;N_star [e/s]&quot;</span><span class="p">],</span>
+            <span class="n">components2</span><span class="p">[</span><span class="s2">&quot;sky_radiance [e/m2/arcsec2/s]&quot;</span><span class="p">],</span>
+            <span class="n">components2</span><span class="p">[</span><span class="s2">&quot;A [m2]&quot;</span><span class="p">],</span>
+        <span class="p">)</span>
+
+        <span class="n">columns</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="p">[</span>
+                <span class="s2">&quot;single frame [ppt]&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;single frame [ppt]&quot;</span><span class="p">,</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">components1</span><span class="p">[</span><span class="s1">&#39;binning [mins]&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> minute binned [ppt]&quot;</span><span class="p">,</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">components2</span><span class="p">[</span><span class="s1">&#39;binning [mins]&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> minute binned [ppt]&quot;</span><span class="p">,</span>
+            <span class="p">],</span>
+            <span class="p">[</span><span class="n">name1</span><span class="p">,</span> <span class="n">name2</span><span class="p">,</span> <span class="n">name1</span><span class="p">,</span> <span class="n">name2</span><span class="p">],</span>
+        <span class="p">]</span>
+        <span class="n">values</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">c_</span><span class="p">[</span>
+                <span class="nb">list</span><span class="p">(</span><span class="n">image_precision1</span><span class="o">.</span><span class="n">values</span><span class="p">()),</span>
+                <span class="nb">list</span><span class="p">(</span><span class="n">image_precision2</span><span class="o">.</span><span class="n">values</span><span class="p">()),</span>
+                <span class="nb">list</span><span class="p">(</span><span class="n">binned_precision1</span><span class="o">.</span><span class="n">values</span><span class="p">()),</span>
+                <span class="nb">list</span><span class="p">(</span><span class="n">binned_precision2</span><span class="o">.</span><span class="n">values</span><span class="p">()),</span>
+            <span class="p">]</span>
+            <span class="o">*</span> <span class="mi">1000</span>  <span class="c1"># convert to ppt</span>
+        <span class="p">)</span>
+        <span class="n">display</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">values</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">image_precision1</span><span class="o">.</span><span class="n">keys</span><span class="p">(),</span> <span class="n">columns</span><span class="o">=</span><span class="n">columns</span><span class="p">))</span>
+
+        <span class="n">columns</span> <span class="o">=</span> <span class="p">[[</span><span class="n">name1</span><span class="p">,</span> <span class="n">name2</span><span class="p">]]</span>
+
+        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">components1</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="nb">bool</span><span class="p">)):</span>
+                <span class="n">components1</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">display_number</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">components2</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="nb">bool</span><span class="p">)):</span>
+                <span class="n">components2</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">display_number</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+
+        <span class="n">values</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">c_</span><span class="p">[</span><span class="nb">list</span><span class="p">(</span><span class="n">components1</span><span class="o">.</span><span class="n">values</span><span class="p">()),</span> <span class="nb">list</span><span class="p">(</span><span class="n">components2</span><span class="o">.</span><span class="n">values</span><span class="p">())]</span>
+        <span class="n">display</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">values</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">components1</span><span class="o">.</span><span class="n">keys</span><span class="p">(),</span> <span class="n">columns</span><span class="o">=</span><span class="n">columns</span><span class="p">))</span>
+
+        <span class="n">columns</span> <span class="o">=</span> <span class="p">[[</span><span class="n">name1</span><span class="p">,</span> <span class="n">name2</span><span class="p">]]</span>
+        <span class="n">values</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">c_</span><span class="p">[</span><span class="nb">list</span><span class="p">(</span><span class="n">vega1</span><span class="o">.</span><span class="n">values</span><span class="p">()),</span> <span class="nb">list</span><span class="p">(</span><span class="n">vega2</span><span class="o">.</span><span class="n">values</span><span class="p">())]</span>
+        <span class="n">display</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">values</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">vega1</span><span class="o">.</span><span class="n">keys</span><span class="p">(),</span> <span class="n">columns</span><span class="o">=</span><span class="n">columns</span><span class="p">))</span>
+
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">columns</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="p">[</span>
+                <span class="s2">&quot;single frame [ppt]&quot;</span><span class="p">,</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">components1</span><span class="p">[</span><span class="s1">&#39;binning [mins]&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> minute binned [ppt]&quot;</span><span class="p">,</span>
+            <span class="p">],</span>
+            <span class="p">[</span><span class="n">name1</span><span class="p">,</span> <span class="n">name1</span><span class="p">],</span>
+        <span class="p">]</span>
+        <span class="n">values</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">c_</span><span class="p">[</span>
+                <span class="nb">list</span><span class="p">(</span><span class="n">image_precision1</span><span class="o">.</span><span class="n">values</span><span class="p">()),</span>
+                <span class="nb">list</span><span class="p">(</span><span class="n">binned_precision1</span><span class="o">.</span><span class="n">values</span><span class="p">()),</span>
+            <span class="p">]</span>
+            <span class="o">*</span> <span class="mi">1000</span>  <span class="c1"># convert to ppt</span>
+        <span class="p">)</span>
+        <span class="n">display</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">values</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">image_precision1</span><span class="o">.</span><span class="n">keys</span><span class="p">(),</span> <span class="n">columns</span><span class="o">=</span><span class="n">columns</span><span class="p">))</span>
+
+        <span class="n">columns</span> <span class="o">=</span> <span class="p">[[</span><span class="n">name1</span><span class="p">]]</span>
+
+        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">components1</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">bool</span><span class="p">):</span>
+                <span class="n">components1</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">display_number</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+
+        <span class="n">values</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">c_</span><span class="p">[</span><span class="nb">list</span><span class="p">(</span><span class="n">components1</span><span class="o">.</span><span class="n">values</span><span class="p">())]</span>
+        <span class="n">display</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">values</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">components1</span><span class="o">.</span><span class="n">keys</span><span class="p">(),</span> <span class="n">columns</span><span class="o">=</span><span class="n">columns</span><span class="p">))</span>
+
+        <span class="n">columns</span> <span class="o">=</span> <span class="p">[[</span><span class="n">name1</span><span class="p">]]</span>
+        <span class="n">values</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">c_</span><span class="p">[</span><span class="nb">list</span><span class="p">(</span><span class="n">vega1</span><span class="o">.</span><span class="n">values</span><span class="p">())]</span>
+        <span class="n">display</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">values</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">vega1</span><span class="o">.</span><span class="n">keys</span><span class="p">(),</span> <span class="n">columns</span><span class="o">=</span><span class="n">columns</span><span class="p">))</span></div>
+
+</pre></div>
+
+                </article>
+              
+
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+<div class="bd-footer-content__inner container">
+  
+  <div class="footer-item">
+    
+<p class="component-author">
+By Peter Pihlmann Pedersen
+</p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+
+  <p class="copyright">
+    
+      © Copyright 2024, Peter Pihlmann Pedersen.
+      <br/>
+    
+  </p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+</div>
+          </footer>
+        
+
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+  </footer>
+  </body>
+</html>
