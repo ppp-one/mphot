@@ -19,3 +19,13 @@ source = "vcs"
 
 [project.optional-dependencies]
 dev = ["black", "pytest"]
+docs = [
+    "sphinx",
+    "sphinx-book-theme",
+    "sphinx-copybutton",
+    "myst-parser",
+]
+
+[project.urls]
+Documentation = "https://mphot.readthedocs.io"
+Repository = "https://github.com/ppp-one/mphot"
