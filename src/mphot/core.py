@@ -662,6 +662,7 @@ def get_precision(
     SPCcorrection: bool = True,
     N_sky: float | None = None,
     N_star: float | None = None,
+    scn: float | None = None,
     exp_time: float | None = None,
     extended: bool = False,
 ) -> dict:
@@ -710,6 +711,9 @@ def get_precision(
 
         N_star (float, optional):
             Number of star counts, calculated if None. Default is None.
+
+        scn (float, optional):
+            Scintillation noise, calculated if None. Default is None.
 
         exp_time (float, optional):
             Exposure time in seconds, calculated if None. Default is None.
@@ -896,7 +900,8 @@ def get_precision(
 
     npix = np.pi * ap**2
 
-    scn = scintillation_noise(r0, t, N_star, airmass)
+    if scn is None:
+        scn = scintillation_noise(r0, t, N_star, airmass)
 
     precision = np.sqrt(
         N_star * t + scn**2 + npix * (N_sky * t + N_dc * t + N_rn**2)
@@ -1112,7 +1117,7 @@ def update_progress(progress: float | int) -> None:
     print(text)
 
 
-def to_precision(x: float, p: int = 3) -> str:
+def display_number(x: float, p: int = 3) -> str:
     """
     Convert a number to a string with the given precision.
 
@@ -1124,11 +1129,11 @@ def to_precision(x: float, p: int = 3) -> str:
         str: The number represented as a string with the specified precision.
 
     Examples:
-    >>> to_precision(123.456, 4)
+    >>> display_number(123.456, 4)
     '123.5'
-    >>> to_precision(0.00123456, 2)
+    >>> display_number(0.00123456, 2)
     '0.0012'
-    >>> to_precision(123456, 2)
+    >>> display_number(123456, 2)
     '1.2e+05'
     """
 
@@ -1214,7 +1219,7 @@ def display_results(r1: tuple, r2: tuple = None) -> None:
             This function displays the results using pandas DataFrames and does not return any value.
     """
 
-    pd.set_option("display.float_format", to_precision)
+    pd.set_option("display.float_format", display_number)
 
     image_precision1, binned_precision1, components1 = r1
 
@@ -1301,11 +1306,11 @@ def display_results(r1: tuple, r2: tuple = None) -> None:
 
         for k, v in components1.items():
             if not isinstance(v, (str, bool)):
-                components1[k] = to_precision(v)
+                components1[k] = display_number(v)
 
         for k, v in components2.items():
             if not isinstance(v, (str, bool)):
-                components2[k] = to_precision(v)
+                components2[k] = display_number(v)
 
         values = np.c_[list(components1.values()), list(components2.values())]
         display(pd.DataFrame(values, index=components1.keys(), columns=columns))
@@ -1335,7 +1340,7 @@ def display_results(r1: tuple, r2: tuple = None) -> None:
 
         for k, v in components1.items():
             if (type(v) != str) and (type(v) != bool):
-                components1[k] = to_precision(v)
+                components1[k] = display_number(v)
 
         values = np.c_[list(components1.values())]
         display(pd.DataFrame(values, index=components1.keys(), columns=columns))
