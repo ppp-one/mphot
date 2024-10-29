@@ -15,7 +15,7 @@ sys.path.insert(0, os.path.abspath("../src/"))
 project = "mphot"
 copyright = "2024, Peter Pihlmann Pedersen"
 author = "Peter Pihlmann Pedersen"
-release = "1.0.0"
+release = "1.0.1"
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration

@@ -44,3 +44,18 @@ You can test the package has been properly installed with
 ```bash
 python -c "import mphot"
 ```
+## Attribution
+
+If you find *mphot* useful for your research, please cite [Pedersen et. al 2024](https://doi.org/10.1117/12.3018320). The BibTeX entry for the paper is:
+
+```bibtex
+@inproceedings{pedersen2024infrared,
+  title={Infrared photometry with InGaAs detectors: First light with SPECULOOS},
+  author={Pedersen, Peter P and Queloz, Didier and Garcia, Lionel and Schacke, Yannick and Delrez, Laetitia and Demory, Brice-Olivier and Ducrot, Elsa and Dransfield, Georgina and Gillon, Michael and Hooton, Matthew J and others},
+  booktitle={Ground-based and Airborne Instrumentation for Astronomy X},
+  volume={13096},
+  pages={1146--1167},
+  year={2024},
+  organization={SPIE}
+}
+```
