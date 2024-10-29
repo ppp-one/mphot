@@ -17,13 +17,11 @@ Simply put,
     - telescope/site parameters (primary and secondary diameters, site seeing)
     - camera parameters (plate scale, dark current, read noise, well depth, target well fill, read time)
     
-- to calculate ideal exposure time and expected precision for a given observation.
+- to calculate the ideal exposure time and expected precision for a given observation.
 
 Please see the [examples](https://github.com/ppp-one/mphot/tree/main/examples) for more details on how to use *mphot*. For further details on the models used, please see [https://doi.org/10.1117/12.3018320](https://doi.org/10.1117/12.3018320).
 
-Note, it uses stellar parameters from "[A Modern Mean Dwarf Stellar Color and Effective Temperature Sequence](https://www.pas.rochester.edu/~emamajek/EEM_dwarf_UBVIJHK_colors_Teff.txt)". Temperatures between 1278 K to 3042 K are calibrated for the [SPECULOOS target list](https://doi.org/10.1051/0004-6361/202038827) and [2MASS](https://irsa.ipac.caltech.edu/Missions/2mass.html) (see Figure 4.7 in "[Optimised ground-based near-infrared instrumentation for robotic exoplanet transit surveys](https://doi.org/10.17863/CAM.96904)").
-
-<!-- For further details, please see the [documentation](https://ppp-one.github.io/mphot/). -->
+Note, it uses stellar parameters from "[A Modern Mean Dwarf Stellar Color and Effective Temperature Sequence](https://www.pas.rochester.edu/~emamajek/EEM_dwarf_UBVIJHK_colors_Teff.txt)". Temperatures between 1278 K to 3042 K are calibrated for the [SPECULOOS target list](https://doi.org/10.1051/0004-6361/202038827) with [2MASS](https://irsa.ipac.caltech.edu/Missions/2mass.html) (see Figure 4.7 in "[Optimised ground-based near-infrared instrumentation for robotic exoplanet transit surveys](https://doi.org/10.17863/CAM.96904)").
 
 
 ## Installation
