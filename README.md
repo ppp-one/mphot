@@ -1,5 +1,5 @@
 # mphot
-*mphot* is a fast Python package to model photometry data from the ground or space.
+*mphot* is a Python package to model photometry data from the ground or space.
 
 ![example plots](examples/example-plots.png)
 
