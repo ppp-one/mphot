@@ -1,5 +1,5 @@
 # mphot
-*mphot* is a Python package to model photometry data from the ground or space.
+*mphot* is a Python package to model photometry for ground or space-based astronomy. Exposure time calculator (ETC) built in.
 
 ![example plots](examples/example-plots.png)
 
