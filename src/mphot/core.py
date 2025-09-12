@@ -1014,7 +1014,7 @@ def best_gaia_filters(
             Name of the instrument.
         
         min_weight_sum (float, optional):
-            The minimum sum of weights in the linear combination of Gaia filters. Default is 0.5.
+            The minimum sum of weights in the linear combination of Gaia filters. Default is 0.
         
         support_points (int, optional):
             The number of support points in the wavelength spectrum between 0.3 and 3.0 microns used to interpolate the instrument system response and Gaia filter transmission curves. Default is 8000.
@@ -1122,7 +1122,7 @@ def get_precision_gaia(
             See https://www.cosmos.esa.int/web/gaia/edr3-passbands for further information. Default is None.
 
         min_weight_sum (float, optional):
-            The minimum sum of Gaia filter weights for determining the best linear combination of Gaia filters. Only used if gaia_filter is not specified. Default is 0.5.
+            The minimum sum of Gaia filter weights for determining the best linear combination of Gaia filters. Only used if gaia_filter is not specified. Default is 0.
 
         support_points (int, optional):
             The number of support points in the wavelength spectrum between 0.3 and 3.0 microns for determining the best linear combination of Gaia filters. Only used if gaia_filter is not specified. Default is 8000.
