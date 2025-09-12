@@ -1003,7 +1003,7 @@ def get_precision(
 
 def best_gaia_filters(
     system_name: str,
-    min_weight_sum: float = 0.5,
+    min_weight_sum: float = 0,
     support_points: int = 8000
 ) -> np.ndarray:
     """
@@ -1074,7 +1074,7 @@ def get_precision_gaia(
     props_sky: dict,
     source_id: np.uint64,
     gaia_filter: str | None = None,
-    min_weight_sum: float = 0.5,
+    min_weight_sum: float = 0,
     support_points: int = 8000,
     binning: float = 10,
     override_grid: bool = False,
@@ -1249,7 +1249,6 @@ def get_precision_gaia(
     )
 
     N_star_cal = components["N_star [e/s]"] * factor
-    N_sky_sim = components["N_sky [e/pix/s]"]
 
     image_precision, binned_precision, components_final = get_precision(
         props, 
@@ -1260,7 +1259,7 @@ def get_precision_gaia(
         override_grid=False,
         SPCcorrection=SPCcorrection, 
         N_star=N_star_cal,
-        N_sky=N_sky_sim,
+        N_sky=N_sky,
         scn=scn,
         h=h,
         C=C,
