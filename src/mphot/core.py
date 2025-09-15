@@ -663,7 +663,6 @@ def get_precision(
     distance: float,
     binning: float = 10,
     override_grid: bool = False,
-    SPCcorrection: bool = True,
     N_sky: float | None = None,
     N_star: float | None = None,
     scn: float | None = None,
@@ -707,9 +706,6 @@ def get_precision(
 
         override_grid (bool, optional):
             If True, override existing grid files. Default is False.
-
-        SPCcorrection (bool, optional):
-            If True, apply SPC correction based on the effective temperature. Default is True.
 
         N_sky (float, optional):
             Number of sky counts, calculated if None. Default is None.
@@ -847,12 +843,6 @@ def get_precision(
         N_sky = radiance * A * plate_scale**2
     else:
         radiance = N_sky / (A * plate_scale**2)
-
-    ## correction
-    if SPCcorrection:
-        if (Teff <= 3042) and (Teff >= 1278):
-            poly = np.load(Path(__file__).parent / "datafiles" / "16_order_poly.npy")
-            N_star = N_star / (2.512 ** np.polyval(poly, Teff))
 
     t = integration_time(
         fwhm,
@@ -1054,7 +1044,6 @@ def get_precision_gaia(
     support_points: int = 8000,
     binning: float = 10,
     override_grid: bool = False,
-    SPCcorrection: bool = True,
     N_sky: float | None = None,
     scn: float | None = None,
     h: float = 2440,
@@ -1110,9 +1099,6 @@ def get_precision_gaia(
 
         override_grid (bool, optional):
             If True, override existing grid files. Default is False.
-
-        SPCcorrection (bool, optional):
-            If True, apply SPC correction based on the effective temperature. Default is True.
 
         N_sky (float, optional):
             Number of sky counts, calculated if None. Default is None.
@@ -1211,7 +1197,6 @@ def get_precision_gaia(
             distance,
             binning=binning,
             override_grid=override_grid,
-            SPCcorrection=SPCcorrection,
             N_sky=N_sky,
             scn=scn,
             h=h,
@@ -1232,7 +1217,6 @@ def get_precision_gaia(
         distance,
         binning=binning,
         override_grid=override_grid,
-        SPCcorrection=SPCcorrection,
         N_sky=N_sky,
         scn=scn,
         h=h,
@@ -1249,7 +1233,6 @@ def get_precision_gaia(
         distance,
         binning=binning,
         override_grid=False,
-        SPCcorrection=SPCcorrection,
         N_star=N_star_cal,
         N_sky=N_sky,
         scn=scn,
