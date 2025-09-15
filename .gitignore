@@ -2,6 +2,7 @@
 temp/
 .vscode/
 *.psd
+atmospheres_2400m.zip
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
