@@ -15,12 +15,10 @@ from astroquery.gaia import Gaia
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-grid_flux_ingredients_name_extended = "pre_grid_03_to_3_microns_2400m_flux.pkl"
-grid_radiance_ingredients_name_extended = "pre_grid_03_to_3_microns_2400m_radiance.pkl"
-vega_file = "vega.csv"
-vega_file_extended = "vega_03_to_3_microns.csv"
-wavelengths = np.arange(0.5, 2, 0.0001)
-wavelengths_extended = np.arange(0.3, 3, 0.0001)
+grid_flux_ingredients_name = "pre_grid_03_to_3_microns_2400m_flux.pkl"
+grid_radiance_ingredients_name = "pre_grid_03_to_3_microns_2400m_radiance.pkl"
+vega_file = "vega_03_to_3_microns.csv"
+wavelengths = np.arange(0.3, 3, 0.001)
 
 pc = 3.0857e16  # parsec in meters
 
@@ -82,7 +80,7 @@ def generate_system_response(
 
     filtDF = pd.DataFrame({"filt": filt[1].values}, index=filt[0])
 
-    df = interpolate_dfs(wavelengths_extended, effDF, filtDF)
+    df = interpolate_dfs(wavelengths, effDF, filtDF)
 
     dfSR = df["eff"] * df["filt"]
 
@@ -95,9 +93,7 @@ def generate_system_response(
     return name, dfSR
 
 
-def generate_flux_grid(
-    sResponse: str, extended: bool = True
-) -> tuple[np.ndarray, np.ndarray]:
+def generate_flux_grid(sResponse: str) -> tuple[np.ndarray, np.ndarray]:
     """
     Generates a base flux grid based on atmospheric parameters and response functions, with the following ranges:
         airmass: 1 - 3
@@ -110,7 +106,6 @@ def generate_flux_grid(
 
     Args:
         sResponse (str): Path to the CSV file containing the spectral response function.
-        extended (bool, optional): If True, use 0.3 to 3.0 micron grid instead of 0.5 to 2.0 micron grid. Default is True.
 
     Returns:
         tuple: A tuple containing:
@@ -123,10 +118,9 @@ def generate_flux_grid(
               airmass, and temperature.
     """
 
-    if extended:
-        gridIngredients = pd.read_pickle(
-            Path(__file__).parent / "datafiles" / grid_flux_ingredients_name_extended
-        )
+    gridIngredients = pd.read_pickle(
+        Path(__file__).parent / "datafiles" / grid_flux_ingredients_name
+    )
 
     rsr = pd.read_csv(sResponse, header=None, index_col=0)
 
@@ -269,10 +263,7 @@ def generate_flux_grid(
             36500,
         ]
     )
-    if extended:
-        gridSauce = interpolate_dfs(wavelengths_extended, rsr, gridIngredients)
-    else:
-        gridSauce = interpolate_dfs(wavelengths, rsr, gridIngredients)
+    gridSauce = interpolate_dfs(wavelengths, rsr, gridIngredients)
 
     gridSauce = gridSauce[(gridSauce[1] > 0)]
     atm_grid = []
@@ -301,9 +292,7 @@ def generate_flux_grid(
     return coords, data
 
 
-def generate_radiance_grid(
-    sResponse: str, extended: bool = True
-) -> tuple[np.ndarray, np.ndarray]:
+def generate_radiance_grid(sResponse: str) -> tuple[np.ndarray, np.ndarray]:
     """
     Generates a radiance base grid for atmospheric parameters, with the following ranges:
         airmass: 1 - 3
@@ -316,7 +305,6 @@ def generate_radiance_grid(
 
     Args:
         sResponse (str): Path to the spectral response CSV file.
-        extended (bool, optional): If True, use 0.3 to 3.0 micron grid instead of 0.5 to 2.0 micron grid. Default is True.
 
     Returns:
         tuple: A tuple containing:
@@ -326,16 +314,9 @@ def generate_radiance_grid(
               containing the integrated atmospheric flux responses.
     """
 
-    if extended:
-        gridIngredients = pd.read_pickle(
-            Path(__file__).parent
-            / "datafiles"
-            / grid_radiance_ingredients_name_extended
-        )
-    else:
-        gridIngredients = pd.read_pickle(
-            Path(__file__).parent / "datafiles" / grid_radiance_ingredients_name
-        )
+    gridIngredients = pd.read_pickle(
+        Path(__file__).parent / "datafiles" / grid_radiance_ingredients_name
+    )
     rsr = pd.read_csv(sResponse, header=None, index_col=0)
 
     pwv_values = np.array(
@@ -477,10 +458,7 @@ def generate_radiance_grid(
             36500,
         ]
     )
-    if extended:
-        gridSauce = interpolate_dfs(wavelengths_extended, rsr, gridIngredients)
-    else:
-        gridSauce = interpolate_dfs(wavelengths, rsr, gridIngredients)
+    gridSauce = interpolate_dfs(wavelengths, rsr, gridIngredients)
 
     gridSauce = gridSauce[(gridSauce[1] > 0)]
     atm_grid = []
@@ -692,7 +670,6 @@ def get_precision(
     h: float = 2440,
     C: float = 1.56,
     exp_time: float | None = None,
-    extended: bool = True,
 ) -> dict:
     """
     Calculate the precision of astronomical observations based on various parameters.
@@ -752,9 +729,6 @@ def get_precision(
         exp_time (float, optional):
             Exposure time in seconds, calculated if None. Default is None.
 
-        extended (bool, optional):
-            If True, use 0.3 to 3.0 micron grid instead of 0.5 to 2.0 micron grid. Default is True.
-
     Returns:
         tuple: A tuple containing:
             image_precision : dict
@@ -764,11 +738,6 @@ def get_precision(
             components : dict
                 Various components used in the calculation
     """
-
-    if extended:
-        extended_str = "extended"
-    else:
-        extended_str = "normal"
 
     props = props.copy()
     props_sky = props_sky.copy()
@@ -809,9 +778,7 @@ def get_precision(
 
     if (
         os.path.isfile(
-            Path(__file__).parent
-            / "grids"
-            / f"{name}_precisionGrid_flux_coords_{extended_str}.npy"
+            Path(__file__).parent / "grids" / f"{name}_precisionGrid_flux_coords.npy"
         )
         is False
     ) or (override_grid):
@@ -821,20 +788,15 @@ def get_precision(
             / "datafiles"
             / "system_responses"
             / f"{name}_instrument_system_response.csv",
-            extended=extended,
         )
 
         # save output
         np.save(
-            Path(__file__).parent
-            / "grids"
-            / f"{name}_precisionGrid_flux_data_{extended_str}.npy",
+            Path(__file__).parent / "grids" / f"{name}_precisionGrid_flux_data.npy",
             data,
         )
         np.save(
-            Path(__file__).parent
-            / "grids"
-            / f"{name}_precisionGrid_flux_coords_{extended_str}.npy",
+            Path(__file__).parent / "grids" / f"{name}_precisionGrid_flux_coords.npy",
             coords,
         )
 
@@ -844,38 +806,29 @@ def get_precision(
             / "datafiles"
             / "system_responses"
             / f"{name}_instrument_system_response.csv",
-            extended=extended,
         )
 
         # save output
         np.save(
             Path(__file__).parent
             / "grids"
-            / f"{name}_precisionGrid_radiance_coords_{extended_str}.npy",
+            / f"{name}_precisionGrid_radiance_coords.npy",
             coords,
         )
         np.save(
-            Path(__file__).parent
-            / "grids"
-            / f"{name}_precisionGrid_radiance_data_{extended_str}.npy",
+            Path(__file__).parent / "grids" / f"{name}_precisionGrid_radiance_data.npy",
             data,
         )
 
     # load grids
     coords = np.load(
-        Path(__file__).parent
-        / "grids"
-        / f"{name}_precisionGrid_flux_coords_{extended_str}.npy"
+        Path(__file__).parent / "grids" / f"{name}_precisionGrid_flux_coords.npy"
     )
     data_flux = np.load(
-        Path(__file__).parent
-        / "grids"
-        / f"{name}_precisionGrid_flux_data_{extended_str}.npy"
+        Path(__file__).parent / "grids" / f"{name}_precisionGrid_flux_data.npy"
     )
     data_radiance = np.load(
-        Path(__file__).parent
-        / "grids"
-        / f"{name}_precisionGrid_radiance_data_{extended_str}.npy"
+        Path(__file__).parent / "grids" / f"{name}_precisionGrid_radiance_data.npy"
     )
 
     # get values from grids
@@ -1264,7 +1217,6 @@ def get_precision_gaia(
             h=h,
             C=C,
             exp_time=exp_time,
-            extended=True,
         )
 
         mphot_flux = components_gaia["N_star [e/s]"] / (np.pi * (r0**2 - r1**2))
@@ -1286,7 +1238,6 @@ def get_precision_gaia(
         h=h,
         C=C,
         exp_time=exp_time,
-        extended=True,
     )
 
     N_star_cal = components["N_star [e/s]"] * factor
@@ -1305,7 +1256,6 @@ def get_precision_gaia(
         h=h,
         C=C,
         exp_time=exp_time,
-        extended=True,
     )
 
     components_final["Gaia-BP weight"] = weights_vec[0]
@@ -1321,7 +1271,6 @@ def vega_mag(
     N_star: float,
     sky_radiance: float,
     A: float,
-    extended: bool = True,
 ) -> dict:
     """
     Calculate the Vega magnitude for a given spectral response file and sky properties.
@@ -1340,8 +1289,6 @@ def vega_mag(
             Sky radiance value.
         A (float):
             Aperture area in square meters.
-        extended (bool, optional):
-            If True, use 0.3 to 3.0 micron grid instead of 0.5 to 2.0 micron grid. Default is True.
 
     Returns:
         dict:
@@ -1351,25 +1298,21 @@ def vega_mag(
             - "vega_flux [e/s]": Vega flux in electrons per second.
     """
 
-    if extended:
-        gridIngredients = pd.read_pickle(
-            Path(__file__).parent / "datafiles" / grid_flux_ingredients_name_extended
-        )
-        vega = pd.read_csv(
-            Path(__file__).parent / "datafiles" / vega_file_extended,
-            header=None,
-            index_col=0,
-        )
+    gridIngredients = pd.read_pickle(
+        Path(__file__).parent / "datafiles" / grid_flux_ingredients_name
+    )
+    vega = pd.read_csv(
+        Path(__file__).parent / "datafiles" / vega_file,
+        header=None,
+        index_col=0,
+    )
 
     rsr = pd.read_csv(SRFile, header=None, index_col=0)
     rsr = rsr[1].rename("rsr")
 
     vega = vega[1].rename("vega")
 
-    if extended:
-        gridSauce = interpolate_dfs(wavelengths_extended, rsr, gridIngredients, vega)
-    else:
-        gridSauce = interpolate_dfs(wavelengths, rsr, gridIngredients, vega)
+    gridSauce = interpolate_dfs(wavelengths, rsr, gridIngredients, vega)
 
     gridSauce = gridSauce[(gridSauce["rsr"] > 0)]
 
@@ -1531,7 +1474,7 @@ def display_number(x: float, p: int = 3) -> str:
     return "".join(out)
 
 
-def display_results(r1: tuple, r2: tuple = None, extended: bool = True) -> None:
+def display_results(r1: tuple, r2: tuple = None) -> None:
     """
     Display the results of the photometric analysis.
 
@@ -1554,8 +1497,6 @@ def display_results(r1: tuple, r2: tuple = None, extended: bool = True) -> None:
                     Dictionary containing binned precision metrics for the second set.
                 - components2 (dict):
                     Dictionary containing components for the second set.
-        extended (bool, optional):
-            If True, use 0.3 to 3.0 micron grid instead of 0.5 to 2.0 micron grid. Default is True.
 
     Returns:
         None
@@ -1592,7 +1533,6 @@ def display_results(r1: tuple, r2: tuple = None, extended: bool = True) -> None:
         components1["N_star [e/s]"],
         components1["sky_radiance [e/m2/arcsec2/s]"],
         components1["A [m2]"],
-        extended=extended,
     )
 
     if r2 is not None:
@@ -1626,7 +1566,6 @@ def display_results(r1: tuple, r2: tuple = None, extended: bool = True) -> None:
             components2["N_star [e/s]"],
             components2["sky_radiance [e/m2/arcsec2/s]"],
             components2["A [m2]"],
-            extended=extended,
         )
 
         columns = [
