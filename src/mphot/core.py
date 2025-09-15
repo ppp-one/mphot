@@ -1,18 +1,21 @@
 import math
 import os
 from pathlib import Path
+import logging
 
 import numpy as np
 import pandas as pd
 from IPython.display import clear_output, display
 from scipy.integrate import simpson as simps
+
 from scipy.interpolate import griddata
 from scipy.optimize import minimize
 from astroquery.gaia import Gaia
 
-grid_flux_ingredients_name = "pre_grid_2400m_flux.pkl"
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
 grid_flux_ingredients_name_extended = "pre_grid_03_to_3_microns_2400m_flux.pkl"
-grid_radiance_ingredients_name = "pre_grid_2400m_radiance.pkl"
 grid_radiance_ingredients_name_extended = "pre_grid_03_to_3_microns_2400m_radiance.pkl"
 vega_file = "vega.csv"
 vega_file_extended = "vega_03_to_3_microns.csv"
@@ -87,7 +90,7 @@ def generate_system_response(
 
     dfSR.to_csv(SRFile, header=False)
 
-    print(f"`{SRFile}` has been generated and saved!")
+    logger.info(f"`{SRFile}` has been generated and saved!")
 
     return name, dfSR
 
@@ -123,10 +126,6 @@ def generate_flux_grid(
     if extended:
         gridIngredients = pd.read_pickle(
             Path(__file__).parent / "datafiles" / grid_flux_ingredients_name_extended
-        )
-    else:
-        gridIngredients = pd.read_pickle(
-            Path(__file__).parent / "datafiles" / grid_flux_ingredients_name
         )
 
     rsr = pd.read_csv(sResponse, header=None, index_col=0)
@@ -621,10 +620,7 @@ def integration_time(
     return t
 
 
-def convert_airmass(
-    airmass: float,
-    h: float
-) -> float:
+def convert_airmass(airmass: float, h: float) -> float:
     """
     Convert airmass at the observatory to an equivalent airmass at Paranal Observatory, assuming an isothermal atmospheric model.
 
@@ -642,9 +638,13 @@ def convert_airmass(
     return airmass * np.exp((2440 - h) / 8000)
 
 
-
 def scintillation_noise(
-    r: float, t: float, N_star: float, h: float = 2440, C: float = 1.56, airmass: float = 1.5
+    r: float,
+    t: float,
+    N_star: float,
+    h: float = 2440,
+    C: float = 1.56,
+    airmass: float = 1.5,
 ) -> float:
     """
     Calculate the scintillation noise for a given set of parameters.
@@ -742,10 +742,10 @@ def get_precision(
 
         scn (float, optional):
             Scintillation noise, calculated if None. Default is None.
-        
+
         h (float, optional):
             Altitude of the observatory in meters. Default is 2440 for Paranal Observatory.
-        
+
         C (float, optional):
             Empirical coefficient used in the calculation of scn. Default is 1.56, optimized for the 20-cm NGTS telescopes at Paranal Observatory.
 
@@ -937,7 +937,9 @@ def get_precision(
     npix = np.pi * ap**2
 
     if scn is None:
-        scn = scintillation_noise(r0, t, N_star, h=h, C=C, airmass=airmass) # use unconverted airmass here
+        scn = scintillation_noise(
+            r0, t, N_star, h=h, C=C, airmass=airmass
+        )  # use unconverted airmass here
 
     precision = np.sqrt(
         N_star * t + scn**2 + npix * (N_sky * t + N_dc * t + N_rn**2)
@@ -982,7 +984,7 @@ def get_precision(
         "sky_radiance [e/m2/arcsec2/s]": radiance,
         "seeing [arcsec]": fwhm,
         "pwv [mm]": pwv,
-        "airmass": airmass, # unconverted airmass
+        "airmass": airmass,  # unconverted airmass
         'plate_scale ["/pix]': plate_scale,
         "N_dc [e/pix/s]": N_dc,
         "N_rn [e_rms/pix]": N_rn,  # not sure of units
@@ -1002,9 +1004,7 @@ def get_precision(
 
 
 def best_gaia_filters(
-    system_name: str,
-    min_weight_sum: float = 0,
-    support_points: int = 8000
+    system_name: str, min_weight_sum: float = 0, support_points: int = 8000
 ) -> np.ndarray:
     """
     Determine the weights of the linear combination of Gaia filters that best resembles the instrument system response.
@@ -1012,10 +1012,10 @@ def best_gaia_filters(
     Args:
         system_name (str):
             Name of the instrument.
-        
+
         min_weight_sum (float, optional):
             The minimum sum of weights in the linear combination of Gaia filters. Default is 0.
-        
+
         support_points (int, optional):
             The number of support points in the wavelength spectrum between 0.3 and 3.0 microns used to interpolate the instrument system response and Gaia filter transmission curves. Default is 8000.
 
@@ -1030,42 +1030,65 @@ def best_gaia_filters(
     """
 
     # Load transmission curves
-    path = Path(__file__).parent / "datafiles" / "system_responses" / f"{system_name}_instrument_system_response.csv"
-    trans = np.loadtxt(str(path), delimiter=',')
-    
-    gaia_filters = ['bp', 'g', 'rp'] 
+    path = (
+        Path(__file__).parent
+        / "datafiles"
+        / "system_responses"
+        / f"{system_name}_instrument_system_response.csv"
+    )
+    trans = np.loadtxt(str(path), delimiter=",")
+
+    gaia_filters = ["bp", "g", "rp"]
     N = len(gaia_filters)
-    gaia_paths = [Path(__file__).parent / "datafiles" / "flux_calibration" / f"gaia_{gaia_filter}.csv" for gaia_filter in gaia_filters]
+    gaia_paths = [
+        Path(__file__).parent
+        / "datafiles"
+        / "flux_calibration"
+        / f"gaia_{gaia_filter}.csv"
+        for gaia_filter in gaia_filters
+    ]
     gaia_trans = []
 
     for gaia_path in gaia_paths:
-        g_trans = np.loadtxt(str(gaia_path), delimiter=',')
+        g_trans = np.loadtxt(str(gaia_path), delimiter=",")
         gaia_trans.append(g_trans)
 
     # Get best linear combination of Gaia filters
     lam = np.linspace(0.3, 3, support_points)
     trans_interp = np.interp(lam, trans[:, 0], trans[:, 1], left=0, right=0)
-    gaia_trans_interp = np.column_stack([np.interp(lam, g_trans[:, 0], g_trans[:, 1], left=0, right=0) for g_trans in gaia_trans])
+    gaia_trans_interp = np.column_stack(
+        [
+            np.interp(lam, g_trans[:, 0], g_trans[:, 1], left=0, right=0)
+            for g_trans in gaia_trans
+        ]
+    )
 
     def squared_err(weights):
         err = gaia_trans_interp @ weights - trans_interp
 
         return err @ err
-    
+
     def jacobian(weights):
         err = gaia_trans_interp @ weights - trans_interp
 
         return 2 * gaia_trans_interp.T @ err
-    
+
     bounds = [(0, None)] * N
-    cons = ({'type': 'ineq', 'fun': lambda weights: np.sum(weights) - min_weight_sum},)
+    cons = ({"type": "ineq", "fun": lambda weights: np.sum(weights) - min_weight_sum},)
     x0 = np.full(N, max(1.0, min_weight_sum / N))
 
-    res = minimize(squared_err, x0, jac=jacobian, bounds=bounds, constraints=cons, options={'maxiter': 2000})
+    res = minimize(
+        squared_err,
+        x0,
+        jac=jacobian,
+        bounds=bounds,
+        constraints=cons,
+        options={"maxiter": 2000},
+    )
 
     if not res.success:
         raise RuntimeError(f"Optimization failed: {res.message}")
-    
+
     return res.x
 
 
@@ -1083,7 +1106,9 @@ def get_precision_gaia(
     scn: float | None = None,
     h: float = 2440,
     C: float = 1.56,
-    exp_time: float | None = None
+    exp_time: float | None = None,
+    Teff: float | None = None,
+    distance: float | None = None,
 ) -> dict:
     """
     Calculate the precision of astronomical observations based on various parameters and perform calibration of fluxes to Gaia fluxes.
@@ -1141,15 +1166,21 @@ def get_precision_gaia(
 
         scn (float, optional):
             Scintillation noise, calculated if None. Default is None.
-        
+
         h (float, optional):
             Altitude of the observatory in meters. Default is 2440 for Paranal Observatory.
-        
+
         C (float, optional):
             Empirical coefficient used in the calculation of scn. Default is 1.56, optimized for the 20-cm NGTS telescopes at Paranal Observatory.
 
         exp_time (float, optional):
             Exposure time in seconds, calculated if None. Default is None.
+
+        Teff (float, optional):
+            Effective temperature of the star in Kelvin. If None, it will be fetched from the Gaia catalog. Default is None.
+
+        distance (float, optional):
+            Distance to the star in parsecs. If None, it will be calculated from the parallax fetched from the Gaia catalog. Default is None.
 
     Returns:
         tuple: A tuple containing:
@@ -1163,7 +1194,7 @@ def get_precision_gaia(
     name = props["name"]
     r0 = props["r0"]
     r1 = props["r1"]
-    
+
     adql = f"""
     SELECT *
         FROM gaiadr3.gaia_source AS gaia
@@ -1172,10 +1203,21 @@ def get_precision_gaia(
     job = Gaia.launch_job_async(adql)
     params = job.get_results().to_pandas()
 
-    Teff = float(params['teff_gspphot'].iloc[0])
-    distance = float(params['distance_gspphot'].iloc[0])
+    if Teff is None:
+        Teff = float(params["teff_gspphot"].iloc[0])
+    if distance is None:
+        distance = 1 / (float(params["parallax"].iloc[0]) * 1e-3)  # pc
 
-    gaia_filters = np.array(['bp', 'g', 'rp'])
+    if np.isnan(Teff):
+        logger.warning(f"Teff value for source_id {source_id} is NaN.")
+        Teff = 3000  # K
+        logger.warning(f"Setting Teff to {Teff} K.")
+    if np.isnan(distance):
+        logger.warning(f"Distance value for source_id {source_id} is NaN.")
+        distance = 10  # pc
+        logger.warning(f"Setting distance to {distance} pc.")
+
+    gaia_filters = np.array(["bp", "g", "rp"])
     gaia_fluxes = np.array([])
     mphot_fluxes = np.array([])
 
@@ -1188,41 +1230,41 @@ def get_precision_gaia(
         weights = 1
         gaia_filters = np.array([gaia_filter])
     else:
-        weights = best_gaia_filters(name, min_weight_sum=min_weight_sum, support_points=support_points)
+        weights = best_gaia_filters(
+            name, min_weight_sum=min_weight_sum, support_points=support_points
+        )
         weights_vec = weights
 
-
     for g_filter in gaia_filters:
-        gaia_str = f'phot_{g_filter}_mean_flux'
+        gaia_str = f"phot_{g_filter}_mean_flux"
         gaia_flux = float(params[gaia_str].iloc[0] / 0.7278)
         gaia_fluxes = np.append(gaia_fluxes, gaia_flux)
 
-
         # Get simulated Gaia flux
         props_instrument_gaia = props.copy()
-        props_instrument_gaia['name'] = f'gaia_{g_filter}_inverse_atmosphere_paranal'
+        props_instrument_gaia["name"] = f"gaia_{g_filter}_inverse_atmosphere_paranal"
 
         ## Ideal conditions
-        props_sky_gaia = { 
+        props_sky_gaia = {
             "pwv": 0.05,
-            "airmass": 1,  
-            "seeing": props['plate_scale'],  
+            "airmass": 1,
+            "seeing": props["plate_scale"],
         }
 
         _, _, components_gaia = get_precision(
-            props_instrument_gaia, 
-            props_sky_gaia, 
-            Teff, 
-            distance, 
-            binning=binning,  
+            props_instrument_gaia,
+            props_sky_gaia,
+            Teff,
+            distance,
+            binning=binning,
             override_grid=override_grid,
-            SPCcorrection=SPCcorrection, 
+            SPCcorrection=SPCcorrection,
             N_sky=N_sky,
             scn=scn,
             h=h,
             C=C,
             exp_time=exp_time,
-            extended=True
+            extended=True,
         )
 
         mphot_flux = components_gaia["N_star [e/s]"] / (np.pi * (r0**2 - r1**2))
@@ -1230,46 +1272,45 @@ def get_precision_gaia(
 
     factor = np.sum(weights * gaia_fluxes) / np.sum(weights * mphot_fluxes)
 
-
     # Calibrate simulated flux
     _, _, components = get_precision(
-        props, 
-        props_sky, 
-        Teff, 
-        distance, 
-        binning=binning,  
+        props,
+        props_sky,
+        Teff,
+        distance,
+        binning=binning,
         override_grid=override_grid,
-        SPCcorrection=SPCcorrection, 
+        SPCcorrection=SPCcorrection,
         N_sky=N_sky,
         scn=scn,
         h=h,
         C=C,
         exp_time=exp_time,
-        extended=True
+        extended=True,
     )
 
     N_star_cal = components["N_star [e/s]"] * factor
 
     image_precision, binned_precision, components_final = get_precision(
-        props, 
-        props_sky, 
-        Teff, 
-        distance, 
-        binning=binning,  
+        props,
+        props_sky,
+        Teff,
+        distance,
+        binning=binning,
         override_grid=False,
-        SPCcorrection=SPCcorrection, 
+        SPCcorrection=SPCcorrection,
         N_star=N_star_cal,
         N_sky=N_sky,
         scn=scn,
         h=h,
         C=C,
         exp_time=exp_time,
-        extended=True
+        extended=True,
     )
 
-    components_final['Gaia-BP weight'] = weights_vec[0]
-    components_final['Gaia-G weight'] = weights_vec[1]
-    components_final['Gaia-RP weight'] = weights_vec[2]
+    components_final["Gaia-BP weight"] = weights_vec[0]
+    components_final["Gaia-G weight"] = weights_vec[1]
+    components_final["Gaia-RP weight"] = weights_vec[2]
 
     return image_precision, binned_precision, components_final
 
@@ -1316,16 +1357,6 @@ def vega_mag(
         )
         vega = pd.read_csv(
             Path(__file__).parent / "datafiles" / vega_file_extended,
-            header=None,
-            index_col=0,
-        )
-    else:
-        gridIngredients = pd.read_pickle(
-            Path(__file__).parent / "datafiles" / grid_flux_ingredients_name
-        )
-
-        vega = pd.read_csv(
-            Path(__file__).parent / "datafiles" / vega_file,
             header=None,
             index_col=0,
         )
@@ -1561,7 +1592,7 @@ def display_results(r1: tuple, r2: tuple = None, extended: bool = True) -> None:
         components1["N_star [e/s]"],
         components1["sky_radiance [e/m2/arcsec2/s]"],
         components1["A [m2]"],
-        extended=extended
+        extended=extended,
     )
 
     if r2 is not None:
@@ -1576,7 +1607,9 @@ def display_results(r1: tuple, r2: tuple = None, extended: bool = True) -> None:
 
         props_sky2 = {
             "pwv": components2["pwv [mm]"],
-            "airmass": convert_airmass(components2["airmass"], components2["altitude [m]"]),
+            "airmass": convert_airmass(
+                components2["airmass"], components2["altitude [m]"]
+            ),
             "seeing": components2["seeing [arcsec]"],
         }
 
@@ -1593,7 +1626,7 @@ def display_results(r1: tuple, r2: tuple = None, extended: bool = True) -> None:
             components2["N_star [e/s]"],
             components2["sky_radiance [e/m2/arcsec2/s]"],
             components2["A [m2]"],
-            extended=extended
+            extended=extended,
         )
 
         columns = [
