@@ -1,6 +1,6 @@
 [project]
 name = "mphot"
-version = "1.2.1"
+version = "1.2.2"
 authors = [
   {name = "Peter Pedersen"},
 ]
@@ -8,7 +8,7 @@ repository = "https://github.com/ppp-one/mphot"
 readme = "README.md"
 license = { text = "MIT License" }
 requires-python = ">=3.11"
-dependencies = ["numpy", "pandas", "scipy", "matplotlib", "ipython"]
+dependencies = ["numpy", "pandas", "scipy", "matplotlib", "ipython", "astroquery"]
 
 [build-system]
 requires = ["hatchling", "hatch-vcs"]
