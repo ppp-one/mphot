@@ -19,11 +19,17 @@ source = "vcs"
 
 [project.optional-dependencies]
 dev = ["black", "pytest"]
+test = ["pytest"]
 docs = [
     "sphinx",
+    "matplotlib",
+    "myst-nb",
     "sphinx-book-theme",
+    "sphinx-design",
+    "ipywidgets",
     "sphinx-copybutton",
-    "myst-parser",
+    "docformatter[tomli]",
+    "toml",
 ]
 
 [project.urls]
