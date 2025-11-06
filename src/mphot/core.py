@@ -1,16 +1,15 @@
+import logging
 import math
 import os
 from pathlib import Path
-import logging
 
 import numpy as np
 import pandas as pd
+from astroquery.gaia import Gaia
 from IPython.display import clear_output, display
 from scipy.integrate import simpson as simps
-
 from scipy.interpolate import griddata
 from scipy.optimize import minimize
-from astroquery.gaia import Gaia
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -84,7 +83,7 @@ def generate_system_response(
 
     dfSR = df["eff"] * df["filt"]
 
-    dfSR = dfSR[dfSR > 0]
+    dfSR = dfSR[dfSR >= 0]
 
     dfSR.to_csv(SRFile, header=False)
 
@@ -765,8 +764,8 @@ def get_precision(
 
     airmass_paranal = convert_airmass(airmass, h)
 
-    ap = 3 * (
-        fwhm / plate_scale
+    ap = (
+        3 * (fwhm / plate_scale)
     )  ## approx pixel radius around target star ## changed on to 3* 2022/04/26 from 10/2.355*
 
     if "ap_rad" in props:
@@ -855,7 +854,6 @@ def get_precision(
     )
 
     if exp_time is not None or (t < min_exp or t > max_exp):
-
         if t < min_exp:
             t = min_exp
         elif t > max_exp:
