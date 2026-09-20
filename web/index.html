@@ -661,6 +661,41 @@
       transition: opacity 120ms linear 80ms;
     }
 
+    .card-head {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .card-head h2 {
+      margin-bottom: 12px;
+    }
+
+    .link-button {
+      width: auto;
+      /* Padding for the tap target, pulled back so the layout does not shift. */
+      padding: 5px 7px;
+      margin: -5px -7px;
+      font: inherit;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--series-1);
+      background: none;
+      border: 0;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .link-button:hover {
+      text-decoration: underline;
+    }
+
+    .link-button:focus-visible {
+      outline: 2px solid var(--series-1);
+      outline-offset: 3px;
+    }
+
     .about {
       max-width: 72ch;
       margin: 32px 0 0;
@@ -729,7 +764,10 @@
     <div class="cols">
       <div class="controls">
         <div class="card">
-          <h2>Preset</h2>
+          <div class="card-head">
+            <h2>Preset</h2>
+            <button type="button" id="reset" class="link-button" hidden>Reset all</button>
+          </div>
           <div class="field">
             <select id="preset"></select>
             <p class="hint">If you change a value below, the preset becomes Custom.</p>
@@ -1016,6 +1054,7 @@
     // Any manual edit means the configuration is no longer one of the presets.
     for (const el of [$("system"), $("filter"), ...INSTRUMENT.map(p => $(p.key))]) {
       el.addEventListener("input", () => {
+        if (restoring) return;
         $("preset").value = "custom";
         checkMirrors();
         scheduleUpdate();
@@ -1025,6 +1064,57 @@
     for (const el of [$("system"), $("filter")]) {
       el.addEventListener("change", () => { updateResponse(); scheduleUpdate(0); });
     }
+
+    // Everything the user can set. The starting values are kept so the page can
+    // tell when something has changed, and can put it all back.
+    const CONTROL_IDS = [
+      "preset", "system", "filter", ...INSTRUMENT.map(p => p.key),
+      "pwv", "airmass", "seeing", "teff", "dist-num", "dist",
+      "gaia-teff", "source-id", "binning", "min_exp", "max_exp",
+    ];
+
+    let startState = null;
+    let restoring = false;
+
+    function readControls() {
+      const values = Object.fromEntries(CONTROL_IDS.map(id => [id, $(id).value]));
+      values.mode = document.querySelector('input[name="mode"]:checked').value;
+      return values;
+    }
+
+    function changedFromStart() {
+      if (!startState) return false;
+      const now = readControls();
+      return Object.keys(startState).some(k => startState[k] !== now[k]);
+    }
+
+    function updateResetButton() {
+      $("reset").hidden = !changedFromStart();
+    }
+
+    function resetAll() {
+      restoring = true;
+      for (const id of CONTROL_IDS) {
+        const el = $(id);
+        if (el.value === startState[id]) continue;
+        el.value = startState[id];
+        // Let the read-outs beside the sliders follow the new value.
+        el.dispatchEvent(new Event("input"));
+      }
+      for (const radio of document.querySelectorAll('input[name="mode"]')) {
+        radio.checked = radio.value === startState.mode;
+        if (radio.checked) radio.dispatchEvent(new Event("change"));
+      }
+      restoring = false;
+
+      $("preset").value = startState.preset;
+      checkMirrors();
+      updateResetButton();
+      updateResponse();
+      update();
+    }
+
+    $("reset").addEventListener("click", resetAll);
 
     // Sky, star and exposure controls all recompute as they move.
     for (const id of ["pwv", "airmass", "seeing", "teff", "gaia-teff", "binning",
@@ -1083,6 +1173,9 @@
     distNum.addEventListener("input", distanceFromNumber);
     distSlider.addEventListener("input", distanceFromSlider);
     distanceFromNumber();
+
+    // Taken here, after the first preset and every read-out are set.
+    startState = readControls();
 
     for (const radio of document.querySelectorAll('input[name="mode"]')) {
       radio.addEventListener("change", () => {
@@ -1526,6 +1619,7 @@ def response_curves(system, filt, points):
     }
 
     function scheduleUpdate(delay = 80) {
+      if (restoring) return;   // resetAll() runs once at the end instead
       clearTimeout(updateTimer);
       updateTimer = setTimeout(update, delay);
     }
@@ -1541,6 +1635,7 @@ def response_curves(system, filt, points):
         return;
       }
 
+      updateResetButton();
       updating = true;
       setBusy(true);
       try {

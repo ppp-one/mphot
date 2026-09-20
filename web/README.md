@@ -56,6 +56,12 @@ values. It warns you when a filter passes light where the detector cannot see
 it. A J filter on a silicon CCD is one example. Without the warning you would
 notice this only later, as an exposure time of several hours.
 
+**Start again.** A **Reset all** button appears next to the Preset heading as
+soon as any value differs from the one the page opened with. It puts every
+control back, including the sky, the star and the exposure limits. It hides
+itself again when nothing differs, so it stays out of the way until you need
+it.
+
 **Distance** covers 0.01 pc to 1 Mpc. The slider is logarithmic. The field
 beside it takes an exact value. The two stay in step.
 
