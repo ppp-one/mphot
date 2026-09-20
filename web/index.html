@@ -602,6 +602,21 @@ def _run(spec, props=None):
         props, props_sky, spec["teff"], spec["distance"], binning=spec["binning"],
     )
 
+def _dumps(payload):
+    return json.dumps(payload, default=_plain)
+
+def _plain(value):
+    """Convert a numpy scalar or array to something json can write.
+
+    The model returns plain floats, but a stray numpy value would stop the
+    whole page with a serialisation error. This keeps that from happening.
+    """
+    if hasattr(value, "item"):
+        return value.item()
+    if hasattr(value, "tolist"):
+        return value.tolist()
+    raise TypeError(f"cannot send {type(value).__name__} to the page")
+
 def _finite(value):
     value = float(value)
     return value if value == value and abs(value) != float("inf") else None
@@ -610,7 +625,7 @@ def compute(spec_json):
     spec = json.loads(spec_json)
     image, binned, components = _run(spec)
     order = ["Star", "Scintillation", "Sky", "Dark current", "Read noise"]
-    return json.dumps({
+    return _dumps({
         "instrument": components["name"],
         "image_all": image["All"],
         "binned_all": binned["All"],
@@ -650,7 +665,7 @@ def response_curves(system, filt, points):
     step = max(1, len(frame) // points)
     frame = frame.iloc[::step]
     col = lambda c: [None if v != v else round(float(v), 5) for v in frame[c]]
-    return json.dumps({
+    return _dumps({
         "lam": [round(float(v), 5) for v in frame.index],
         "eff": col("eff"), "filt": col("filt"), "sr": col("sr"),
         "peak": peak,
@@ -674,7 +689,7 @@ def sweep(spec_json, plan_json, points):
             xs.append(value)
             ys.append(y)
         out[key] = {"x": xs, "y": ys, "now": spec["props"][key]}
-    return json.dumps(out)
+    return _dumps(out)
 `;
 
 // The wheel's name carries the project version, so build.py records it in a

@@ -242,4 +242,7 @@ def interpolate_grid(
             w_lower * interp_lower + w_upper * interp_upper
         )  # final interpolated value
 
-    return interp
+    # griddata returns a 0-d array. Weighting it above turns it into a numpy
+    # scalar, but the branch that hits a grid temperature exactly does not, so
+    # the return type used to depend on Teff. Callers were promised a float.
+    return float(interp)

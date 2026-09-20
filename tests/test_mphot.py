@@ -1,5 +1,6 @@
 import contextlib
 import io
+import json
 import os
 import sys
 import urllib.error
@@ -10,6 +11,7 @@ import pandas as pd
 import pytest
 
 import mphot
+import mphot.core
 import mphot.gaia
 
 
@@ -298,3 +300,40 @@ def test_query_gaia_source_does_not_retry_missing_source(monkeypatch):
         mphot.query_gaia_source(1, timeout=1, tap_sources=("vizier", "esa"))
 
     assert tried == ["vizier"]
+
+
+def test_interpolate_grid_returns_a_float_on_and_off_a_grid_temperature():
+    # griddata returns a 0-d array. The branch for a Teff that sits exactly on
+    # a grid temperature used to pass it straight back, so the return type
+    # depended on Teff and the value would not serialise to JSON.
+    coords, data_flux, _ = mphot.core.load_grids("gaia_g_inverse_atmosphere_paranal")
+    on_grid = float(mphot.core.TEFF_VALUES[20])
+
+    for Teff in (on_grid, on_grid + 5):
+        value = mphot.interpolate_grid(coords, data_flux, 2.5, 1.1, Teff)
+        assert type(value) is float, f"Teff={Teff} gave {type(value).__name__}"
+
+
+def test_get_precision_components_are_json_serialisable():
+    name = "speculoos_Andor_iKon-L-936_-60_I+z"
+    mphot.generate_system_response(
+        "resources/systems/speculoos_Andor_iKon-L-936_-60.csv",
+        "resources/filters/I+z.csv",
+    )
+    props = {
+        "name": name,
+        "plate_scale": 0.35,
+        "N_dc": 0.2,
+        "N_rn": 6.328,
+        "well_depth": 64000,
+        "well_fill": 0.7,
+        "read_time": 10.5,
+        "r0": 0.5,
+        "r1": 0.14,
+    }
+    props_sky = {"pwv": 2.5, "airmass": 1.1, "seeing": 1.35}
+    on_grid = float(mphot.core.TEFF_VALUES[20])
+
+    for Teff in (on_grid, on_grid + 5):
+        _, _, components = mphot.get_precision(props, props_sky, Teff, 12.5)
+        json.dumps({k: v for k, v in components.items() if k != "name"})
