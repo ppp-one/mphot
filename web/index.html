@@ -710,7 +710,7 @@
         <h1>Exposure time calculator</h1>
         <p>
           This page gives the exposure time and the precision for a photometric
-          observation. It runs the <code>mphot</code> Python package in your browser.
+          observation.
         </p>
       </div>
       <a class="source-link" href="https://withastra.io/" target="_blank" rel="noreferrer">withastra.io <svg
@@ -743,7 +743,7 @@
             <select id="filter"></select>
           </div>
           <p class="hint">
-            mphot multiplies these two curves together. The result is the system
+            The ETC multiplies these two curves together. The result is the system
             response. A new pair takes a moment to build the first time.
           </p>
         </div>
@@ -796,13 +796,13 @@
             <div class="field">
               <label for="source-id">Gaia DR3 source_id</label>
               <input type="text" id="source-id" value="2635476908753563008" inputmode="numeric">
-              <p class="hint">Press Enter to load the star. mphot reads its distance and
+              <p class="hint">Press Enter to load the star. The ETC reads its distance and
                 brightness from Gaia, then scales the model to match.</p>
             </div>
             <div class="field">
               <label for="gaia-teff">Temperature <span class="val" id="gaia-teff-v"></span></label>
-              <input type="range" id="gaia-teff" min="450" max="36500" step="10" value="2560">
-              <p class="hint">mphot uses this value if Gaia has no temperature for the star.</p>
+              <input type="range" id="gaia-teff" min="450" max="36500" step="10" value="5780">
+              <p class="hint">The ETC uses this value if Gaia has no temperature for the star.</p>
             </div>
           </div>
         </div>
@@ -823,7 +823,7 @@
               <input type="number" id="max_exp" min="0" step="any" placeholder="none">
             </div>
           </div>
-          <p class="hint">Leave these empty to let mphot pick any exposure time.</p>
+          <p class="hint">Leave these empty to let the ETC pick any exposure time.</p>
         </div>
       </div>
 
@@ -880,13 +880,11 @@
         3042 K are calibrated for the SPECULOOS target list with 2MASS.
       </p>
       <p>
-        The calculator runs the open-source <a
-          href="https://github.com/ppp-one/mphot">mphot</a> Python package. It
+        The calculator runs the open-source <a href="https://github.com/ppp-one/mphot">mphot</a> Python package. It
         runs as WebAssembly in your browser, so no server does the work and
-        nothing you type is sent anywhere. For the method, see <a
-          href="https://doi.org/10.1117/12.3018320">Pedersen et al. 2024</a>.
-        The package documentation is at <a
-          href="https://mphot.readthedocs.io">mphot.readthedocs.io</a>.
+        nothing you type is sent anywhere. For the method, see <a href="https://doi.org/10.1117/12.3018320">Pedersen et
+          al. 2024</a>.
+        The package documentation is at <a href="https://mphot.readthedocs.io">mphot.readthedocs.io</a>.
       </p>
     </section>
 
@@ -950,7 +948,7 @@
         key: "well_depth", label: "Well depth", unit: "e⁻/pix", min: 100, max: 1e7, step: "any"
       },
       {
-        key: "well_fill", label: "Well fill", unit: "", min: 0.01, max: 1, step: "any"
+        key: "well_fill", label: "Well fill", unit: "", min: 0.01, max: 1, step: 0.01
       },
       {
         key: "read_time", label: "Read time", unit: "s", min: 0, max: 120, step: "any"
