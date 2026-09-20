@@ -1,118 +1,139 @@
 # Web demo
 
-An exposure time calculator built on `mphot`, running entirely in the browser
-through [Pyodide](https://pyodide.org) — the same package as on the command
-line, with no server doing the work. Gaia DR3 is queried live from VizieR.
+This page is an exposure time calculator. It runs the `mphot` package in the
+browser with [Pyodide](https://pyodide.org). No server does the work. The page
+reads Gaia DR3 data from VizieR.
 
 ## Run it
 
 ```bash
-python web/build.py                          # stage the wheel and the curves
+python web/build.py                          # build the wheel, copy the curves
 python -m http.server --directory web 8000   # serve web/
 ```
 
 Then open <http://localhost:8000/>.
 
-`build.py` makes `web/` self-contained: it writes the wheel and its manifest to
-`web/dist/`, and copies the instrument and filter curves to `web/resources/`.
-Both are ignored by git, and both are rebuilt from the working tree.
+`build.py` makes `web/` complete on its own. It writes the wheel and a manifest
+to `web/dist/`, and it copies the instrument and filter curves to
+`web/resources/`. Git ignores both directories. `build.py` rebuilds them from
+the source tree.
 
-## Deploying to Netlify
+## Deploy to Netlify
 
-`netlify.toml` in the repository root already carries the settings, so the
-fields in the Netlify UI can be left blank:
+`netlify.toml` in the repository root holds the settings. You can leave the
+fields in the Netlify user interface empty.
 
 | Setting | Value |
 |---|---|
-| Base directory | *(blank)* |
-| Package directory | *(blank)* |
+| Base directory | *(empty)* |
+| Package directory | *(empty)* |
 | Build command | `python web/build.py` |
 | Publish directory | `web` |
-| Functions directory | *(unused)* |
+| Functions directory | *(not used)* |
 
-`PYTHON_VERSION` is pinned to 3.11 because mphot needs 3.11 or newer and the
-build image default is older. The deploy is about 18 MB — the 16 MB wheel, the
-2.7 MB of curves and the page.
+`PYTHON_VERSION` is set to 3.11. mphot needs Python 3.11 or later. The default
+version in the build image is older. The deploy is about 18 MB: a 16 MB wheel,
+2.7 MB of curves, and the page.
 
-## What it does
+## What you can do
 
-**Build an instrument.** Pair any of the three efficiency curves (telescope ×
-optics × detector QE) with any of the thirteen filters, then set the telescope
-and camera parameters — primary and secondary radius, plate scale, dark
-current, read noise, well depth, well fill, read time and aperture radius.
-These are the same keys `get_precision` takes, as in the notebooks. Three
-presets fill them in; editing any field switches to Custom.
+**Build an instrument.** Choose one of three efficiency curves and one of
+thirteen filters. The efficiency curve covers the telescope, the optics and the
+detector. Then set the telescope and camera values: primary and secondary
+radius, plate scale, dark current, read noise, well depth, well fill, read time
+and aperture radius. These are the same keys that `get_precision` takes. Three
+presets fill them in. If you change a value, the preset becomes Custom.
 
-**Read the result.** Exposure time and binned precision lead, with the
-single-frame precision beside them, the number of frames per bin, and how full
-the peak pixel gets. The noise budget can be shown per frame or per bin.
+**Read the result.** The exposure time and the binned precision stay at the top
+of the page as you scroll. Beside them is the precision of one frame. Below
+them are the number of frames in each bin, and how full the brightest pixel
+gets. The noise chart shows one bin or one frame.
 
-**See the optics.** The system response panel plots the detector-plus-optics
-curve, the filter, and their product against wavelength, updating as soon as you
-change either. Hovering reads off all three. It warns when a filter passes light
-where the detector barely responds — a J filter on a silicon CCD, say — which
-would otherwise show up only as an absurd exposure time further down.
+**See the optics.** The system response panel draws three curves against
+wavelength: the detector with the optics, the filter, and the two multiplied
+together. It redraws when you change either choice. Point at it to read the
+values. It warns you when a filter passes light where the detector cannot see
+it. A J filter on a silicon CCD is one example. Without the warning you would
+notice this only later, as an exposure time of several hours.
 
-**Distance** spans 0.01 pc to 1 Mpc. The slider is logarithmic; the field beside
-it takes an exact value, and the two stay in step.
+**Distance** covers 0.01 pc to 1 Mpc. The slider is logarithmic. The field
+beside it takes an exact value. The two stay in step.
 
-**See what matters.** The sensitivity panel sweeps each parameter on its own
-while the rest stay put, after `examples/Sensitivity plot.ipynb`. Ranges are set
-relative to the current design rather than fixed, so a panel stays informative
-whether the camera has 0.2 or 110 e⁻/pix/s of dark current. All panels share one
-vertical scale, so a flat curve really does mean that parameter does not matter
-here.
+**Find what matters.** The sensitivity panel changes one parameter at a time
+and holds the others still. It follows `examples/Sensitivity plot.ipynb`. Each
+range depends on your current value, not on a fixed range. This keeps a panel
+useful whether the camera has 0.2 or 110 e⁻/pix/s of dark current. All panels
+share one vertical scale. A flat curve therefore means that the parameter does
+not matter here.
 
-## Why nothing is pre-computed
+## Everything updates as you move a control
 
-A precision grid is per system response, so the tempting move is to ship a grid
-for every (detector, filter) pairing. Measured in the browser:
+Every control recomputes the result. One update takes about 10 ms, so the page
+waits 80 ms after your last change and then runs. The sensitivity panel is
+slower, so it keeps its own button.
+
+Gaia mode reads a star once and keeps the answer. Without this cache the page
+would query VizieR on every slider move. Press Enter in the source_id field to
+load a different star.
+
+## Why the page builds nothing in advance
+
+A precision grid belongs to one system response. It is tempting to ship a grid
+for every detector and filter pair. These are the measured times in the
+browser:
 
 | | |
 |---|---|
-| Build a new pairing (response + both grids) | 20–230 ms |
+| Build a new pair: response and both grids | 20–230 ms |
 | One cached `get_precision` | 9 ms |
 | One grid on disk | 1.87 MB |
-| …of which the coords array | 1.40 MB, **identical for every instrument** |
+| The coords array inside it | 1.40 MB, **the same for every instrument** |
 
-Three detectors × thirteen filters is 39 pairings, about 18 MB of unique grid
-data — roughly doubling the 16 MB wheel to save a fifth of a second, once per
-pairing per session. So the demo builds them on demand and caches them for the
-session. The same holds for the package itself: the grids are caches, and
-`build.py` leaves them out of the wheel entirely.
+Three detectors and thirteen filters make 39 pairs. That is about 18 MB of grid
+data. It would roughly double the 16 MB wheel, and it would save a fifth of a
+second once per pair per session. The page therefore builds each pair when you
+first ask for it, and keeps it for the session.
 
-Worth noting separately: every `*_coords.npy` in `src/mphot/grids` is byte
-identical, because `_grid_coords()` does not depend on the instrument. That is
-1.4 MB duplicated per instrument in the repo and in the released wheel.
+The same holds for the package. The grids are caches, so `build.py` leaves them
+out of the wheel.
+
+One more point: every `*_coords.npy` file in `src/mphot/grids` holds the same
+bytes, because `_grid_coords()` does not depend on the instrument. That is
+1.4 MB repeated for each instrument, in the repository and in the released
+wheel.
 
 ## How it works
 
-`build.py` makes a wheel from the working tree, so the page always runs the code
-you have checked out rather than the last release. The page then loads Pyodide
-with numpy, pandas and scipy, installs the wheel with `micropip`, copies the
-response curves into Pyodide's filesystem, and calls `generate_system_response`
-followed by `get_precision` or `get_precision_gaia`. Results are bit-identical
-to running mphot natively.
+`build.py` builds a wheel from the source tree. The page therefore runs the
+code you have checked out, not the last release. The page then:
 
-## Notes and limits
+1. loads Pyodide with numpy, pandas and scipy,
+2. installs the wheel with `micropip`,
+3. copies the response curves into the Pyodide file system,
+4. calls `generate_system_response`, then `get_precision` or
+   `get_precision_gaia`.
 
-**Why it works at all.** mphot depends only on numpy, pandas and scipy, all of
-which ship with Pyodide. A package needing a catalogue client such as
-`astroquery` could not run here — it is not built for Pyodide, and its HTTP
-transport needs sockets, which WebAssembly does not have.
+The results are the same bits as mphot gives on the command line.
+
+## Limits
+
+**Why this works at all.** mphot needs only numpy, pandas and scipy. Pyodide
+supplies all three. A package that needs a catalogue client such as
+`astroquery` cannot run here. Pyodide has no build of it, and its HTTP
+transport needs sockets. WebAssembly has no sockets.
 
 **The Gaia query.** WebAssembly has no sockets, so `urllib` cannot reach the
-network. `mphot.gaia` detects `sys.platform == "emscripten"` and uses the
-browser's own HTTP stack instead, which means the archive must allow
-cross-origin requests. VizieR sends `Access-Control-Allow-Origin: *` and works.
-The ESA archive sends no such header, so a browser blocks it; reaching ESA from
-a page needs a proxy. mphot tries VizieR first, so the default path is the one
-that works.
+network. `mphot.gaia` sees `sys.platform == "emscripten"` and uses the browser
+to make the request instead. The archive must then allow cross-origin requests.
+VizieR sends `Access-Control-Allow-Origin: *`, so it works. The ESA archive
+sends no such header, so the browser blocks it. To reach ESA from a page you
+need a proxy. mphot tries VizieR first, so the normal path works.
 
-**First load** pulls roughly 45 MB: Pyodide with numpy/pandas/scipy, plus a
-16 MB wheel. Most of the wheel is the two atmosphere and stellar-spectra
-pickles in `datafiles/`. The browser caches all of it after the first visit.
+**First load** downloads about 45 MB: Pyodide with numpy, pandas and scipy,
+plus the 16 MB wheel. Most of the wheel holds the two files of atmosphere and
+stellar spectra in `datafiles/`. The browser caches all of it after the first
+visit.
 
-**The sweep blocks.** Pyodide runs on the main thread, so the ~1.5 s sensitivity
-sweep freezes the page while it runs. Moving Pyodide into a web worker would fix
-that.
+**The sensitivity sweep blocks the page.** Pyodide runs on the main thread. The
+sweep takes about 1.5 s, and the page cannot respond during it. A web worker
+would fix this.

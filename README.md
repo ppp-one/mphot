@@ -47,15 +47,15 @@ python -c "import mphot"
 
 ## Web demo
 
-*mphot* runs in the browser through [Pyodide](https://pyodide.org), with nothing
-computed on a server. To try it locally:
+*mphot* runs in the browser through [Pyodide](https://pyodide.org). No server
+does the work. To run it on your machine:
 
 ```bash
 python web/build.py
-python -m http.server --directory . 8000
+python -m http.server --directory web 8000
 ```
 
-then open <http://localhost:8000/web/>. See [web/README.md](web/README.md).
+Then open <http://localhost:8000/>. See [web/README.md](web/README.md).
 
 ## Attribution
 

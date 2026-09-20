@@ -1,24 +1,24 @@
-# Deploy the browser demo in web/.
+# This deploys the browser demo in web/.
 #
-# `web/build.py` builds an mphot wheel from the checked-out tree and copies the
-# response curves next to the page, so `web/` is a complete site on its own.
-# Everything else in the repository stays out of the deploy.
+# `web/build.py` builds an mphot wheel from the source tree. It also copies the
+# response curves next to the page. `web/` is then a complete site on its own,
+# and nothing else in the repository is deployed.
 
 [build]
   command = "python web/build.py"
   publish = "web"
 
 [build.environment]
-  # mphot needs 3.11 or newer; the build image default is older.
+  # mphot needs Python 3.11 or later. The build image default is older.
   PYTHON_VERSION = "3.11"
 
-# Wheel names carry the project version, so a given file never changes.
+# A wheel name holds the project version, so the file never changes.
 [[headers]]
   for = "/dist/*.whl"
   [headers.values]
     Cache-Control = "public, max-age=31536000, immutable"
 
-# The manifest points at the current wheel, so it must never be served stale.
+# The manifest names the current wheel. A stale copy would break the page.
 [[headers]]
   for = "/dist/wheel.json"
   [headers.values]

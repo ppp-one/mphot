@@ -79,7 +79,8 @@
     margin: 18px 0; color: var(--text-secondary); font-size: 14px;
   }
   #status[data-state="error"] { color: var(--bad); }
-  #status[data-state="ready"] { color: var(--good); }
+  /* Nothing to read once it is ready, and the row costs space. */
+  #status[data-state="ready"] { display: none; }
   .spinner {
     width: 14px; height: 14px; flex: none; border-radius: 50%;
     border: 2px solid var(--baseline); border-top-color: var(--series-1);
@@ -91,6 +92,27 @@
 
   .cols { display: grid; grid-template-columns: 340px minmax(0, 1fr); gap: 20px; align-items: start; }
   @media (max-width: 900px) { .cols { grid-template-columns: 1fr; } }
+
+  /* A wide screen fits the controls in two columns, so they end near the
+     bottom of the results instead of running far past them. */
+  @media (min-width: 1280px) {
+    .cols { grid-template-columns: 664px minmax(0, 1fr); }
+    .controls { column-count: 2; column-gap: 16px; }
+    .controls .card { break-inside: avoid; margin: 0 0 16px; }
+  }
+
+  /* The control column is long. Pin the numbers so they stay in view while
+     you reach a control near the bottom of it. */
+  #summary {
+    position: sticky; top: 0; z-index: 2; margin: 0 0 14px;
+    border-radius: 0 0 12px 12px; border-top: 0;
+    background: var(--surface-1);
+  }
+  #summary.busy { opacity: 0.55; transition: opacity 120ms linear 80ms; }
+  #summary .stats { gap: 12px; }
+  #summary .stat .v { font-size: 34px; }
+  #summary .meta { margin-top: 8px; }
+  @media (max-width: 900px) { #summary { position: static; border-radius: 12px; border-top: 1px solid var(--border); } }
 
   .card { background: var(--surface-1); border: 1px solid var(--border);
     border-radius: 12px; padding: 16px 18px; }
@@ -182,6 +204,8 @@
   .readout { font-family: var(--mono); font-size: 12px; color: var(--text-secondary);
     min-height: 1.5em; margin: 6px 0 0; }
 
+  #results.busy { opacity: 0.55; transition: opacity 120ms linear 80ms; }
+
   .placeholder { color: var(--text-muted); font-size: 14px; }
   footer { margin-top: 26px; font-size: 13px; color: var(--text-muted); }
   footer a { color: var(--series-1); }
@@ -193,29 +217,27 @@
 <header>
   <h1>mphot exposure time calculator</h1>
   <p>
-    Build a telescope, camera and filter, and see the exposure time and binned
-    precision that follow. The model runs here as WebAssembly &mdash; the same
-    <code>mphot</code> package as on the command line, with nothing computed on a
-    server. Gaia DR3 is queried live from VizieR.
+    This page gives the exposure time and the precision for a photometric
+    observation. It runs the <code>mphot</code> Python package in your browser.
+    No server does the work. Results change as you move the controls. Gaia DR3
+    data comes from VizieR.
   </p>
 </header>
 
-<div id="status" data-state="loading"><span class="spinner"></span><span id="status-text">Starting Python&hellip;</span></div>
+<div id="status" data-state="loading"><span class="spinner"></span><span id="status-text">Python starts&hellip;</span></div>
+
+<div id="summary" class="card" hidden></div>
 
 <div class="cols">
-  <div>
+  <div class="controls">
     <div class="card">
       <h2>Preset</h2>
       <div class="field">
         <select id="preset"></select>
-        <p class="hint">Changing any value below switches to Custom.</p>
+        <p class="hint">If you change a value below, the preset becomes Custom.</p>
       </div>
-    </div>
-
-    <div class="card">
-      <h2>Optics</h2>
       <div class="field">
-        <label for="system">Telescope, optics and detector QE</label>
+        <label for="system">Telescope, optics and detector</label>
         <select id="system"></select>
       </div>
       <div class="field">
@@ -223,26 +245,22 @@
         <select id="filter"></select>
       </div>
       <p class="hint">
-        These two curves multiply into the system response. A new pairing is
-        built on demand, which takes a moment the first time.
+        mphot multiplies these two curves together. The result is the system
+        response. A new pair takes a moment to build the first time.
       </p>
     </div>
 
     <div class="card">
-      <h2>Telescope</h2>
+      <h2>Telescope and camera</h2>
       <div class="grid2" id="telescope-fields"></div>
       <p class="hint err" id="mirror-hint" hidden></p>
-    </div>
-
-    <div class="card">
-      <h2>Camera</h2>
-      <div class="grid2" id="camera-fields"></div>
+      <div class="grid2" id="camera-fields" style="margin-top:12px"></div>
     </div>
 
     <div class="card">
       <h2>Sky</h2>
       <div class="field">
-        <label for="pwv">Precipitable water vapour <span class="val" id="pwv-v"></span></label>
+        <label for="pwv">Water vapour <span class="val" id="pwv-v"></span></label>
         <input type="range" id="pwv" min="0.05" max="30" step="0.05" value="2.5">
       </div>
       <div class="field">
@@ -256,16 +274,16 @@
     </div>
 
     <div class="card">
-      <h2>Target</h2>
+      <h2>Star</h2>
       <div class="field">
         <div class="seg">
           <label><input type="radio" name="mode" value="model" checked> Model star</label>
-          <label><input type="radio" name="mode" value="gaia"> Gaia source</label>
+          <label><input type="radio" name="mode" value="gaia"> Gaia star</label>
         </div>
       </div>
       <div id="model-fields">
         <div class="field">
-          <label for="teff">Effective temperature <span class="val" id="teff-v"></span></label>
+          <label for="teff">Temperature <span class="val" id="teff-v"></span></label>
           <input type="range" id="teff" min="450" max="36500" step="10" value="2560">
         </div>
         <div class="field">
@@ -273,18 +291,20 @@
           <input type="number" id="dist-num" min="0.01" max="1e6" step="any" value="12.5">
           <input type="range" id="dist" min="-2" max="6" step="0.001" value="1.0969"
                  aria-label="Distance, logarithmic" style="margin-top:6px">
-          <p class="hint">0.01 pc to 1 Mpc on a log slider, or type an exact value.</p>
+          <p class="hint">The slider covers 0.01 pc to 1 Mpc. You can also type a value.</p>
         </div>
       </div>
       <div id="gaia-fields" hidden>
         <div class="field">
           <label for="source-id">Gaia DR3 source_id</label>
           <input type="text" id="source-id" value="2635476908753563008" inputmode="numeric">
+          <p class="hint">Press Enter to load the star. mphot reads its distance and
+            brightness from Gaia, then scales the model to match.</p>
         </div>
         <div class="field">
-          <label for="gaia-teff">Effective temperature <span class="val" id="gaia-teff-v"></span></label>
+          <label for="gaia-teff">Temperature <span class="val" id="gaia-teff-v"></span></label>
           <input type="range" id="gaia-teff" min="450" max="36500" step="10" value="2560">
-          <p class="hint">Used when Gaia has no <code>teff_gspphot</code> for the star.</p>
+          <p class="hint">mphot uses this value if Gaia has no temperature for the star.</p>
         </div>
       </div>
     </div>
@@ -292,50 +312,47 @@
     <div class="card">
       <h2>Exposure</h2>
       <div class="field">
-        <label for="binning">Binning window <span class="val" id="binning-v"></span></label>
+        <label for="binning">Bin length <span class="val" id="binning-v"></span></label>
         <input type="range" id="binning" min="1" max="60" step="1" value="10">
       </div>
       <div class="grid2">
         <div class="field">
-          <label for="min_exp">Min exposure <span class="unit">s</span></label>
+          <label for="min_exp">Shortest <span class="unit">s</span></label>
           <input type="number" id="min_exp" min="0" step="any" placeholder="none">
         </div>
         <div class="field">
-          <label for="max_exp">Max exposure <span class="unit">s</span></label>
+          <label for="max_exp">Longest <span class="unit">s</span></label>
           <input type="number" id="max_exp" min="0" step="any" placeholder="none">
         </div>
       </div>
-      <p class="hint">Leave blank for an unconstrained exposure.</p>
-    </div>
-
-    <div class="card">
-      <button id="run" disabled>Compute</button>
+      <p class="hint">Leave these empty to let mphot pick any exposure time.</p>
     </div>
   </div>
 
-  <div>
+  <div class="output">
     <div class="card" id="results">
-      <p class="placeholder">Results appear here once Python has loaded.</p>
+      <p class="placeholder">Python is still loading.</p>
     </div>
     <div class="card" id="response-card">
       <h2>System response</h2>
-      <div id="response"><p class="placeholder">Loading\u2026</p></div>
+      <div id="response"><p class="placeholder">Python is still loading.</p></div>
     </div>
     <div class="card" id="sensitivity-card" hidden>
       <h2>Sensitivity</h2>
       <p class="hint" style="margin:0 0 12px">
-        Binned precision as each parameter is swept on its own, with the rest held
-        at their current values. The dot marks where you are now.
+        Each panel changes one parameter. The other parameters keep their
+        current values. The dot shows where you are now. Use this to find which
+        parameter changes the result most.
       </p>
-      <button class="secondary" id="sweep">Analyse sensitivity</button>
+      <button class="secondary" id="sweep">Test each parameter</button>
       <div id="facets"></div>
     </div>
   </div>
 </div>
 
 <footer>
-  Built from the working tree by <code>python web/build.py</code>.
-  Source: <a href="https://github.com/ppp-one/mphot">github.com/ppp-one/mphot</a>.
+  <code>python web/build.py</code> builds this page from the source tree.
+  Code: <a href="https://github.com/ppp-one/mphot">github.com/ppp-one/mphot</a>.
 </footer>
 
 </div>
@@ -343,11 +360,17 @@
 <script type="module">
 const $ = id => document.getElementById(id);
 const statusEl = $("status"), statusText = $("status-text");
-const runBtn = $("run"), sweepBtn = $("sweep"), resultsEl = $("results");
+const sweepBtn = $("sweep"), resultsEl = $("results");
 
-// Declared here because checkMirrors() reads it during the initial preset,
-// which runs before boot().
+// These are declared here because the first preset is applied before boot(),
+// and it reaches code that reads them.
 let pyodide;
+
+// Every control recomputes as you move it. One update takes about 10 ms, so a
+// short pause after the last change keeps the page smooth.
+let updateTimer = null;
+let updateQueued = false;
+let updating = false;
 
 function setStatus(text, state = "loading") {
   statusText.textContent = text;
@@ -392,7 +415,7 @@ const CAMERA = [
     range: () => [0.05, 1] },
   { key: "read_time", label: "Read time", unit: "s", min: 0, max: 120, step: "any",
     range: upFrom0(3, 10) },
-  { key: "ap_rad", label: "Aperture radius", unit: "FWHM", min: 0.2, max: 8, step: "any",
+  { key: "ap_rad", label: "Aperture", unit: "FWHM", min: 0.2, max: 8, step: "any",
     range: () => [0.5, 5] },
 ];
 const INSTRUMENT = [...TELESCOPE, ...CAMERA];
@@ -436,22 +459,39 @@ function applyPreset(id) {
   for (const param of INSTRUMENT) $(param.key).value = p.props[param.key];
   checkMirrors();
   updateResponse();
+  scheduleUpdate(0);
 }
 
 // Any manual edit means the configuration is no longer one of the presets.
 for (const el of [$("system"), $("filter"), ...INSTRUMENT.map(p => $(p.key))]) {
-  el.addEventListener("input", () => { $("preset").value = "custom"; checkMirrors(); });
+  el.addEventListener("input", () => {
+    $("preset").value = "custom";
+    checkMirrors();
+    scheduleUpdate();
+  });
 }
 $("preset").addEventListener("change", e => applyPreset(e.target.value));
-for (const el of [$("system"), $("filter")]) el.addEventListener("change", () => updateResponse());
+for (const el of [$("system"), $("filter")]) {
+  el.addEventListener("change", () => { updateResponse(); scheduleUpdate(0); });
+}
+
+// Sky, star and exposure controls all recompute as they move.
+for (const id of ["pwv", "airmass", "seeing", "teff", "gaia-teff", "binning",
+                  "dist", "dist-num", "min_exp", "max_exp"]) {
+  $(id).addEventListener("input", () => scheduleUpdate());
+}
+for (const radio of document.querySelectorAll('input[name="mode"]')) {
+  radio.addEventListener("change", () => scheduleUpdate(0));
+}
+// A source_id is only useful once it is complete, so wait for Enter or blur.
+$("source-id").addEventListener("change", () => scheduleUpdate(0));
 
 function checkMirrors() {
   const r0 = +$("r0").value, r1 = +$("r1").value;
   const bad = !(r0 > 0) || !(r1 >= 0) || r1 >= r0;
   const hint = $("mirror-hint");
   hint.hidden = !bad;
-  if (bad) hint.textContent = "The secondary radius must be smaller than the primary.";
-  runBtn.disabled = bad || !pyodide;
+  if (bad) hint.textContent = "Make the secondary radius smaller than the primary radius.";
   return !bad;
 }
 applyPreset(PRESETS[0].id);
@@ -525,6 +565,19 @@ import json
 import mphot
 
 _NAMES = {}
+
+# Every control recomputes, so the page would query VizieR on each move. Read
+# each star once and keep the answer.
+_GAIA = {}
+_query = mphot.gaia.query_gaia_source
+
+def _query_once(source_id, **kwargs):
+    key = int(source_id)
+    if key not in _GAIA:
+        _GAIA[key] = _query(source_id, **kwargs)
+    return _GAIA[key]
+
+mphot.gaia.query_gaia_source = _query_once
 
 def _system_name(system, filt):
     """Build the system response once per (optics, filter) pairing."""
@@ -635,20 +688,20 @@ async function installWheel() {
     ({ wheel: name } = await res.json());
   } catch {
     throw new Error(
-      "no wheel in web/dist. Run `python web/build.py`, then reload.");
+      "No wheel in web/dist. Run `python web/build.py`, then reload this page.");
   }
 
   const res = await fetch(new URL(`dist/${name}`, location.href).href);
   if (!res.ok) {
-    throw new Error(`${name} is missing (HTTP ${res.status}). ` +
-      "Run `python web/build.py` again, then reload.");
+    throw new Error(`The server has no ${name} (HTTP ${res.status}). ` +
+      "Run `python web/build.py` again, then reload this page.");
   }
   const bytes = new Uint8Array(await res.arrayBuffer());
   // A missing file is answered with an HTML page, which micropip would report
   // only as "File is not a zip file".
   if (bytes[0] !== 0x50 || bytes[1] !== 0x4b) {
-    throw new Error(`${name} did not come back as a wheel. ` +
-      "Check that the repository root is the directory being served.");
+    throw new Error(`${name} is not a wheel file. ` +
+      "Check which directory the server shows.");
   }
 
   pyodide.FS.mkdirTree("/wheels");
@@ -661,23 +714,23 @@ async function boot() {
   const { loadPyodide } = await import(
     "https://cdn.jsdelivr.net/pyodide/v0.29.5/full/pyodide.mjs");
 
-  setStatus("Starting Python…");
+  setStatus("Python starts…");
   pyodide = await loadPyodide({ indexURL: "https://cdn.jsdelivr.net/pyodide/v0.29.5/full/" });
 
-  setStatus("Loading numpy, pandas and scipy…");
+  setStatus("numpy, pandas and scipy load…");
   await pyodide.loadPackage(["numpy", "pandas", "scipy", "micropip"]);
 
-  setStatus("Installing mphot…");
+  setStatus("mphot installs…");
   await installWheel();
 
-  setStatus("Fetching response curves…");
+  setStatus("Response curves load…");
   const paths = [
     ...SYSTEMS.map(s => `resources/systems/${s.id}.csv`),
     ...FILTERS.map(f => `resources/filters/${f}.csv`),
   ];
   for (const path of paths) {
     const res = await fetch(new URL(path, location.href));
-    if (!res.ok) throw new Error(`cannot fetch ${path} (HTTP ${res.status})`);
+    if (!res.ok) throw new Error(`The server has no ${path} (HTTP ${res.status})`);
     pyodide.FS.mkdirTree(`/data/${path.substring(0, path.lastIndexOf("/"))}`);
     pyodide.FS.writeFile(`/data/${path}`, new Uint8Array(await res.arrayBuffer()));
   }
@@ -685,8 +738,8 @@ async function boot() {
   await pyodide.runPythonAsync(PY);
   setStatus("Ready", "ready");
   checkMirrors();
-  resultsEl.innerHTML = '<p class="placeholder">Press Compute.</p>';
   updateResponse();
+  update();
 }
 
 function callPython(fn, ...args) {
@@ -728,7 +781,8 @@ function render(data) {
       <div class="num">${sig(c.v)}</div>
       <div class="row-gap"></div>`).join("");
 
-  resultsEl.innerHTML = `
+  $("summary").hidden = false;
+  $("summary").innerHTML = `
     <div class="stats">
       <div class="stat lead">
         <div class="k">Exposure time</div>
@@ -738,29 +792,31 @@ function render(data) {
       <div class="stat lead">
         <div class="k">Binned precision</div>
         <div class="v">${sig(ppt(data.binned_all))}</div>
-        <div class="u">ppt over ${data.binning} min</div>
+        <div class="u">ppt in ${data.binning} min</div>
       </div>
       <div class="stat">
-        <div class="k">Single frame</div>
+        <div class="k">One frame</div>
         <div class="v">${sig(ppt(data.image_all))}</div>
         <div class="u">ppt</div>
       </div>
     </div>
     <p class="meta">
-      ${sig(data.frames_per_bin)} frames per bin &middot;
-      peak pixel filled to ${sig(data.well_fill * 100, 2)}% of the well
+      ${sig(data.frames_per_bin)} frames in each bin &middot;
+      the brightest pixel fills ${sig(data.well_fill * 100, 2)}% of the well
       ${data.frames_per_bin < 1
-        ? '<br><span class="warn">A bin is shorter than one exposure, so binning cannot help here.</span>' : ""}
-      ${data.gaia ? `<br>Calibrated against Gaia DR3 ${data.gaia}.` : ""}
-    </p>
+        ? '<br><span class="warn">The bin is shorter than one exposure. Binning cannot improve the result.</span>' : ""}
+      ${data.gaia ? `<br>Scaled to the Gaia DR3 brightness of star ${data.gaia}.` : ""}
+    </p>`;
 
-    <figure style="margin-top:22px">
+  resultsEl.innerHTML = `
+    <h2>Noise</h2>
+    <figure>
       <div class="fig-head">
         <figcaption style="margin:0">
-          Noise budget in parts per thousand. Components add in quadrature, so
-          they do not sum to the ${sig(total)} ppt total.
+          Each noise source, in parts per thousand. They add in quadrature.
+          This is why they do not sum to the total of ${sig(total)} ppt.
         </figcaption>
-        <div class="seg" role="group" aria-label="Noise budget view">
+        <div class="seg" role="group" aria-label="Which noise budget to show">
           <label><input type="radio" name="budget" value="binned" ${budgetView === "binned" ? "checked" : ""}> Binned</label>
           <label><input type="radio" name="budget" value="image" ${budgetView === "image" ? "checked" : ""}> Frame</label>
         </div>
@@ -769,16 +825,16 @@ function render(data) {
     </figure>
 
     <details style="margin-top:20px">
-      <summary>Noise budget as a table</summary>
+      <summary>Show these noise sources as a table</summary>
       <table>
-        <thead><tr><th>Component</th><th>Frame [ppt]</th><th>Binned [ppt]</th></tr></thead>
+        <thead><tr><th>Noise source</th><th>Frame [ppt]</th><th>Binned [ppt]</th></tr></thead>
         <tbody>${data.components.map(c =>
           `<tr><th scope="row">${c.name}</th><td>${sig(ppt(c.image))}</td><td>${sig(ppt(c.binned))}</td></tr>`).join("")}
         </tbody>
       </table>
     </details>
     <details style="margin-top:12px">
-      <summary>All model components</summary>
+      <summary>Show every model value</summary>
       <table><tbody>${Object.entries(data.table)
         .map(([k, v]) => `<tr><th scope="row">${k}</th><td>${sig(v)}</td></tr>`).join("")}
       </tbody></table>
@@ -806,7 +862,7 @@ function renderResponse(data, subtitle) {
   const W = narrow ? 360 : 560, H = narrow ? 200 : 216;
   const L = 34, R = 12, T = 10, B = 36;
   const lam = data.lam;
-  if (!lam.length) { $("response").innerHTML = '<p class="placeholder">No overlap between these curves.</p>'; return; }
+  if (!lam.length) { $("response").innerHTML = '<p class="placeholder">These two curves do not overlap.</p>'; return; }
 
   const x0 = lam[0], x1 = lam[lam.length - 1];
   let top = 0;
@@ -862,12 +918,12 @@ function renderResponse(data, subtitle) {
             stroke="var(--surface-1)" stroke-width="2" opacity="0"/>`).join("")}
         <rect class="hit" x="${L}" y="${T}" width="${W - L - R}" height="${H - T - B}" fill="transparent"/>
       </svg>
-      <p class="readout" id="response-readout">Peak system response ${sig(data.peak)} at ${
+      <p class="readout" id="response-readout">Highest system response ${sig(data.peak)} at ${
         sig(lam[data.sr.indexOf(Math.max(...data.sr.filter(v => v !== null)))])} µm.</p>
     </figure>
-    ${data.peak < 0.01 ? `<p class="hint err">This detector barely responds where the
-      filter passes light, so the star flux will be near zero and the exposure
-      time meaningless.</p>` : ""}`;
+    ${data.peak < 0.01 ? `<p class="hint err">The detector has almost no response
+      where this filter passes light. The star flux is near zero. The exposure
+      time has no meaning.</p>` : ""}`;
 
   const svg = $("response").querySelector("svg");
   const cross = svg.querySelector(".cross");
@@ -909,10 +965,10 @@ function updateResponse() {
   const label = SYSTEMS.find(x => x.id === system).label;
   try {
     renderResponse(callPython("response_curves", system, filt, 480),
-                   `${label} through the ${filt} filter. `
-                   + "The vertical axis is the transmitted fraction.");
+                   `${label}, with the ${filt} filter. `
+                   + "The vertical axis is the fraction of light that passes.");
   } catch (err) {
-    $("response").innerHTML = '<p class="placeholder">Could not build these curves.</p>';
+    $("response").innerHTML = '<p class="placeholder">These curves did not load.</p>';
   }
 }
 
@@ -922,7 +978,7 @@ function renderFacets(sweeps) {
   const PLOT_B = H - PAD_B;
   const finite = [];
   for (const k in sweeps) for (const y of sweeps[k].y) if (y !== null) finite.push(y);
-  if (!finite.length) { $("facets").innerHTML = '<p class="hint">No finite results to plot.</p>'; return; }
+  if (!finite.length) { $("facets").innerHTML = '<p class="hint">No result can be drawn.</p>'; return; }
 
   // Anchor the shared scale on the current result. One parameter can run away
   // by orders of magnitude, and a scale that fits it flattens every other
@@ -985,9 +1041,9 @@ function renderFacets(sweeps) {
 
   $("facets").innerHTML = `
     <p class="hint" style="margin:14px 0 10px">
-      Binned precision in ppt, one shared scale from 0 to ${sig(yMax)}${clipped
-        ? ", so steeper curves run off the top" : ""}. The hairline marks 1 ppt.
-      Hover a panel to read a value.
+      All panels share one vertical scale, 0 to ${sig(yMax)} ppt of binned
+      precision${clipped ? ". Steep curves leave the top of the panel" : ""}.
+      The thin line marks 1 ppt. Point at a panel to read a value.
     </p>
     <div class="facets">${html}</div>`;
 
@@ -1037,39 +1093,55 @@ function reportError(err) {
   setStatus(last.replace(/^[\w.]*Error:\s*|^[\w.]+:\s*/, ""), "error");
 }
 
-runBtn.addEventListener("click", () => {
+function scheduleUpdate(delay = 80) {
+  clearTimeout(updateTimer);
+  updateTimer = setTimeout(update, delay);
+}
+
+function update() {
+  if (!pyodide) return;
+  if (updating) { updateQueued = true; return; }   // a drag can outrun a run
   if (!checkMirrors()) return;
+
   const spec = readSpec();
   if (spec.mode === "gaia" && !/^\d+$/.test(spec.source_id)) {
-    setStatus("A Gaia DR3 source_id is a whole number, for example 2635476908753563008.", "error");
+    setStatus("A Gaia source_id is a whole number, such as 2635476908753563008.", "error");
     return;
   }
-  runBtn.disabled = true;
-  setStatus(spec.mode === "gaia" ? "Querying Gaia and computing…" : "Computing…");
-  requestAnimationFrame(() => {
-    try {
-      render(callPython("compute", JSON.stringify(spec)));
-      $("facets").innerHTML = "";
-      setStatus("Ready", "ready");
-    } catch (err) {
-      reportError(err);
-    } finally {
-      runBtn.disabled = false;
-    }
-  });
-});
+
+  updating = true;
+  setBusy(true);
+  try {
+    render(callPython("compute", JSON.stringify(spec)));
+    $("facets").innerHTML = "";
+    setStatus("Ready", "ready");
+  } catch (err) {
+    reportError(err);
+  } finally {
+    updating = false;
+    setBusy(false);
+    if (updateQueued) { updateQueued = false; scheduleUpdate(0); }
+  }
+}
+
+// Redraw the numbers dimmed while a run is in flight, so a slow first Gaia
+// call does not look like a frozen page.
+function setBusy(busy) {
+  $("summary").classList.toggle("busy", busy);
+  resultsEl.classList.toggle("busy", busy);
+}
 
 sweepBtn.addEventListener("click", () => {
   if (!lastResult || !checkMirrors()) return;
   const spec = readSpec();
   const plan = Object.fromEntries(INSTRUMENT.map(p => [
     p.key,
-    // The secondary only makes sense below the primary.
+    // The secondary mirror only makes sense smaller than the primary.
     p.key === "r1" ? [0, Math.max(0.01, spec.props.r0 * 0.9)]
                    : p.range(spec.props[p.key]),
   ]));
   sweepBtn.disabled = true;
-  setStatus("Sweeping parameters…");
+  setStatus("Each parameter is being tested\u2026");
   requestAnimationFrame(() => {
     try {
       renderFacets(callPython("sweep", JSON.stringify(spec), JSON.stringify(plan), 21));
@@ -1084,7 +1156,7 @@ sweepBtn.addEventListener("click", () => {
 
 boot().catch(err => {
   setStatus(`Could not start: ${err.message}`, "error");
-  resultsEl.innerHTML = `<p class="placeholder">Did you run <code>python web/build.py</code> and serve the repository root?</p>`;
+  resultsEl.innerHTML = `<p class="placeholder">Run <code>python web/build.py</code>, then serve the <code>web</code> directory.</p>`;
 });
 </script>
 </body>
