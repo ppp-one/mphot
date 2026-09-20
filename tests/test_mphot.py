@@ -1,9 +1,12 @@
+import time
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import pytest
 
 import mphot
+import mphot.gaia
 
 
 def test_interpolate_dfs():
@@ -134,3 +137,79 @@ def test_generate_system_response():
 
     assert np.allclose(SR.index.values, system_response.index.values), "Index mismatch"
     assert np.allclose(SR.values, system_response.values), "Values mismatch"
+
+
+def test_run_with_timeout_returns_value():
+    assert mphot.gaia._run_with_timeout(lambda: 42, timeout=5, message="late") == 42
+    assert mphot.gaia._run_with_timeout(lambda: 42, timeout=None, message="late") == 42
+
+
+def test_run_with_timeout_raises():
+    def slow():
+        time.sleep(5)
+
+    with pytest.raises(TimeoutError, match="late"):
+        mphot.gaia._run_with_timeout(slow, timeout=0.05, message="late")
+
+
+def test_run_with_timeout_reraises_error():
+    def boom():
+        raise KeyError("inner")
+
+    with pytest.raises(KeyError):
+        mphot.gaia._run_with_timeout(boom, timeout=5, message="late")
+
+
+def test_to_float():
+    assert mphot.gaia._to_float(1) == 1.0
+    assert np.isnan(mphot.gaia._to_float(None))
+    assert np.isnan(mphot.gaia._to_float(np.ma.masked))
+    assert np.isnan(mphot.gaia._to_float("not a number"))
+
+
+def test_query_gaia_source_rejects_unknown_service():
+    with pytest.raises(ValueError, match="Unknown Gaia TAP source"):
+        mphot.query_gaia_source(1, tap_sources="not_a_service")
+
+
+def test_query_gaia_source_falls_back(monkeypatch):
+    tried = []
+    row = dict.fromkeys(mphot.gaia._GAIA_COLUMNS, 1.0)
+
+    def fake_query(source_id, tap_source, timeout):
+        tried.append(tap_source)
+        if tap_source == "esa":
+            raise TimeoutError("timed out")
+        return row
+
+    monkeypatch.setattr(mphot.gaia, "_query_gaia_tap", fake_query)
+
+    result = mphot.query_gaia_source(1, timeout=1, tap_sources=("esa", "vizier"))
+
+    assert tried == ["esa", "vizier"]
+    assert result == row
+
+
+def test_query_gaia_source_raises_when_all_services_fail(monkeypatch):
+    def fake_query(source_id, tap_source, timeout):
+        raise TimeoutError("timed out")
+
+    monkeypatch.setattr(mphot.gaia, "_query_gaia_tap", fake_query)
+
+    with pytest.raises(RuntimeError, match="any TAP service"):
+        mphot.query_gaia_source(1, timeout=1, tap_sources=("esa", "vizier"))
+
+
+def test_query_gaia_source_does_not_retry_missing_source(monkeypatch):
+    tried = []
+
+    def fake_query(source_id, tap_source, timeout):
+        tried.append(tap_source)
+        raise mphot.GaiaSourceNotFound("missing")
+
+    monkeypatch.setattr(mphot.gaia, "_query_gaia_tap", fake_query)
+
+    with pytest.raises(mphot.GaiaSourceNotFound):
+        mphot.query_gaia_source(1, timeout=1, tap_sources=("vizier", "esa"))
+
+    assert tried == ["vizier"]
