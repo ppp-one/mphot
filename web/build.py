@@ -9,10 +9,15 @@ The precision grids under ``src/mphot/grids`` are left out. They are caches,
 they are the largest part of the package, and the demo rebuilds the ones it
 needs in a fraction of a second.
 
+The wheel's name carries the project version, so this also writes
+``web/dist/wheel.json`` naming the file. The page reads that rather than
+hard-coding a version that a release would invalidate.
+
 Usage:
     python web/build.py
 """
 
+import json
 import shutil
 import subprocess
 import sys
@@ -55,6 +60,12 @@ def build() -> Path:
     wheels = sorted(DIST.glob("mphot-*.whl"))
     if not wheels:
         raise RuntimeError("no wheel was produced")
+
+    # The page reads this to find the wheel. Without it the page would have to
+    # hard-code a version, and every release would break it.
+    (DIST / "wheel.json").write_text(
+        json.dumps({"wheel": wheels[0].name}, indent=2) + "\n"
+    )
     return wheels[0]
 
 

@@ -624,6 +624,39 @@ def sweep(spec_json, plan_json, points):
     return json.dumps(out)
 `;
 
+// The wheel's name carries the project version, so build.py records it in a
+// manifest rather than the page hard-coding a version that a release changes.
+async function installWheel() {
+  let name;
+  try {
+    const res = await fetch(new URL("dist/wheel.json", location.href).href,
+                            { cache: "no-cache" });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    ({ wheel: name } = await res.json());
+  } catch {
+    throw new Error(
+      "no wheel in web/dist. Run `python web/build.py`, then reload.");
+  }
+
+  const res = await fetch(new URL(`dist/${name}`, location.href).href);
+  if (!res.ok) {
+    throw new Error(`${name} is missing (HTTP ${res.status}). ` +
+      "Run `python web/build.py` again, then reload.");
+  }
+  const bytes = new Uint8Array(await res.arrayBuffer());
+  // A missing file is answered with an HTML page, which micropip would report
+  // only as "File is not a zip file".
+  if (bytes[0] !== 0x50 || bytes[1] !== 0x4b) {
+    throw new Error(`${name} did not come back as a wheel. ` +
+      "Check that the repository root is the directory being served.");
+  }
+
+  pyodide.FS.mkdirTree("/wheels");
+  pyodide.FS.writeFile(`/wheels/${name}`, bytes);
+  await pyodide.runPythonAsync(
+    `import micropip\nawait micropip.install("emfs:/wheels/${name}")`);
+}
+
 async function boot() {
   const { loadPyodide } = await import(
     "https://cdn.jsdelivr.net/pyodide/v0.29.5/full/pyodide.mjs");
@@ -635,9 +668,7 @@ async function boot() {
   await pyodide.loadPackage(["numpy", "pandas", "scipy", "micropip"]);
 
   setStatus("Installing mphot…");
-  const wheel = new URL("dist/mphot-1.2.3-py3-none-any.whl", location.href).href;
-  await pyodide.runPythonAsync(
-    `import micropip\nawait micropip.install(${JSON.stringify(wheel)})`);
+  await installWheel();
 
   setStatus("Fetching response curves…");
   const paths = [
