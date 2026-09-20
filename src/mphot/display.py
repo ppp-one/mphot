@@ -57,7 +57,7 @@ def display_number(x: float, p: int = 3) -> str:
         n = n / 10.0
         e = e + 1
 
-    m = "%.*g" % (p, n)
+    m = f"{n:.{p}g}"
 
     if e < -2 or e >= p:
         out.append(m[0])
@@ -83,7 +83,7 @@ def display_number(x: float, p: int = 3) -> str:
     return "".join(out)
 
 
-def display_results(r1: tuple, r2: tuple = None) -> None:
+def display_results(r1: tuple, r2: tuple | None = None) -> None:
     """
     Display the results of the photometric analysis.
 
@@ -224,7 +224,7 @@ def display_results(r1: tuple, r2: tuple = None) -> None:
         columns = [[name1]]
 
         for k, v in components1.items():
-            if (type(v) != str) and (type(v) != bool):
+            if not isinstance(v, (str, bool)):
                 components1[k] = display_number(v)
 
         values = np.c_[list(components1.values())]

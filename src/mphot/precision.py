@@ -13,7 +13,7 @@ from mphot.constants import (
     WAVELENGTHS,
 )
 from mphot.grid import generate_grids, interpolate_grid, load_grids
-from mphot.paths import DATAFILES_DIR, grid_path, system_response_path
+from mphot.paths import DATAFILES_DIR, grid_path
 from mphot.utils import gaussian, interpolate_dfs
 
 
@@ -223,15 +223,8 @@ def get_precision(
     well_fill = props["well_fill"]
     read_time = props["read_time"]
 
-    if "min_exp" in props:
-        min_exp = props["min_exp"]
-    else:
-        min_exp = 0
-
-    if "max_exp" in props:
-        max_exp = props["max_exp"]
-    else:
-        max_exp = np.inf
+    min_exp = props.get("min_exp", 0)
+    max_exp = props.get("max_exp", np.inf)
 
     r0 = props["r0"]
     r1 = props["r1"]
@@ -422,10 +415,8 @@ def vega_mag(
         y=gridSauce["rsr"] * atmosphere_trans * simStar, x=gridSauce.index
     )  # e/s/m2
 
-    vega_dict = {
+    return {
         "star [mag]": -2.5 * np.log10(N_star / (vega * A)),
         "sky [mag/arcsec2]": -2.5 * np.log10(sky_radiance / vega),
         "vega_flux [e/s]": vega * A,
     }
-
-    return vega_dict

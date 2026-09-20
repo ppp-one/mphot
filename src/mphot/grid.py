@@ -28,7 +28,7 @@ def _grid_coords() -> np.ndarray:
     """
 
     shape = (len(PWV_VALUES), len(AIRMASS_VALUES), len(TEFF_VALUES))
-    coords = np.zeros(shape + (3,))
+    coords = np.zeros((*shape, 3))
     coords[..., 0] = PWV_VALUES.reshape((shape[0], 1, 1))
     coords[..., 1] = AIRMASS_VALUES.reshape((1, shape[1], 1))
     coords[..., 2] = TEFF_VALUES.reshape((1, 1, shape[2]))

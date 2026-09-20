@@ -108,14 +108,14 @@ def test_generate_system_response():
     )
 
     # does instrument efficiency file exist?
-    assert Path(
-        instrument_efficiency_path
-    ).exists(), f"Expected file {instrument_efficiency_path} to exist, but it does not"
+    assert Path(instrument_efficiency_path).exists(), (
+        f"Expected file {instrument_efficiency_path} to exist, but it does not"
+    )
 
     # does filter file exist?
-    assert Path(
-        filter_path
-    ).exists(), f"Expected file {filter_path} to exist, but it does not"
+    assert Path(filter_path).exists(), (
+        f"Expected file {filter_path} to exist, but it does not"
+    )
 
     name, system_response = mphot.generate_system_response(
         instrument_efficiency_path, filter_path

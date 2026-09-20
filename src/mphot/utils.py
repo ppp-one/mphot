@@ -76,10 +76,10 @@ def update_progress(progress: float | int) -> None:
     if progress >= 1:
         progress = 1
 
-    block = int(round(bar_length * progress))
+    block = round(bar_length * progress)
 
     clear_output(wait=True)
-    text = "Progress: [{0}] {1:.1f}%".format(
+    text = "Progress: [{}] {:.1f}%".format(
         "#" * block + "-" * (bar_length - block), progress * 100
     )
     print(text)

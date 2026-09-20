@@ -18,7 +18,6 @@ build-backend = "hatchling.build"
 source = "vcs"
 
 [project.optional-dependencies]
-dev = ["black", "pytest"]
 test = ["pytest"]
 docs = [
     "sphinx",
@@ -32,6 +31,33 @@ docs = [
     "toml",
 ]
 
+[dependency-groups]
+dev = [
+    "pytest",
+    "pre-commit",
+    "ruff",
+]
+
 [project.urls]
 Documentation = "https://mphot.readthedocs.io"
 Repository = "https://github.com/ppp-one/mphot"
+
+[tool.ruff]
+line-length = 88
+target-version = "py311"
+# Notebooks are left alone: reformatting cells creates noisy diffs in the
+# examples. Drop "*.ipynb" here to lint and format them too.
+extend-exclude = ["docs/build", "resources", "*.ipynb"]
+
+[tool.ruff.lint]
+# E4/E7/E9 is ruff's default pycodestyle subset. It leaves line length (E501)
+# alone, because the formatter does not reflow the long docstrings here.
+select = ["E4", "E7", "E9", "F", "I", "UP", "B", "SIM", "C4", "RUF", "PTH", "RET"]
+
+[tool.ruff.lint.per-file-ignores]
+# These modules re-export names for backwards compatibility.
+"src/mphot/core.py" = ["F401"]
+"src/mphot/__init__.py" = ["F401"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

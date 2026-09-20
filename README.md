@@ -6,7 +6,7 @@
 
 ## How it works
 
-Simply put, 
+Simply put,
 - it combines user submitted [telescope * filter * camera qe] efficiencies with generic stellar models and sky transmission/radiance models (for Paranal, 2400m) to generate integrable grids of stellar fluxes and sky radiances.
 
 - Then, *mphot* uses the grids to interpolate between different
@@ -16,7 +16,7 @@ Simply put,
 - using user submitted
     - telescope/site parameters (primary and secondary diameters, site seeing)
     - camera parameters (plate scale, dark current, read noise, well depth, target well fill, read time)
-    
+
 - to calculate the ideal exposure time and expected precision for a given observation.
 
 Please see the [examples](https://github.com/ppp-one/mphot/tree/main/examples) for more details on how to use *mphot*. For further details on the models used, please see [https://doi.org/10.1117/12.3018320](https://doi.org/10.1117/12.3018320).

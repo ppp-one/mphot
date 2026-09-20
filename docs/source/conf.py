@@ -6,12 +6,12 @@
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
-import os
-import sys
 import importlib.metadata
+import sys
+from pathlib import Path
 
 # add path to source code
-sys.path.insert(0, os.path.abspath("../../src/"))
+sys.path.insert(0, str(Path("../../src/").resolve()))
 
 project = "mphot"
 copyright = "2025, Peter Pedersen"
