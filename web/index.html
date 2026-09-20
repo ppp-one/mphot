@@ -676,7 +676,7 @@ async function boot() {
     ...FILTERS.map(f => `resources/filters/${f}.csv`),
   ];
   for (const path of paths) {
-    const res = await fetch(new URL(`../${path}`, location.href));
+    const res = await fetch(new URL(path, location.href));
     if (!res.ok) throw new Error(`cannot fetch ${path} (HTTP ${res.status})`);
     pyodide.FS.mkdirTree(`/data/${path.substring(0, path.lastIndexOf("/"))}`);
     pyodide.FS.writeFile(`/data/${path}`, new Uint8Array(await res.arrayBuffer()));

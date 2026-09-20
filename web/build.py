@@ -1,17 +1,22 @@
 """
-Build the mphot wheel that the web demo loads.
+Assemble the web demo so that `web/` is a complete, self-contained site.
 
 The demo runs mphot in the browser under Pyodide, which installs the package
 from a wheel. The wheel is built from the working tree, so the demo always
 shows the code you have checked out rather than the last release.
 
-The precision grids under ``src/mphot/grids`` are left out. They are caches,
-they are the largest part of the package, and the demo rebuilds the ones it
-needs in a fraction of a second.
+This writes two things into `web/`, both ignored by git:
 
-The wheel's name carries the project version, so this also writes
-``web/dist/wheel.json`` naming the file. The page reads that rather than
-hard-coding a version that a release would invalidate.
+* ``dist/`` — the wheel, plus a ``wheel.json`` naming it. The wheel's name
+  carries the project version, so the page reads the manifest rather than
+  hard-coding a version that a release would invalidate.
+* ``resources/`` — a copy of the instrument and filter curves the page fetches.
+  Copying them means `web/` can be published on its own, rather than having to
+  serve the whole repository so that ``../resources`` resolves.
+
+The precision grids under ``src/mphot/grids`` are left out of the wheel. They
+are caches, they are the largest part of the package, and the demo rebuilds the
+ones it needs in a fraction of a second.
 
 Usage:
     python web/build.py
@@ -24,11 +29,17 @@ import sys
 import tempfile
 from pathlib import Path
 
-REPO = Path(__file__).resolve().parent.parent
-DIST = Path(__file__).resolve().parent / "dist"
+WEB = Path(__file__).resolve().parent
+REPO = WEB.parent
+DIST = WEB / "dist"
+RESOURCES = WEB / "resources"
+
+# The curve families the page offers. Whole directories, so adding a filter to
+# the page needs no change here.
+CURVE_DIRS = ("systems", "filters")
 
 
-def build() -> Path:
+def build_wheel() -> Path:
     """Build the wheel into web/dist and return its path."""
     with tempfile.TemporaryDirectory() as tmp:
         stage = Path(tmp) / "mphot"
@@ -42,7 +53,6 @@ def build() -> Path:
             ignore=shutil.ignore_patterns("__pycache__", "*.pyc"),
         )
 
-        # Drop the grid caches; the demo regenerates what it needs.
         for npy in (stage / "src" / "mphot" / "grids").glob("*.npy"):
             npy.unlink()
 
@@ -61,17 +71,39 @@ def build() -> Path:
     if not wheels:
         raise RuntimeError("no wheel was produced")
 
-    # The page reads this to find the wheel. Without it the page would have to
-    # hard-code a version, and every release would break it.
     (DIST / "wheel.json").write_text(
         json.dumps({"wheel": wheels[0].name}, indent=2) + "\n"
     )
     return wheels[0]
 
 
+def copy_curves() -> int:
+    """Copy the response curves the page fetches into web/resources."""
+    if RESOURCES.exists():
+        shutil.rmtree(RESOURCES)
+
+    count = 0
+    for name in CURVE_DIRS:
+        source = REPO / "resources" / name
+        if not source.is_dir():
+            raise RuntimeError(f"missing {source.relative_to(REPO)}")
+        target = RESOURCES / name
+        target.mkdir(parents=True)
+        for csv in sorted(source.glob("*.csv")):
+            shutil.copy(csv, target / csv.name)
+            count += 1
+    return count
+
+
+def build() -> tuple[Path, int]:
+    """Build the wheel and stage the curves. Returns the wheel and curve count."""
+    return build_wheel(), copy_curves()
+
+
 if __name__ == "__main__":
-    wheel = build()
+    wheel, curves = build()
     size = wheel.stat().st_size / 1e6
     print(f"built {wheel.relative_to(REPO)} ({size:.1f} MB)")
-    print("now serve the repository root and open /web/:")
-    print("    python -m http.server --directory . 8000")
+    print(f"staged {curves} response curves in {RESOURCES.relative_to(REPO)}")
+    print("now serve web/ and open it:")
+    print("    python -m http.server --directory web 8000")

@@ -7,14 +7,32 @@ line, with no server doing the work. Gaia DR3 is queried live from VizieR.
 ## Run it
 
 ```bash
-python web/build.py                        # build the wheel the page loads
-python -m http.server --directory . 8000   # serve the repository root
+python web/build.py                          # stage the wheel and the curves
+python -m http.server --directory web 8000   # serve web/
 ```
 
-Then open <http://localhost:8000/web/>.
+Then open <http://localhost:8000/>.
 
-Serve the repository root, not `web/`: the page reads the response curves from
-`resources/`.
+`build.py` makes `web/` self-contained: it writes the wheel and its manifest to
+`web/dist/`, and copies the instrument and filter curves to `web/resources/`.
+Both are ignored by git, and both are rebuilt from the working tree.
+
+## Deploying to Netlify
+
+`netlify.toml` in the repository root already carries the settings, so the
+fields in the Netlify UI can be left blank:
+
+| Setting | Value |
+|---|---|
+| Base directory | *(blank)* |
+| Package directory | *(blank)* |
+| Build command | `python web/build.py` |
+| Publish directory | `web` |
+| Functions directory | *(unused)* |
+
+`PYTHON_VERSION` is pinned to 3.11 because mphot needs 3.11 or newer and the
+build image default is older. The deploy is about 18 MB — the 16 MB wheel, the
+2.7 MB of curves and the page.
 
 ## What it does
 
