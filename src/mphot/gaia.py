@@ -3,6 +3,7 @@
 import csv
 import io
 import logging
+import sys
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -172,6 +173,40 @@ def _to_float(value, float32: bool = False) -> float:
     return float(np.float32(number)) if float32 else number
 
 
+def _read_url_emscripten(url: str) -> str:
+    """
+    Read a URL from inside a browser, where sockets do not exist.
+
+    WebAssembly has no sockets, so `urllib` cannot reach the network. Pyodide
+    offers a synchronous reader built on the browser's own HTTP stack, which
+    keeps the calling code unchanged.
+
+    Note that the browser applies its same-origin policy, so the service must
+    send an `Access-Control-Allow-Origin` header. VizieR does; the ESA archive
+    does not, and needs a proxy.
+
+    Args:
+        url (str): The URL to read.
+
+    Returns:
+        str: The response body.
+
+    Raises:
+        RuntimeError: If the request fails, usually because the service sends
+            no CORS header.
+    """
+
+    from pyodide.http import open_url
+
+    try:
+        return open_url(url).getvalue()
+    except Exception as e:
+        raise RuntimeError(
+            f"the browser could not fetch the TAP service ({type(e).__name__}). "
+            "The service must allow cross-origin requests."
+        ) from e
+
+
 def _tap_sync_csv(base_url: str, adql: str, timeout: float | None) -> list[dict]:
     """
     Run a synchronous TAP query and return its rows.
@@ -183,7 +218,8 @@ def _tap_sync_csv(base_url: str, adql: str, timeout: float | None) -> list[dict]
         base_url (str): Base TAP endpoint, without the ``/sync`` suffix.
         adql (str): The ADQL query.
         timeout (float, optional): Seconds to wait for each network operation.
-            If None, there is no timeout.
+            If None, there is no timeout. Ignored in a browser, where the
+            browser controls the timeout.
 
     Returns:
         list[dict]: One dict per result row, keyed by column name, values as
@@ -198,6 +234,10 @@ def _tap_sync_csv(base_url: str, adql: str, timeout: float | None) -> list[dict]
         {"REQUEST": "doQuery", "LANG": "ADQL", "FORMAT": "csv", "QUERY": adql}
     )
     url = base_url.rstrip("/") + "/sync?" + query
+
+    if sys.platform == "emscripten":
+        return list(csv.DictReader(io.StringIO(_read_url_emscripten(url))))
+
     request = urllib.request.Request(url, headers={"User-Agent": "mphot"})
 
     try:

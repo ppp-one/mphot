@@ -44,6 +44,19 @@ You can test the package has been properly installed with
 ```bash
 python -c "import mphot"
 ```
+
+## Web demo
+
+*mphot* runs in the browser through [Pyodide](https://pyodide.org), with nothing
+computed on a server. To try it locally:
+
+```bash
+python web/build.py
+python -m http.server --directory . 8000
+```
+
+then open <http://localhost:8000/web/>. See [web/README.md](web/README.md).
+
 ## Attribution
 
 If you find *mphot* useful for your research, please cite [Pedersen et. al 2024](https://doi.org/10.1117/12.3018320). The BibTeX entry for the paper is:

@@ -1,0 +1,1060 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>mphot exposure time calculator</title>
+<style>
+  :root {
+    color-scheme: light;
+    --surface-0: #f4f4f1;
+    --surface-1: #fcfcfb;
+    --surface-2: #eeeeea;
+    --text-primary: #0b0b0b;
+    --text-secondary: #52514e;
+    --text-muted: #898781;
+    --series-1: #2a78d6;
+    --series-2: #eb6834;
+    --series-3: #1baf7a;
+    --gridline: #e1e0d9;
+    --baseline: #c3c2b7;
+    --border: rgba(11, 11, 11, 0.10);
+    --good: #006300;
+    --bad: #b4241f;
+    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --surface-0: #121211;
+      --surface-1: #1a1a19;
+      --surface-2: #232321;
+      --text-primary: #ffffff;
+      --text-secondary: #c3c2b7;
+      --text-muted: #898781;
+      --series-1: #3987e5;
+      --series-2: #d95926;
+      --series-3: #199e70;
+      --gridline: #2c2c2a;
+      --baseline: #383835;
+      --border: rgba(255, 255, 255, 0.10);
+      --good: #0ca30c;
+      --bad: #e66767;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --surface-0: #121211;
+    --surface-1: #1a1a19;
+    --surface-2: #232321;
+    --text-primary: #ffffff;
+    --text-secondary: #c3c2b7;
+    --text-muted: #898781;
+    --series-1: #3987e5;
+    --series-2: #d95926;
+    --series-3: #199e70;
+    --gridline: #2c2c2a;
+    --baseline: #383835;
+    --border: rgba(255, 255, 255, 0.10);
+    --good: #0ca30c;
+    --bad: #e66767;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--surface-0); color: var(--text-primary);
+    font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 32px 16px 64px; }
+
+  header { margin-bottom: 20px; }
+  h1 { font-size: 24px; font-weight: 640; margin: 0 0 4px; letter-spacing: -0.01em; }
+  header p { margin: 0; color: var(--text-secondary); max-width: 66ch; }
+  code { font-family: var(--mono); font-size: 0.92em; }
+
+  #status {
+    display: flex; align-items: center; gap: 10px; background: var(--surface-1);
+    border: 1px solid var(--border); border-radius: 10px; padding: 11px 14px;
+    margin: 18px 0; color: var(--text-secondary); font-size: 14px;
+  }
+  #status[data-state="error"] { color: var(--bad); }
+  #status[data-state="ready"] { color: var(--good); }
+  .spinner {
+    width: 14px; height: 14px; flex: none; border-radius: 50%;
+    border: 2px solid var(--baseline); border-top-color: var(--series-1);
+    animation: spin 0.8s linear infinite;
+  }
+  #status[data-state="ready"] .spinner, #status[data-state="error"] .spinner { display: none; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce) { .spinner { animation: none; } }
+
+  .cols { display: grid; grid-template-columns: 340px minmax(0, 1fr); gap: 20px; align-items: start; }
+  @media (max-width: 900px) { .cols { grid-template-columns: 1fr; } }
+
+  .card { background: var(--surface-1); border: 1px solid var(--border);
+    border-radius: 12px; padding: 16px 18px; }
+  .card + .card { margin-top: 14px; }
+  h2 { font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase;
+    color: var(--text-muted); margin: 0 0 12px; }
+
+  .field { margin-bottom: 12px; }
+  .field:last-child { margin-bottom: 0; }
+  .field > label { display: flex; justify-content: space-between; align-items: baseline;
+    gap: 8px; font-size: 13px; color: var(--text-secondary); margin-bottom: 4px; }
+  .field .val { font-family: var(--mono); font-size: 12px; color: var(--text-primary);
+    white-space: nowrap; }
+  select, input[type="text"], input[type="number"] {
+    width: 100%; padding: 6px 9px; font: inherit; font-size: 14px;
+    color: var(--text-primary); background: var(--surface-0);
+    border: 1px solid var(--border); border-radius: 7px;
+  }
+  input[type="range"] { width: 100%; accent-color: var(--series-1); margin: 0; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .unit { color: var(--text-muted); font-weight: 400; }
+
+  button {
+    width: 100%; padding: 9px; font: inherit; font-weight: 560; cursor: pointer;
+    color: #fff; background: var(--series-1); border: 0; border-radius: 8px;
+  }
+  button.secondary { color: var(--text-primary); background: var(--surface-2);
+    border: 1px solid var(--border); font-weight: 500; }
+  button:disabled { opacity: 0.5; cursor: default; }
+  .hint { font-size: 12px; color: var(--text-muted); margin: 6px 0 0; }
+  .hint.err { color: var(--bad); }
+
+  .seg { display: flex; gap: 6px; }
+  .seg label { flex: 1; text-align: center; padding: 6px 4px; font-size: 13px; cursor: pointer;
+    border: 1px solid var(--border); border-radius: 7px; color: var(--text-secondary); }
+  .seg input { position: absolute; opacity: 0; width: 0; height: 0; }
+  .seg label:has(input:checked) { border-color: var(--series-1); color: var(--series-1); font-weight: 560; }
+  .seg label:has(input:focus-visible) { outline: 2px solid var(--series-1); outline-offset: 2px; }
+
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  @media (max-width: 560px) { .stats { grid-template-columns: 1fr 1fr; } }
+  .stat .k { font-size: 12px; color: var(--text-muted); margin-bottom: 2px; }
+  .stat .v { font-size: 40px; line-height: 1.05; font-weight: 640; letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums; }
+  .stat.lead .v { color: var(--series-1); }
+  .stat .u { font-size: 13px; color: var(--text-secondary); }
+  .meta { font-size: 13px; color: var(--text-secondary); margin: 14px 0 0; }
+  .meta .warn { color: var(--bad); }
+
+  figure { margin: 0; }
+  figcaption { font-size: 13px; color: var(--text-secondary); margin-bottom: 12px; }
+  .fig-head { display: flex; justify-content: space-between; align-items: flex-start;
+    gap: 16px; margin-bottom: 12px; }
+  .fig-head .seg { flex: none; width: 190px; }
+  @media (max-width: 560px) {
+    .fig-head { flex-direction: column; gap: 10px; }
+    .fig-head .seg { width: 100%; }
+  }
+
+  .bars { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 3px 10px; align-items: center; }
+  .bars .name { font-size: 13px; color: var(--text-secondary); white-space: nowrap; }
+  .bars .track { height: 22px; position: relative; }
+  .bars .fill { position: absolute; inset: 0 auto 0 0; min-width: 2px;
+    background: var(--series-1); border-radius: 0 4px 4px 0; }
+  .bars .num { font-family: var(--mono); font-size: 12px; font-variant-numeric: tabular-nums;
+    color: var(--text-primary); white-space: nowrap; }
+  .bars .row-gap { height: 2px; grid-column: 1 / -1; }
+
+  .facets { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px 14px; }
+  .facet .ttl { font-size: 12px; color: var(--text-secondary); margin-bottom: 2px; }
+  .facet .now { font-family: var(--mono); font-size: 11px; color: var(--text-muted); }
+  .facet svg { display: block; width: 100%; height: auto; overflow: visible; touch-action: none; }
+  .facet .now { min-height: 1.4em; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { text-align: left; padding: 5px 8px; border-bottom: 1px solid var(--gridline); }
+  thead th { color: var(--text-muted); font-weight: 600; font-size: 11px;
+    letter-spacing: 0.05em; text-transform: uppercase; }
+  td:last-child { text-align: right; font-family: var(--mono); font-variant-numeric: tabular-nums; }
+  tr:last-child td { border-bottom: 0; }
+  details > summary { cursor: pointer; font-size: 13px; color: var(--text-secondary); }
+  details[open] > summary { margin-bottom: 10px; }
+
+  .legend { display: flex; flex-wrap: wrap; gap: 6px 16px; margin: 0 0 10px; }
+  .legend span { display: inline-flex; align-items: center; gap: 6px;
+    font-size: 12px; color: var(--text-secondary); }
+  .legend i { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+  .chart svg { display: block; width: 100%; height: auto; touch-action: none; }
+  .readout { font-family: var(--mono); font-size: 12px; color: var(--text-secondary);
+    min-height: 1.5em; margin: 6px 0 0; }
+
+  .placeholder { color: var(--text-muted); font-size: 14px; }
+  footer { margin-top: 26px; font-size: 13px; color: var(--text-muted); }
+  footer a { color: var(--series-1); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>mphot exposure time calculator</h1>
+  <p>
+    Build a telescope, camera and filter, and see the exposure time and binned
+    precision that follow. The model runs here as WebAssembly &mdash; the same
+    <code>mphot</code> package as on the command line, with nothing computed on a
+    server. Gaia DR3 is queried live from VizieR.
+  </p>
+</header>
+
+<div id="status" data-state="loading"><span class="spinner"></span><span id="status-text">Starting Python&hellip;</span></div>
+
+<div class="cols">
+  <div>
+    <div class="card">
+      <h2>Preset</h2>
+      <div class="field">
+        <select id="preset"></select>
+        <p class="hint">Changing any value below switches to Custom.</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Optics</h2>
+      <div class="field">
+        <label for="system">Telescope, optics and detector QE</label>
+        <select id="system"></select>
+      </div>
+      <div class="field">
+        <label for="filter">Filter</label>
+        <select id="filter"></select>
+      </div>
+      <p class="hint">
+        These two curves multiply into the system response. A new pairing is
+        built on demand, which takes a moment the first time.
+      </p>
+    </div>
+
+    <div class="card">
+      <h2>Telescope</h2>
+      <div class="grid2" id="telescope-fields"></div>
+      <p class="hint err" id="mirror-hint" hidden></p>
+    </div>
+
+    <div class="card">
+      <h2>Camera</h2>
+      <div class="grid2" id="camera-fields"></div>
+    </div>
+
+    <div class="card">
+      <h2>Sky</h2>
+      <div class="field">
+        <label for="pwv">Precipitable water vapour <span class="val" id="pwv-v"></span></label>
+        <input type="range" id="pwv" min="0.05" max="30" step="0.05" value="2.5">
+      </div>
+      <div class="field">
+        <label for="airmass">Airmass <span class="val" id="airmass-v"></span></label>
+        <input type="range" id="airmass" min="1" max="3" step="0.01" value="1.1">
+      </div>
+      <div class="field">
+        <label for="seeing">Seeing <span class="val" id="seeing-v"></span></label>
+        <input type="range" id="seeing" min="0.4" max="4" step="0.05" value="1.35">
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Target</h2>
+      <div class="field">
+        <div class="seg">
+          <label><input type="radio" name="mode" value="model" checked> Model star</label>
+          <label><input type="radio" name="mode" value="gaia"> Gaia source</label>
+        </div>
+      </div>
+      <div id="model-fields">
+        <div class="field">
+          <label for="teff">Effective temperature <span class="val" id="teff-v"></span></label>
+          <input type="range" id="teff" min="450" max="36500" step="10" value="2560">
+        </div>
+        <div class="field">
+          <label for="dist-num">Distance <span class="val" id="dist-v"></span></label>
+          <input type="number" id="dist-num" min="0.01" max="1e6" step="any" value="12.5">
+          <input type="range" id="dist" min="-2" max="6" step="0.001" value="1.0969"
+                 aria-label="Distance, logarithmic" style="margin-top:6px">
+          <p class="hint">0.01 pc to 1 Mpc on a log slider, or type an exact value.</p>
+        </div>
+      </div>
+      <div id="gaia-fields" hidden>
+        <div class="field">
+          <label for="source-id">Gaia DR3 source_id</label>
+          <input type="text" id="source-id" value="2635476908753563008" inputmode="numeric">
+        </div>
+        <div class="field">
+          <label for="gaia-teff">Effective temperature <span class="val" id="gaia-teff-v"></span></label>
+          <input type="range" id="gaia-teff" min="450" max="36500" step="10" value="2560">
+          <p class="hint">Used when Gaia has no <code>teff_gspphot</code> for the star.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Exposure</h2>
+      <div class="field">
+        <label for="binning">Binning window <span class="val" id="binning-v"></span></label>
+        <input type="range" id="binning" min="1" max="60" step="1" value="10">
+      </div>
+      <div class="grid2">
+        <div class="field">
+          <label for="min_exp">Min exposure <span class="unit">s</span></label>
+          <input type="number" id="min_exp" min="0" step="any" placeholder="none">
+        </div>
+        <div class="field">
+          <label for="max_exp">Max exposure <span class="unit">s</span></label>
+          <input type="number" id="max_exp" min="0" step="any" placeholder="none">
+        </div>
+      </div>
+      <p class="hint">Leave blank for an unconstrained exposure.</p>
+    </div>
+
+    <div class="card">
+      <button id="run" disabled>Compute</button>
+    </div>
+  </div>
+
+  <div>
+    <div class="card" id="results">
+      <p class="placeholder">Results appear here once Python has loaded.</p>
+    </div>
+    <div class="card" id="response-card">
+      <h2>System response</h2>
+      <div id="response"><p class="placeholder">Loading\u2026</p></div>
+    </div>
+    <div class="card" id="sensitivity-card" hidden>
+      <h2>Sensitivity</h2>
+      <p class="hint" style="margin:0 0 12px">
+        Binned precision as each parameter is swept on its own, with the rest held
+        at their current values. The dot marks where you are now.
+      </p>
+      <button class="secondary" id="sweep">Analyse sensitivity</button>
+      <div id="facets"></div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  Built from the working tree by <code>python web/build.py</code>.
+  Source: <a href="https://github.com/ppp-one/mphot">github.com/ppp-one/mphot</a>.
+</footer>
+
+</div>
+
+<script type="module">
+const $ = id => document.getElementById(id);
+const statusEl = $("status"), statusText = $("status-text");
+const runBtn = $("run"), sweepBtn = $("sweep"), resultsEl = $("results");
+
+// Declared here because checkMirrors() reads it during the initial preset,
+// which runs before boot().
+let pyodide;
+
+function setStatus(text, state = "loading") {
+  statusText.textContent = text;
+  statusEl.dataset.state = state;
+}
+
+// --------------------------------------------------------------- parameters
+// Each pairing is an efficiency file (telescope x optics x detector QE) and a
+// filter file; generate_system_response() multiplies them together.
+const SYSTEMS = [
+  { id: "speculoos_Andor_iKon-L-936_-60", label: "SPECULOOS 1 m · Andor iKon-L CCD" },
+  { id: "speculoos_PIRT_1280SciCam_-60", label: "SPECULOOS NIR · PIRT 1280SciCam InGaAs" },
+  { id: "generic_IMX461", label: "Generic optics · Sony IMX461 CMOS" },
+];
+const FILTERS = ["I+z", "z", "i", "r", "g", "u", "clear", "luminance", "halpha",
+                 "zYJ", "J", "SPC_J", "SPC_H"];
+
+// The sensitivity sweep follows examples/Sensitivity plot.ipynb, but each range
+// is set relative to the current value rather than fixed. A fixed 0-1000 dark
+// current range is informative for an InGaAs array and useless for a CCD at 0.2.
+const around = (lo, hi, floor = 0) => now => [
+  Math.max(floor, now * lo), Math.max(now * hi, floor + 1e-9),
+];
+const upFrom0 = (mult, atLeast) => now => [0, Math.max(now * mult, atLeast)];
+
+const TELESCOPE = [
+  { key: "r0", label: "Primary radius", unit: "m", min: 0.02, max: 5, step: "any",
+    range: around(0.25, 3, 0.02) },
+  { key: "r1", label: "Secondary radius", unit: "m", min: 0, max: 4, step: "any",
+    range: null },  // filled from the primary at sweep time
+];
+const CAMERA = [
+  { key: "plate_scale", label: "Plate scale", unit: "″/pix", min: 0.01, max: 5, step: "any",
+    range: around(0.25, 3, 0.01) },
+  { key: "N_dc", label: "Dark current", unit: "e⁻/pix/s", min: 0, max: 5000, step: "any",
+    range: upFrom0(5, 1) },
+  { key: "N_rn", label: "Read noise", unit: "e⁻ rms", min: 0, max: 500, step: "any",
+    range: upFrom0(3, 10) },
+  { key: "well_depth", label: "Well depth", unit: "e⁻/pix", min: 100, max: 1e7, step: "any",
+    range: around(0.25, 3, 1000) },
+  { key: "well_fill", label: "Well fill", unit: "", min: 0.01, max: 1, step: "any",
+    range: () => [0.05, 1] },
+  { key: "read_time", label: "Read time", unit: "s", min: 0, max: 120, step: "any",
+    range: upFrom0(3, 10) },
+  { key: "ap_rad", label: "Aperture radius", unit: "FWHM", min: 0.2, max: 8, step: "any",
+    range: () => [0.5, 5] },
+];
+const INSTRUMENT = [...TELESCOPE, ...CAMERA];
+
+const PRESETS = [
+  { id: "spec-iz", label: "SPECULOOS 1 m · I+z",
+    system: SYSTEMS[0].id, filter: "I+z",
+    props: { r0: 0.5, r1: 0.14, plate_scale: 0.35, N_dc: 0.2, N_rn: 6.328,
+             well_depth: 64000, well_fill: 0.7, read_time: 10.5, ap_rad: 3 } },
+  { id: "spec-nir", label: "SPECULOOS NIR · zYJ",
+    system: SYSTEMS[1].id, filter: "zYJ",
+    props: { r0: 0.5, r1: 0.14, plate_scale: 0.31, N_dc: 110, N_rn: 90,
+             well_depth: 56000, well_fill: 0.7, read_time: 0.1, ap_rad: 3 } },
+  { id: "small-cmos", label: "50 cm · IMX461 CMOS · luminance",
+    system: SYSTEMS[2].id, filter: "luminance",
+    props: { r0: 0.25, r1: 0.1, plate_scale: 0.9, N_dc: 0.1, N_rn: 8.47,
+             well_depth: 1048560, well_fill: 0.7, read_time: 5, ap_rad: 3 } },
+];
+
+// ------------------------------------------------------------------ controls
+function buildNumberFields(container, params) {
+  container.innerHTML = params.map(p => `
+    <div class="field">
+      <label for="${p.key}">${p.label} ${p.unit ? `<span class="unit">${p.unit}</span>` : ""}</label>
+      <input type="number" id="${p.key}" min="${p.min}" max="${p.max}" step="${p.step}">
+    </div>`).join("");
+}
+buildNumberFields($("telescope-fields"), TELESCOPE);
+buildNumberFields($("camera-fields"), CAMERA);
+
+for (const s of SYSTEMS) $("system").add(new Option(s.label, s.id));
+for (const f of FILTERS) $("filter").add(new Option(f, f));
+for (const p of PRESETS) $("preset").add(new Option(p.label, p.id));
+$("preset").add(new Option("Custom", "custom"));
+
+function applyPreset(id) {
+  const p = PRESETS.find(x => x.id === id);
+  if (!p) return;
+  $("system").value = p.system;
+  $("filter").value = p.filter;
+  for (const param of INSTRUMENT) $(param.key).value = p.props[param.key];
+  checkMirrors();
+  updateResponse();
+}
+
+// Any manual edit means the configuration is no longer one of the presets.
+for (const el of [$("system"), $("filter"), ...INSTRUMENT.map(p => $(p.key))]) {
+  el.addEventListener("input", () => { $("preset").value = "custom"; checkMirrors(); });
+}
+$("preset").addEventListener("change", e => applyPreset(e.target.value));
+for (const el of [$("system"), $("filter")]) el.addEventListener("change", () => updateResponse());
+
+function checkMirrors() {
+  const r0 = +$("r0").value, r1 = +$("r1").value;
+  const bad = !(r0 > 0) || !(r1 >= 0) || r1 >= r0;
+  const hint = $("mirror-hint");
+  hint.hidden = !bad;
+  if (bad) hint.textContent = "The secondary radius must be smaller than the primary.";
+  runBtn.disabled = bad || !pyodide;
+  return !bad;
+}
+applyPreset(PRESETS[0].id);
+
+const sliderFmt = {
+  pwv: v => `${(+v).toFixed(2)} mm`,
+  airmass: v => (+v).toFixed(2),
+  seeing: v => `${(+v).toFixed(2)}″`,
+  teff: v => `${Math.round(v)} K`,
+  "gaia-teff": v => `${Math.round(v)} K`,
+  binning: v => `${Math.round(v)} min`,
+};
+for (const [id, f] of Object.entries(sliderFmt)) {
+  const input = $(id), out = $(`${id}-v`);
+  const sync = () => { out.textContent = f(input.value); };
+  input.addEventListener("input", sync);
+  sync();
+}
+// Distance spans many decades, so the slider is logarithmic and the number
+// field beside it takes an exact value.
+const distNum = $("dist-num"), distSlider = $("dist");
+const fmtDistance = pc =>
+  !isFinite(pc) || pc <= 0 ? "\u2014"
+  : pc >= 1e6 ? `${sig(pc / 1e6)} Mpc`
+  : pc >= 1e3 ? `${sig(pc / 1e3)} kpc`
+  : `${sig(pc)} pc`;
+
+function distanceFromNumber() {
+  const pc = +distNum.value;
+  if (pc > 0) distSlider.value = Math.log10(pc);
+  $("dist-v").textContent = fmtDistance(pc);
+}
+function distanceFromSlider() {
+  const pc = 10 ** +distSlider.value;
+  distNum.value = Number(pc.toPrecision(4));
+  $("dist-v").textContent = fmtDistance(pc);
+}
+distNum.addEventListener("input", distanceFromNumber);
+distSlider.addEventListener("input", distanceFromSlider);
+distanceFromNumber();
+
+for (const radio of document.querySelectorAll('input[name="mode"]')) {
+  radio.addEventListener("change", () => {
+    const gaia = radio.value === "gaia" && radio.checked;
+    $("model-fields").hidden = gaia;
+    $("gaia-fields").hidden = !gaia;
+  });
+}
+
+function readSpec() {
+  const mode = document.querySelector('input[name="mode"]:checked').value;
+  const props = {};
+  for (const p of INSTRUMENT) props[p.key] = +$(p.key).value;
+  props.well_fill = Math.min(Math.max(props.well_fill, 0.01), 1);
+  const minExp = $("min_exp").value.trim(), maxExp = $("max_exp").value.trim();
+  if (minExp !== "") props.min_exp = +minExp;
+  if (maxExp !== "") props.max_exp = +maxExp;
+  return {
+    system: $("system").value, filter: $("filter").value, props, mode,
+    pwv: +$("pwv").value, airmass: +$("airmass").value, seeing: +$("seeing").value,
+    binning: +$("binning").value,
+    teff: mode === "gaia" ? +$("gaia-teff").value : +$("teff").value,
+    distance: +distNum.value,
+    source_id: $("source-id").value.trim(),
+  };
+}
+
+// ------------------------------------------------------------------- Pyodide
+const PY = `
+import json
+import mphot
+
+_NAMES = {}
+
+def _system_name(system, filt):
+    """Build the system response once per (optics, filter) pairing."""
+    key = (system, filt)
+    if key not in _NAMES:
+        name, _ = mphot.generate_system_response(
+            f"/data/resources/systems/{system}.csv",
+            f"/data/resources/filters/{filt}.csv",
+        )
+        _NAMES[key] = name
+    return _NAMES[key]
+
+def _run(spec, props=None):
+    props = dict(props or spec["props"], name=_system_name(spec["system"], spec["filter"]))
+    props_sky = {"pwv": spec["pwv"], "airmass": spec["airmass"], "seeing": spec["seeing"]}
+    if spec["mode"] == "gaia":
+        return mphot.get_precision_gaia(
+            props, props_sky, source_id=int(spec["source_id"]),
+            Teff=spec["teff"], binning=spec["binning"],
+        )
+    return mphot.get_precision(
+        props, props_sky, spec["teff"], spec["distance"], binning=spec["binning"],
+    )
+
+def _finite(value):
+    value = float(value)
+    return value if value == value and abs(value) != float("inf") else None
+
+def compute(spec_json):
+    spec = json.loads(spec_json)
+    image, binned, components = _run(spec)
+    order = ["Star", "Scintillation", "Sky", "Dark current", "Read noise"]
+    return json.dumps({
+        "instrument": components["name"],
+        "image_all": image["All"],
+        "binned_all": binned["All"],
+        "exposure": components["t [s]"],
+        "frames_per_bin": components["binned images"],
+        "well_fill": components["peak well_fill"],
+        "binning": spec["binning"],
+        "gaia": spec["source_id"] if spec["mode"] == "gaia" else None,
+        "components": [
+            {"name": k, "image": image[k], "binned": binned[k]} for k in order
+        ],
+        "table": {k: v for k, v in components.items() if k != "name"},
+    })
+
+def response_curves(system, filt, points):
+    """Return the detector-plus-optics curve, the filter, and their product."""
+    import pandas as pd
+    from mphot.constants import WAVELENGTHS
+    from mphot.utils import interpolate_dfs
+
+    eff = pd.read_csv(f"/data/resources/systems/{system}.csv", header=None)
+    flt = pd.read_csv(f"/data/resources/filters/{filt}.csv", header=None)
+    frame = interpolate_dfs(
+        WAVELENGTHS,
+        pd.DataFrame({"eff": eff[1].values}, index=eff[0]),
+        pd.DataFrame({"filt": flt[1].values}, index=flt[0]),
+    )
+    frame["sr"] = frame["eff"] * frame["filt"]
+
+    # Show only where the filter passes something, with a little air either side.
+    peak = float(frame["sr"].max())
+    live = frame.index[frame["sr"] > peak * 1e-3]
+    if len(live):
+        pad = (live[-1] - live[0]) * 0.08 + 0.02
+        frame = frame[(frame.index >= live[0] - pad) & (frame.index <= live[-1] + pad)]
+
+    step = max(1, len(frame) // points)
+    frame = frame.iloc[::step]
+    col = lambda c: [None if v != v else round(float(v), 5) for v in frame[c]]
+    return json.dumps({
+        "lam": [round(float(v), 5) for v in frame.index],
+        "eff": col("eff"), "filt": col("filt"), "sr": col("sr"),
+        "peak": peak,
+    })
+
+def sweep(spec_json, plan_json, points):
+    """Vary one parameter at a time, as examples/Sensitivity plot.ipynb does."""
+    spec = json.loads(spec_json)
+    out = {}
+    for key, (lo, hi) in json.loads(plan_json).items():
+        xs, ys = [], []
+        for i in range(points):
+            value = lo + (hi - lo) * i / (points - 1)
+            props = dict(spec["props"])
+            props[key] = value
+            try:
+                _, binned, _ = _run(spec, props)
+                y = _finite(binned["All"] * 1000)
+            except Exception:
+                y = None
+            xs.append(value)
+            ys.append(y)
+        out[key] = {"x": xs, "y": ys, "now": spec["props"][key]}
+    return json.dumps(out)
+`;
+
+async function boot() {
+  const { loadPyodide } = await import(
+    "https://cdn.jsdelivr.net/pyodide/v0.29.5/full/pyodide.mjs");
+
+  setStatus("Starting Python…");
+  pyodide = await loadPyodide({ indexURL: "https://cdn.jsdelivr.net/pyodide/v0.29.5/full/" });
+
+  setStatus("Loading numpy, pandas and scipy…");
+  await pyodide.loadPackage(["numpy", "pandas", "scipy", "micropip"]);
+
+  setStatus("Installing mphot…");
+  const wheel = new URL("dist/mphot-1.2.3-py3-none-any.whl", location.href).href;
+  await pyodide.runPythonAsync(
+    `import micropip\nawait micropip.install(${JSON.stringify(wheel)})`);
+
+  setStatus("Fetching response curves…");
+  const paths = [
+    ...SYSTEMS.map(s => `resources/systems/${s.id}.csv`),
+    ...FILTERS.map(f => `resources/filters/${f}.csv`),
+  ];
+  for (const path of paths) {
+    const res = await fetch(new URL(`../${path}`, location.href));
+    if (!res.ok) throw new Error(`cannot fetch ${path} (HTTP ${res.status})`);
+    pyodide.FS.mkdirTree(`/data/${path.substring(0, path.lastIndexOf("/"))}`);
+    pyodide.FS.writeFile(`/data/${path}`, new Uint8Array(await res.arrayBuffer()));
+  }
+
+  await pyodide.runPythonAsync(PY);
+  setStatus("Ready", "ready");
+  checkMirrors();
+  resultsEl.innerHTML = '<p class="placeholder">Press Compute.</p>';
+  updateResponse();
+}
+
+function callPython(fn, ...args) {
+  const f = pyodide.globals.get(fn);
+  try { return JSON.parse(f(...args)); } finally { f.destroy(); }
+}
+
+// ----------------------------------------------------------------- rendering
+const ppt = x => x * 1000;
+
+function sig(x, digits = 3) {
+  if (x === null || x === undefined || !isFinite(x)) return "—";
+  if (x === 0) return "0";
+  const abs = Math.abs(x);
+  if (abs >= 1e5 || abs < 1e-3) return x.toExponential(2);
+  return Number(x.toPrecision(digits)).toString();
+}
+
+function duration(seconds) {
+  if (!isFinite(seconds)) return ["—", ""];
+  if (seconds < 90) return [sig(seconds), "s"];
+  const m = seconds / 60;
+  return m < 90 ? [sig(m), "min"] : [sig(m / 60), "h"];
+}
+
+let lastResult = null;
+let budgetView = "binned";
+
+function render(data) {
+  lastResult = data;
+  const comps = data.components.map(c => ({ name: c.name, v: ppt(c[budgetView]) }));
+  const max = Math.max(...comps.map(c => c.v));
+  const total = ppt(budgetView === "binned" ? data.binned_all : data.image_all);
+  const [expValue, expUnit] = duration(data.exposure);
+
+  const bars = comps.map(c => `
+      <div class="name">${c.name}</div>
+      <div class="track"><div class="fill" style="width:${max > 0 ? (c.v / max) * 100 : 0}%"></div></div>
+      <div class="num">${sig(c.v)}</div>
+      <div class="row-gap"></div>`).join("");
+
+  resultsEl.innerHTML = `
+    <div class="stats">
+      <div class="stat lead">
+        <div class="k">Exposure time</div>
+        <div class="v">${expValue}</div>
+        <div class="u">${expUnit} per frame</div>
+      </div>
+      <div class="stat lead">
+        <div class="k">Binned precision</div>
+        <div class="v">${sig(ppt(data.binned_all))}</div>
+        <div class="u">ppt over ${data.binning} min</div>
+      </div>
+      <div class="stat">
+        <div class="k">Single frame</div>
+        <div class="v">${sig(ppt(data.image_all))}</div>
+        <div class="u">ppt</div>
+      </div>
+    </div>
+    <p class="meta">
+      ${sig(data.frames_per_bin)} frames per bin &middot;
+      peak pixel filled to ${sig(data.well_fill * 100, 2)}% of the well
+      ${data.frames_per_bin < 1
+        ? '<br><span class="warn">A bin is shorter than one exposure, so binning cannot help here.</span>' : ""}
+      ${data.gaia ? `<br>Calibrated against Gaia DR3 ${data.gaia}.` : ""}
+    </p>
+
+    <figure style="margin-top:22px">
+      <div class="fig-head">
+        <figcaption style="margin:0">
+          Noise budget in parts per thousand. Components add in quadrature, so
+          they do not sum to the ${sig(total)} ppt total.
+        </figcaption>
+        <div class="seg" role="group" aria-label="Noise budget view">
+          <label><input type="radio" name="budget" value="binned" ${budgetView === "binned" ? "checked" : ""}> Binned</label>
+          <label><input type="radio" name="budget" value="image" ${budgetView === "image" ? "checked" : ""}> Frame</label>
+        </div>
+      </div>
+      <div class="bars">${bars}</div>
+    </figure>
+
+    <details style="margin-top:20px">
+      <summary>Noise budget as a table</summary>
+      <table>
+        <thead><tr><th>Component</th><th>Frame [ppt]</th><th>Binned [ppt]</th></tr></thead>
+        <tbody>${data.components.map(c =>
+          `<tr><th scope="row">${c.name}</th><td>${sig(ppt(c.image))}</td><td>${sig(ppt(c.binned))}</td></tr>`).join("")}
+        </tbody>
+      </table>
+    </details>
+    <details style="margin-top:12px">
+      <summary>All model components</summary>
+      <table><tbody>${Object.entries(data.table)
+        .map(([k, v]) => `<tr><th scope="row">${k}</th><td>${sig(v)}</td></tr>`).join("")}
+      </tbody></table>
+    </details>`;
+
+  for (const r of resultsEl.querySelectorAll('input[name="budget"]')) {
+    r.addEventListener("change", e => {
+      if (!e.target.checked) return;
+      budgetView = e.target.value;
+      render(lastResult);
+    });
+  }
+  $("sensitivity-card").hidden = false;
+}
+
+// Detector-plus-optics, filter, and their product against wavelength.
+const RESPONSE_SERIES = [
+  { key: "eff", label: "Detector + optics", color: "var(--series-3)" },
+  { key: "filt", label: "Filter", color: "var(--series-2)" },
+  { key: "sr", label: "System response", color: "var(--series-1)", fill: true },
+];
+
+function renderResponse(data, subtitle) {
+  const narrow = window.innerWidth < 640;
+  const W = narrow ? 360 : 560, H = narrow ? 200 : 216;
+  const L = 34, R = 12, T = 10, B = 36;
+  const lam = data.lam;
+  if (!lam.length) { $("response").innerHTML = '<p class="placeholder">No overlap between these curves.</p>'; return; }
+
+  const x0 = lam[0], x1 = lam[lam.length - 1];
+  let top = 0;
+  for (const s2 of RESPONSE_SERIES) for (const v of data[s2.key]) if (v !== null && v > top) top = v;
+  const yMax = Math.max(0.1, Math.ceil(top * 10) / 10);
+
+  const sx = v => L + ((v - x0) / (x1 - x0 || 1)) * (W - L - R);
+  const sy = v => T + (1 - v / yMax) * (H - T - B);
+
+  const path = key => {
+    let d = "", pen = false;
+    lam.forEach((xv, i) => {
+      const yv = data[key][i];
+      if (yv === null) { pen = false; return; }
+      d += `${pen ? "L" : "M"}${sx(xv).toFixed(1)} ${sy(yv).toFixed(1)} `;
+      pen = true;
+    });
+    return d;
+  };
+  const area = key => {
+    const pts = lam.map((xv, i) => [xv, data[key][i]]).filter(([, y]) => y !== null);
+    if (!pts.length) return "";
+    return `M${sx(pts[0][0]).toFixed(1)} ${sy(0).toFixed(1)} `
+      + pts.map(([xv, yv]) => `L${sx(xv).toFixed(1)} ${sy(yv).toFixed(1)}`).join(" ")
+      + ` L${sx(pts[pts.length - 1][0]).toFixed(1)} ${sy(0).toFixed(1)} Z`;
+  };
+
+  const yTicks = [0, 0.25, 0.5, 0.75, 1].map(f => f * yMax);
+  const nx = narrow ? 3 : 5;
+  const xTicks = Array.from({ length: nx }, (_, i) => x0 + (x1 - x0) * i / (nx - 1));
+
+  $("response").innerHTML = `
+    <p class="hint" style="margin:0 0 10px">${subtitle}</p>
+    <div class="legend">${RESPONSE_SERIES.map(s2 =>
+      `<span><i style="background:${s2.color}"></i>${s2.label}</span>`).join("")}</div>
+    <figure class="chart">
+      <svg viewBox="0 0 ${W} ${H}" role="img"
+           aria-label="Transmission against wavelength for the detector, the filter and their product">
+        ${yTicks.map(t => `<line x1="${L}" y1="${sy(t).toFixed(1)}" x2="${W - R}" y2="${sy(t).toFixed(1)}"
+            stroke="var(--gridline)" stroke-width="1"/>
+          <text x="${L - 6}" y="${(sy(t) + 3).toFixed(1)}" text-anchor="end" font-size="9"
+            fill="var(--text-muted)">${t.toFixed(2)}</text>`).join("")}
+        ${xTicks.map(t => `<text x="${sx(t).toFixed(1)}" y="${H - 20}" text-anchor="middle"
+            font-size="9" fill="var(--text-muted)">${t.toFixed(2)}</text>`).join("")}
+        <text x="${(L + (W - R - L) / 2).toFixed(0)}" y="${H - 6}" text-anchor="middle"
+              font-size="9" fill="var(--text-muted)">wavelength [µm]</text>
+        <path d="${area("sr")}" fill="var(--series-1)" opacity="0.10"/>
+        ${RESPONSE_SERIES.map(s2 => `<path d="${path(s2.key)}" fill="none" stroke="${s2.color}"
+            stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`).join("")}
+        <line class="cross" x1="0" y1="${T}" x2="0" y2="${H - B}" stroke="var(--baseline)"
+              stroke-width="1" opacity="0"/>
+        ${RESPONSE_SERIES.map(s2 => `<circle class="hd" data-key="${s2.key}" r="4" fill="${s2.color}"
+            stroke="var(--surface-1)" stroke-width="2" opacity="0"/>`).join("")}
+        <rect class="hit" x="${L}" y="${T}" width="${W - L - R}" height="${H - T - B}" fill="transparent"/>
+      </svg>
+      <p class="readout" id="response-readout">Peak system response ${sig(data.peak)} at ${
+        sig(lam[data.sr.indexOf(Math.max(...data.sr.filter(v => v !== null)))])} µm.</p>
+    </figure>
+    ${data.peak < 0.01 ? `<p class="hint err">This detector barely responds where the
+      filter passes light, so the star flux will be near zero and the exposure
+      time meaningless.</p>` : ""}`;
+
+  const svg = $("response").querySelector("svg");
+  const cross = svg.querySelector(".cross");
+  const dots = [...svg.querySelectorAll(".hd")];
+  const readout = $("response-readout");
+  const resting = readout.textContent;
+
+  svg.addEventListener("pointermove", event => {
+    const box = svg.getBoundingClientRect();
+    const vx = ((event.clientX - box.left) / box.width) * W;
+    let near = 0;
+    lam.forEach((xv, i) => {
+      if (Math.abs(sx(xv) - vx) < Math.abs(sx(lam[near]) - vx)) near = i;
+    });
+    cross.setAttribute("x1", sx(lam[near]).toFixed(1));
+    cross.setAttribute("x2", sx(lam[near]).toFixed(1));
+    cross.setAttribute("opacity", "1");
+    for (const dot of dots) {
+      const v = data[dot.dataset.key][near];
+      if (v === null) { dot.setAttribute("opacity", "0"); continue; }
+      dot.setAttribute("cx", sx(lam[near]).toFixed(1));
+      dot.setAttribute("cy", sy(v).toFixed(1));
+      dot.setAttribute("opacity", "1");
+    }
+    readout.textContent = `${sig(lam[near])} µm · ` + RESPONSE_SERIES
+      .map(s2 => `${s2.label} ${data[s2.key][near] === null ? "\u2014" : sig(data[s2.key][near])}`)
+      .join(" · ");
+  });
+  svg.addEventListener("pointerleave", () => {
+    cross.setAttribute("opacity", "0");
+    for (const dot of dots) dot.setAttribute("opacity", "0");
+    readout.textContent = resting;
+  });
+}
+
+function updateResponse() {
+  if (!pyodide) return;
+  const system = $("system").value, filt = $("filter").value;
+  const label = SYSTEMS.find(x => x.id === system).label;
+  try {
+    renderResponse(callPython("response_curves", system, filt, 480),
+                   `${label} through the ${filt} filter. `
+                   + "The vertical axis is the transmitted fraction.");
+  } catch (err) {
+    $("response").innerHTML = '<p class="placeholder">Could not build these curves.</p>';
+  }
+}
+
+// Small multiples: one facet per parameter, shared y so they compare directly.
+function renderFacets(sweeps) {
+  const W = 200, H = 96, PAD_L = 4, PAD_R = 4, PAD_T = 8, PAD_B = 18;
+  const PLOT_B = H - PAD_B;
+  const finite = [];
+  for (const k in sweeps) for (const y of sweeps[k].y) if (y !== null) finite.push(y);
+  if (!finite.length) { $("facets").innerHTML = '<p class="hint">No finite results to plot.</p>'; return; }
+
+  // Anchor the shared scale on the current result. One parameter can run away
+  // by orders of magnitude, and a scale that fits it flattens every other
+  // panel; curves that leave the top are clipped instead.
+  const now = ppt(lastResult.binned_all);
+  const sorted = [...finite].sort((a, b) => a - b);
+  const p95 = sorted[Math.min(sorted.length - 1, Math.floor(sorted.length * 0.95))];
+  const yMax = Math.max(1.2, Math.min(Math.max(p95, now * 1.5), now * 4));
+  const clipped = finite.some(y => y > yMax);
+  const meta = Object.fromEntries(INSTRUMENT.map(p => [p.key, p]));
+
+  const html = Object.entries(sweeps).map(([key, s]) => {
+    const p = meta[key];
+    const x0 = Math.min(...s.x), x1 = Math.max(...s.x);
+    const sx = v => PAD_L + ((v - x0) / (x1 - x0 || 1)) * (W - PAD_L - PAD_R);
+    const sy = v => PAD_T + (1 - Math.min(v, yMax) / yMax) * (PLOT_B - PAD_T);
+
+    let d = "", pen = false;
+    s.x.forEach((xv, i) => {
+      const yv = s.y[i];
+      if (yv === null) { pen = false; return; }
+      d += `${pen ? "L" : "M"}${sx(xv).toFixed(1)} ${sy(yv).toFixed(1)} `;
+      pen = true;
+    });
+
+    let best = -1;
+    s.x.forEach((xv, i) => {
+      if (s.y[i] === null) return;
+      if (best < 0 || Math.abs(xv - s.now) < Math.abs(s.x[best] - s.now)) best = i;
+    });
+    const hasDot = best >= 0 && s.now >= x0 && s.now <= x1;
+    const oneY = sy(1);
+
+    return `<div class="facet" data-key="${key}">
+      <div class="ttl">${p.label}${p.unit ? ` <span class="unit">${p.unit}</span>` : ""}</div>
+      <div class="now"><span class="now-text">now ${sig(s.now)}</span></div>
+      <svg viewBox="0 0 ${W} ${H}" role="img"
+           aria-label="${p.label} swept from ${sig(x0)} to ${sig(x1)}; binned precision in ppt">
+        <clipPath id="clip-${key}"><rect x="0" y="0" width="${W}" height="${PLOT_B}"/></clipPath>
+        ${oneY > PAD_T && oneY < PLOT_B
+          ? `<line x1="${PAD_L}" y1="${oneY.toFixed(1)}" x2="${W - PAD_R}" y2="${oneY.toFixed(1)}"
+                   stroke="var(--gridline)" stroke-width="1"/>` : ""}
+        <line x1="${PAD_L}" y1="${PLOT_B}" x2="${W - PAD_R}" y2="${PLOT_B}"
+              stroke="var(--baseline)" stroke-width="1"/>
+        <path d="${d}" fill="none" stroke="var(--series-1)" stroke-width="2"
+              stroke-linejoin="round" stroke-linecap="round" clip-path="url(#clip-${key})"/>
+        <line class="cross" x1="0" y1="${PAD_T}" x2="0" y2="${PLOT_B}"
+              stroke="var(--baseline)" stroke-width="1" opacity="0"/>
+        ${hasDot ? `<circle cx="${sx(s.now).toFixed(1)}" cy="${sy(s.y[best]).toFixed(1)}" r="4.5"
+                    fill="var(--series-1)" stroke="var(--surface-1)" stroke-width="2"/>` : ""}
+        <circle class="hover-dot" r="4" fill="var(--series-1)"
+                stroke="var(--surface-1)" stroke-width="2" opacity="0"/>
+        <text x="${PAD_L}" y="${H - 4}" font-size="9" fill="var(--text-muted)">${sig(x0)}</text>
+        <text x="${W - PAD_R}" y="${H - 4}" font-size="9" fill="var(--text-muted)"
+              text-anchor="end">${sig(x1)}</text>
+        <rect class="hit" x="0" y="0" width="${W}" height="${PLOT_B}" fill="transparent"/>
+      </svg>
+    </div>`;
+  }).join("");
+
+  $("facets").innerHTML = `
+    <p class="hint" style="margin:14px 0 10px">
+      Binned precision in ppt, one shared scale from 0 to ${sig(yMax)}${clipped
+        ? ", so steeper curves run off the top" : ""}. The hairline marks 1 ppt.
+      Hover a panel to read a value.
+    </p>
+    <div class="facets">${html}</div>`;
+
+  // Hover readout: nearest swept point, reported in the panel header.
+  for (const facet of $("facets").querySelectorAll(".facet")) {
+    const s = sweeps[facet.dataset.key];
+    const p = meta[facet.dataset.key];
+    const svg = facet.querySelector("svg");
+    const label = facet.querySelector(".now-text");
+    const cross = facet.querySelector(".cross");
+    const dot = facet.querySelector(".hover-dot");
+    const x0 = Math.min(...s.x), x1 = Math.max(...s.x);
+    const sx = v => PAD_L + ((v - x0) / (x1 - x0 || 1)) * (W - PAD_L - PAD_R);
+    const sy = v => PAD_T + (1 - Math.min(v, yMax) / yMax) * (PLOT_B - PAD_T);
+    const reset = () => {
+      label.textContent = `now ${sig(s.now)}`;
+      cross.setAttribute("opacity", "0");
+      dot.setAttribute("opacity", "0");
+    };
+
+    svg.addEventListener("pointermove", event => {
+      const box = svg.getBoundingClientRect();
+      const vx = ((event.clientX - box.left) / box.width) * W;
+      let near = -1;
+      s.x.forEach((xv, i) => {
+        if (s.y[i] === null) return;
+        if (near < 0 || Math.abs(sx(xv) - vx) < Math.abs(sx(s.x[near]) - vx)) near = i;
+      });
+      if (near < 0) return;
+      label.textContent = `${sig(s.x[near])} ${p.unit} \u2192 ${sig(s.y[near])} ppt`;
+      cross.setAttribute("x1", sx(s.x[near]).toFixed(1));
+      cross.setAttribute("x2", sx(s.x[near]).toFixed(1));
+      cross.setAttribute("opacity", "1");
+      dot.setAttribute("cx", sx(s.x[near]).toFixed(1));
+      dot.setAttribute("cy", sy(s.y[near]).toFixed(1));
+      dot.setAttribute("opacity", "1");
+    });
+    svg.addEventListener("pointerleave", reset);
+  }
+}
+
+// ------------------------------------------------------------------- actions
+function reportError(err) {
+  // Pyodide re-raises the Python traceback; the last line is the message,
+  // prefixed by the dotted exception class, which readers do not need.
+  const last = String(err).split("\n").filter(Boolean).pop() || "Computation failed";
+  setStatus(last.replace(/^[\w.]*Error:\s*|^[\w.]+:\s*/, ""), "error");
+}
+
+runBtn.addEventListener("click", () => {
+  if (!checkMirrors()) return;
+  const spec = readSpec();
+  if (spec.mode === "gaia" && !/^\d+$/.test(spec.source_id)) {
+    setStatus("A Gaia DR3 source_id is a whole number, for example 2635476908753563008.", "error");
+    return;
+  }
+  runBtn.disabled = true;
+  setStatus(spec.mode === "gaia" ? "Querying Gaia and computing…" : "Computing…");
+  requestAnimationFrame(() => {
+    try {
+      render(callPython("compute", JSON.stringify(spec)));
+      $("facets").innerHTML = "";
+      setStatus("Ready", "ready");
+    } catch (err) {
+      reportError(err);
+    } finally {
+      runBtn.disabled = false;
+    }
+  });
+});
+
+sweepBtn.addEventListener("click", () => {
+  if (!lastResult || !checkMirrors()) return;
+  const spec = readSpec();
+  const plan = Object.fromEntries(INSTRUMENT.map(p => [
+    p.key,
+    // The secondary only makes sense below the primary.
+    p.key === "r1" ? [0, Math.max(0.01, spec.props.r0 * 0.9)]
+                   : p.range(spec.props[p.key]),
+  ]));
+  sweepBtn.disabled = true;
+  setStatus("Sweeping parameters…");
+  requestAnimationFrame(() => {
+    try {
+      renderFacets(callPython("sweep", JSON.stringify(spec), JSON.stringify(plan), 21));
+      setStatus("Ready", "ready");
+    } catch (err) {
+      reportError(err);
+    } finally {
+      sweepBtn.disabled = false;
+    }
+  });
+});
+
+boot().catch(err => {
+  setStatus(`Could not start: ${err.message}`, "error");
+  resultsEl.innerHTML = `<p class="placeholder">Did you run <code>python web/build.py</code> and serve the repository root?</p>`;
+});
+</script>
+</body>
+</html>
