@@ -8,7 +8,10 @@ repository = "https://github.com/ppp-one/mphot"
 readme = "README.md"
 license = { text = "MIT License" }
 requires-python = ">=3.11"
-dependencies = ["numpy", "pandas", "scipy", "matplotlib", "ipython", "astroquery"]
+# The Gaia lookup uses the TAP standard over plain HTTP from the standard
+# library, so no catalogue client is needed. IPython is optional: it is used
+# only to render results in a notebook, where it is always present anyway.
+dependencies = ["numpy", "pandas", "scipy"]
 
 [build-system]
 requires = ["hatchling", "hatch-vcs"]
@@ -19,7 +22,9 @@ source = "vcs"
 
 [project.optional-dependencies]
 test = ["pytest"]
+notebook = ["ipython"]
 docs = [
+    "ipython",
     "sphinx",
     "matplotlib",
     "myst-nb",
@@ -36,6 +41,7 @@ dev = [
     "pytest",
     "pre-commit",
     "ruff",
+    "ipython",
 ]
 
 [project.urls]

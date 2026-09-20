@@ -1,11 +1,13 @@
 """Gaia DR3 lookups and flux calibration against the Gaia bands."""
 
+import csv
+import io
 import logging
-import threading
-from collections.abc import Callable
+import urllib.error
+import urllib.parse
+import urllib.request
 
 import numpy as np
-from astroquery.utils.tap.core import TapPlus
 from scipy.optimize import minimize
 
 from mphot.paths import FLUX_CALIBRATION_DIR, system_response_path
@@ -116,6 +118,12 @@ _GAIA_COLUMNS = (
     "phot_rp_mean_flux",
 )
 
+# Columns the archive stores as 32-bit floats. CSV carries the shortest decimal
+# that round-trips the stored float32, so reading it straight into a float64
+# lands a few ULP away from the catalogue value. Casting back through float32
+# recovers the stored bits exactly.
+_FLOAT32_COLUMNS = frozenset({"teff_gspphot"})
+
 # Each service uses its own column and table names, so the results are mapped
 # back to the Gaia DR3 names given in _GAIA_COLUMNS.
 _GAIA_TAP_TABLES = {
@@ -142,59 +150,71 @@ class GaiaSourceNotFound(ValueError):
     """Raised when a TAP service holds no row for the given source_id."""
 
 
-def _run_with_timeout(func: Callable, timeout: float | None, message: str):
+def _to_float(value, float32: bool = False) -> float:
     """
-    Run `func` in a daemon thread and give up after `timeout` seconds.
-
-    The TAP client gives no timeout of its own, so a slow or stuck service can
-    block forever. The thread is left to die with the process.
+    Convert a CSV field to float, mapping an empty or missing one to NaN.
 
     Args:
-        func (callable):
-            Function to call with no arguments.
-        timeout (float, optional):
-            Seconds to wait. If None, `func` runs on the current thread.
-        message (str):
-            Message of the TimeoutError.
+        value: The raw CSV field.
+        float32 (bool, optional): If True, round the value to the nearest
+            float32 first, recovering the value the archive stores.
 
     Returns:
-        The return value of `func`.
-
-    Raises:
-        TimeoutError: If `func` does not finish within `timeout` seconds.
+        float: The parsed value, or NaN if it is empty or not a number.
     """
-    if timeout is None:
-        return func()
 
-    result = []
-    error = []
-
-    def run():
-        try:
-            result.append(func())
-        except Exception as e:
-            # Re-raised on the calling thread once join() returns.
-            error.append(e)
-
-    thread = threading.Thread(target=run, daemon=True)
-    thread.start()
-    thread.join(timeout=timeout)
-
-    if thread.is_alive():
-        raise TimeoutError(message)
-    if error:
-        raise error[0]
-    return result[0]
-
-
-def _to_float(value) -> float:
-    """Convert a table value to float, mapping missing values to NaN."""
-    if value is None or value is np.ma.masked:
+    if value is None:
         return float("nan")
     try:
-        return float(value)
+        number = float(value)
     except (TypeError, ValueError):
         return float("nan")
+    return float(np.float32(number)) if float32 else number
+
+
+def _tap_sync_csv(base_url: str, adql: str, timeout: float | None) -> list[dict]:
+    """
+    Run a synchronous TAP query and return its rows.
+
+    The TAP standard serves results over plain HTTP GET, so this needs no
+    client library. Asking for CSV also avoids a VOTable parser.
+
+    Args:
+        base_url (str): Base TAP endpoint, without the ``/sync`` suffix.
+        adql (str): The ADQL query.
+        timeout (float, optional): Seconds to wait for each network operation.
+            If None, there is no timeout.
+
+    Returns:
+        list[dict]: One dict per result row, keyed by column name, values as
+            strings.
+
+    Raises:
+        TimeoutError: If the service does not respond within `timeout` seconds.
+        RuntimeError: If the service returns an HTTP error.
+    """
+
+    query = urllib.parse.urlencode(
+        {"REQUEST": "doQuery", "LANG": "ADQL", "FORMAT": "csv", "QUERY": adql}
+    )
+    url = base_url.rstrip("/") + "/sync?" + query
+    request = urllib.request.Request(url, headers={"User-Agent": "mphot"})
+
+    try:
+        with urllib.request.urlopen(request, timeout=timeout) as response:
+            body = response.read().decode("utf-8")
+    except urllib.error.HTTPError as e:
+        detail = e.read().decode("utf-8", errors="replace").strip().replace("\n", " ")
+        raise RuntimeError(f"HTTP {e.code} from the TAP service: {detail[:200]}") from e
+    except urllib.error.URLError as e:
+        # A connect timeout arrives wrapped, a read timeout arrives bare.
+        if isinstance(e.reason, TimeoutError):
+            raise TimeoutError(f"no response within {timeout} s") from e
+        raise RuntimeError(f"cannot reach the TAP service: {e.reason}") from e
+    except TimeoutError as e:
+        raise TimeoutError(f"no response within {timeout} s") from e
+
+    return list(csv.DictReader(io.StringIO(body)))
 
 
 def _query_gaia_tap(source_id, tap_source: str, timeout: float | None) -> dict:
@@ -210,27 +230,22 @@ def _query_gaia_tap(source_id, tap_source: str, timeout: float | None) -> dict:
         f"WHERE {config['id_column']} = {int(source_id)}"
     )
 
-    def run():
-        tap = TapPlus(url=GAIA_TAP_URLS[tap_source], verbose=False)
-        return tap.launch_job(adql).get_results()
-
     logger.debug(f"Gaia query to '{tap_source}': {adql}")
-    table = _run_with_timeout(
-        run,
-        timeout,
-        f"timed out after {timeout} s",
-    )
+    rows = _tap_sync_csv(GAIA_TAP_URLS[tap_source], adql, timeout)
 
-    if table is None or len(table) == 0:
+    if not rows:
         raise GaiaSourceNotFound(
             f"No Gaia DR3 source with source_id {source_id} in '{tap_source}'."
         )
 
-    row = table[0]
+    row = rows[0]
     # Column names come back in the case used by the service, so match them
     # without case.
-    lookup = {name.lower(): name for name in table.colnames}
-    return {name: _to_float(row[lookup[name.lower()]]) for name in columns}
+    lookup = {name.lower(): name for name in row}
+    return {
+        name: _to_float(row[lookup[name.lower()]], name in _FLOAT32_COLUMNS)
+        for name in columns
+    }
 
 
 def query_gaia_source(
@@ -241,17 +256,18 @@ def query_gaia_source(
     """
     Get the parameters of one Gaia DR3 source used for flux calibration.
 
-    The query is synchronous, it reads only the five columns that mphot needs,
-    and it stops after `timeout` seconds. If a service fails or times out, the
-    next service in `tap_sources` is tried.
+    The query is a plain HTTP GET against the service's TAP ``/sync`` endpoint
+    asking for CSV, so it needs no TAP client library. It reads only the five
+    columns that mphot needs. If a service fails or times out, the next service
+    in `tap_sources` is tried.
 
     Args:
         source_id (np.uint64):
             The source_id property of the target from the Gaia DR3 catalog.
 
         timeout (float, optional):
-            Seconds to wait for each service. If None, there is no timeout.
-            Default is 60.
+            Seconds to wait for each network operation, per service. If None,
+            there is no timeout. Default is 60.
 
         tap_sources (str or tuple, optional):
             Name or names of the TAP services to try, in order. Must be keys of

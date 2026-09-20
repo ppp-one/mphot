@@ -4,7 +4,11 @@ import math
 
 import numpy as np
 import pandas as pd
-from IPython.display import display
+
+try:
+    from IPython.display import display
+except ModuleNotFoundError:  # pragma: no cover - only when outside a notebook
+    display = print
 
 from mphot.paths import system_response_path
 from mphot.precision import convert_airmass, vega_mag

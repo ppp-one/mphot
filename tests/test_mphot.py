@@ -1,4 +1,8 @@
-import time
+import contextlib
+import io
+import os
+import sys
+import urllib.error
 from pathlib import Path
 
 import numpy as np
@@ -139,32 +143,113 @@ def test_generate_system_response():
     assert np.allclose(SR.values, system_response.values), "Values mismatch"
 
 
-def test_run_with_timeout_returns_value():
-    assert mphot.gaia._run_with_timeout(lambda: 42, timeout=5, message="late") == 42
-    assert mphot.gaia._run_with_timeout(lambda: 42, timeout=None, message="late") == 42
-
-
-def test_run_with_timeout_raises():
-    def slow():
-        time.sleep(5)
-
-    with pytest.raises(TimeoutError, match="late"):
-        mphot.gaia._run_with_timeout(slow, timeout=0.05, message="late")
-
-
-def test_run_with_timeout_reraises_error():
-    def boom():
-        raise KeyError("inner")
-
-    with pytest.raises(KeyError):
-        mphot.gaia._run_with_timeout(boom, timeout=5, message="late")
-
-
 def test_to_float():
+    assert mphot.gaia._to_float("1") == 1.0
     assert mphot.gaia._to_float(1) == 1.0
     assert np.isnan(mphot.gaia._to_float(None))
-    assert np.isnan(mphot.gaia._to_float(np.ma.masked))
+    assert np.isnan(mphot.gaia._to_float(""))
     assert np.isnan(mphot.gaia._to_float("not a number"))
+
+
+def test_to_float_float32_recovers_stored_value():
+    # teff_gspphot is float32 upstream, so CSV carries its shortest decimal.
+    assert mphot.gaia._to_float("3099.6", float32=True) == 3099.60009765625
+    assert mphot.gaia._to_float("3099.6") == 3099.6
+    assert np.isnan(mphot.gaia._to_float("", float32=True))
+
+
+def test_tap_sync_csv_builds_a_sync_url_and_parses_rows(monkeypatch):
+    seen = {}
+
+    def fake_urlopen(request, timeout=None):
+        seen["url"] = request.full_url
+        seen["timeout"] = timeout
+        return contextlib.closing(io.BytesIO(b"parallax,teff_gspphot\n80.2,5000\n"))
+
+    monkeypatch.setattr(mphot.gaia.urllib.request, "urlopen", fake_urlopen)
+
+    rows = mphot.gaia._tap_sync_csv("https://example.org/tap/", "SELECT 1", 30)
+
+    assert rows == [{"parallax": "80.2", "teff_gspphot": "5000"}]
+    assert seen["timeout"] == 30
+    assert seen["url"].startswith("https://example.org/tap/sync?")
+    assert "FORMAT=csv" in seen["url"]
+    assert "SELECT+1" in seen["url"]
+
+
+def test_tap_sync_csv_turns_a_timeout_into_timeout_error(monkeypatch):
+    def fake_urlopen(request, timeout=None):
+        raise urllib.error.URLError(TimeoutError("timed out"))
+
+    monkeypatch.setattr(mphot.gaia.urllib.request, "urlopen", fake_urlopen)
+
+    with pytest.raises(TimeoutError):
+        mphot.gaia._tap_sync_csv("https://example.org/tap", "SELECT 1", 1)
+
+
+def test_tap_sync_csv_reports_an_http_error(monkeypatch):
+    def fake_urlopen(request, timeout=None):
+        raise urllib.error.HTTPError(
+            "https://example.org/tap/sync",
+            400,
+            "Bad Request",
+            {},
+            io.BytesIO(b"malformed ADQL"),
+        )
+
+    monkeypatch.setattr(mphot.gaia.urllib.request, "urlopen", fake_urlopen)
+
+    with pytest.raises(RuntimeError, match="HTTP 400"):
+        mphot.gaia._tap_sync_csv("https://example.org/tap", "SELECT 1", 1)
+
+
+def test_query_gaia_tap_maps_columns_and_reports_a_missing_source(monkeypatch):
+    monkeypatch.setattr(
+        mphot.gaia,
+        "_tap_sync_csv",
+        lambda url, adql, timeout: [
+            {
+                "PARALLAX": "80.2",
+                "TEFF_GSPPHOT": "3099.6",
+                "PHOT_BP_MEAN_FLUX": "341.2",
+                "PHOT_G_MEAN_FLUX": "10615.1",
+                "PHOT_RP_MEAN_FLUX": "18095.7",
+            }
+        ],
+    )
+    # Column names come back in whatever case the service uses.
+    result = mphot.gaia._query_gaia_tap(1, "vizier", 30)
+    assert result["parallax"] == 80.2
+    assert result["teff_gspphot"] == 3099.60009765625
+
+    monkeypatch.setattr(mphot.gaia, "_tap_sync_csv", lambda url, adql, timeout: [])
+    with pytest.raises(mphot.GaiaSourceNotFound):
+        mphot.gaia._query_gaia_tap(1, "vizier", 30)
+
+
+def test_package_imports_without_ipython(monkeypatch):
+    # IPython is optional; the package must import in a plain interpreter.
+    import subprocess
+
+    code = (
+        "import sys;"
+        "sys.modules['IPython'] = None;"
+        "sys.modules['IPython.display'] = None;"
+        "import mphot, mphot.display, mphot.utils;"
+        "assert mphot.utils.clear_output is None, 'clear_output fallback not used';"
+        "assert mphot.display.display is print, 'display fallback not used';"
+        "mphot.update_progress(0.5);"
+        "print('OK', mphot.get_precision.__name__)"
+    )
+    out = subprocess.run(
+        [sys.executable, "-c", code],
+        capture_output=True,
+        text=True,
+        env={**os.environ, "PYTHONPATH": str(Path(mphot.__path__[0]).parent)},
+    )
+    assert out.returncode == 0, out.stderr
+    assert "OK get_precision" in out.stdout
+    assert "Progress: [##########----------] 50.0%" in out.stdout
 
 
 def test_query_gaia_source_rejects_unknown_service():

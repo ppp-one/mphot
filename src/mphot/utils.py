@@ -2,7 +2,11 @@
 
 import numpy as np
 import pandas as pd
-from IPython.display import clear_output
+
+try:
+    from IPython.display import clear_output
+except ModuleNotFoundError:  # pragma: no cover - only when outside a notebook
+    clear_output = None
 
 
 def interpolate_dfs(index: list, *data: pd.DataFrame) -> pd.DataFrame:
@@ -78,7 +82,8 @@ def update_progress(progress: float | int) -> None:
 
     block = round(bar_length * progress)
 
-    clear_output(wait=True)
+    if clear_output is not None:
+        clear_output(wait=True)
     text = "Progress: [{}] {:.1f}%".format(
         "#" * block + "-" * (bar_length - block), progress * 100
     )
