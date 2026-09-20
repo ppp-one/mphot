@@ -1,0 +1,52 @@
+# This deploys the browser demo in web/.
+#
+# `web/build.py` builds an mphot wheel from the source tree. It also copies the
+# response curves next to the page. `web/` is then a complete site on its own,
+# and nothing else in the repository is deployed.
+
+[build]
+  command = "python web/build.py"
+  publish = "web"
+
+[build.environment]
+  # mphot needs Python 3.11 or later. The build image default is older.
+  PYTHON_VERSION = "3.11"
+
+# A wheel name holds the project version, so the file never changes.
+[[headers]]
+  for = "/dist/*.whl"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# The manifest names the current wheel. A stale copy would break the page.
+[[headers]]
+  for = "/dist/wheel.json"
+  [headers.values]
+    Cache-Control = "no-cache"
+
+[[headers]]
+  for = "/resources/*"
+  [headers.values]
+    Cache-Control = "public, max-age=3600"
+
+# The icon and the share image change only when the page does.
+[[headers]]
+  for = "/*.png"
+  [headers.values]
+    Cache-Control = "public, max-age=86400"
+
+[[headers]]
+  for = "/icon.svg"
+  [headers.values]
+    Cache-Control = "public, max-age=86400"
+
+# Crawlers should always read the current copy of these.
+[[headers]]
+  for = "/robots.txt"
+  [headers.values]
+    Cache-Control = "public, max-age=300"
+
+[[headers]]
+  for = "/sitemap.xml"
+  [headers.values]
+    Cache-Control = "public, max-age=300"

@@ -1,0 +1,30 @@
+# The repo holds measured data (CSV spectra, .npy grids, .pkl ingredients) and
+# one-off generator notebooks next to the package source. Rewriting those is
+# not wanted, so the hooks are scoped to source files.
+exclude: ^(resources/|src/mphot/datafiles/|src/mphot/grids/|docs/build/)
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: check-toml
+      - id: check-yaml
+      - id: check-merge-conflict
+      - id: check-added-large-files
+        args: [--maxkb=10240]  # the datafiles pickles are ~8 MB
+      - id: end-of-file-fixer
+        types_or: [python, toml, yaml, markdown]
+      - id: trailing-whitespace
+        types_or: [python, toml, yaml, markdown]
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.16.8
+    hooks:
+      - id: ruff-check
+        args: [--fix]
+      - id: ruff-format
+
+  - repo: https://github.com/astral-sh/uv-pre-commit
+    rev: 0.12.17
+    hooks:
+      - id: uv-lock

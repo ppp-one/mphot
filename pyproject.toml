@@ -1,6 +1,6 @@
 [project]
 name = "mphot"
-version = "1.2.3"
+version = "2.0.0"
 authors = [
   {name = "Peter Pedersen"},
 ]
@@ -8,7 +8,10 @@ repository = "https://github.com/ppp-one/mphot"
 readme = "README.md"
 license = { text = "MIT License" }
 requires-python = ">=3.11"
-dependencies = ["numpy", "pandas", "scipy", "matplotlib", "ipython", "astroquery"]
+# The Gaia lookup uses the TAP standard over plain HTTP from the standard
+# library, so no catalogue client is needed. IPython is optional: it is used
+# only to render results in a notebook, where it is always present anyway.
+dependencies = ["numpy", "pandas", "scipy"]
 
 [build-system]
 requires = ["hatchling", "hatch-vcs"]
@@ -18,9 +21,10 @@ build-backend = "hatchling.build"
 source = "vcs"
 
 [project.optional-dependencies]
-dev = ["black", "pytest"]
 test = ["pytest"]
+notebook = ["ipython"]
 docs = [
+    "ipython",
     "sphinx",
     "matplotlib",
     "myst-nb",
@@ -32,6 +36,34 @@ docs = [
     "toml",
 ]
 
+[dependency-groups]
+dev = [
+    "pytest",
+    "pre-commit",
+    "ruff",
+    "ipython",
+]
+
 [project.urls]
 Documentation = "https://mphot.readthedocs.io"
 Repository = "https://github.com/ppp-one/mphot"
+
+[tool.ruff]
+line-length = 88
+target-version = "py311"
+# Notebooks are left alone: reformatting cells creates noisy diffs in the
+# examples. Drop "*.ipynb" here to lint and format them too.
+extend-exclude = ["docs/build", "resources", "*.ipynb"]
+
+[tool.ruff.lint]
+# E4/E7/E9 is ruff's default pycodestyle subset. It leaves line length (E501)
+# alone, because the formatter does not reflow the long docstrings here.
+select = ["E4", "E7", "E9", "F", "I", "UP", "B", "SIM", "C4", "RUF", "PTH", "RET"]
+
+[tool.ruff.lint.per-file-ignores]
+# These modules re-export names for backwards compatibility.
+"src/mphot/core.py" = ["F401"]
+"src/mphot/__init__.py" = ["F401"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
