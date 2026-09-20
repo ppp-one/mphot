@@ -17,15 +17,22 @@ def interpolate_dfs(index: list, *data: pd.DataFrame) -> pd.DataFrame:
         pd.DataFrame: A single DataFrame with interpolated values for the given index.
     """
 
-    df = pd.DataFrame({"tmp": index}, index=index)
+    index = pd.Index(index)
+
+    if not data:
+        return pd.DataFrame(index=index)
+
+    # Each input is interpolated onto `index` on its own. Interpolating them
+    # together instead builds one frame over the union of every input index,
+    # so a long input makes every column of every other input longer, and all
+    # of those extra rows are dropped again by the reindex.
+    frames = []
     for dat in data:
         dat = dat[~dat.index.duplicated(keep="first")]
-        df = pd.concat([df, dat], axis=1)
-    df = df.sort_index()
-    df = df.interpolate("index").reindex(index)
-    df.drop("tmp", axis=1, inplace=True)
+        dat = dat.reindex(dat.index.union(index)).sort_index()
+        frames.append(dat.interpolate("index").reindex(index))
 
-    return df
+    return pd.concat(frames, axis=1)
 
 
 def gaussian(delta: float, sigma: float) -> float:

@@ -59,19 +59,34 @@ def _generate_grid(
     gridSauce = interpolate_dfs(WAVELENGTHS, rsr, gridIngredients)
     gridSauce = gridSauce[(gridSauce[1] > 0)]
 
+    # Pull the columns out as plain arrays. Every pandas operation rebuilds a
+    # Series and realigns its index, which costs more than the integral does.
+    lam = gridSauce.index.to_numpy()
+    system_response = gridSauce[1].to_numpy()
+
+    if weight_by_star:
+        # One row per grid temperature, so all of them integrate in one call.
+        star_spectra = np.array(
+            [
+                gridSauce[str(temperature) + "K"].to_numpy()
+                for temperature in TEFF_VALUES
+            ]
+        )
+
     data = np.zeros((len(PWV_VALUES), len(AIRMASS_VALUES), len(TEFF_VALUES)))
 
     for i, pwv in enumerate(PWV_VALUES):
         update_progress(i / (len(PWV_VALUES) - 1))
         for j, airmass in enumerate(AIRMASS_VALUES):
-            atmosphere = gridSauce[str(pwv) + "_" + str(airmass)]
-            for k, temperature in enumerate(TEFF_VALUES):
-                response = gridSauce[1] * atmosphere
-                if weight_by_star:
-                    response = response * gridSauce[str(temperature) + "K"]
-                # Without a stellar weight the integrand does not depend on
-                # temperature, so this repeats the same integral along k.
-                data[i, j, k] = simps(y=response, x=gridSauce.index)
+            atmosphere = gridSauce[str(pwv) + "_" + str(airmass)].to_numpy()
+            response = system_response * atmosphere
+
+            if weight_by_star:
+                data[i, j] = simps(y=response * star_spectra, x=lam, axis=-1)
+            else:
+                # Sky radiance carries no stellar weight, so the integrand does
+                # not depend on temperature. One integral fills the whole axis.
+                data[i, j] = simps(y=response, x=lam)
 
     return _grid_coords(), data
 
