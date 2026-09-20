@@ -28,3 +28,25 @@
   for = "/resources/*"
   [headers.values]
     Cache-Control = "public, max-age=3600"
+
+# The icon and the share image change only when the page does.
+[[headers]]
+  for = "/*.png"
+  [headers.values]
+    Cache-Control = "public, max-age=86400"
+
+[[headers]]
+  for = "/icon.svg"
+  [headers.values]
+    Cache-Control = "public, max-age=86400"
+
+# Crawlers should always read the current copy of these.
+[[headers]]
+  for = "/robots.txt"
+  [headers.values]
+    Cache-Control = "public, max-age=300"
+
+[[headers]]
+  for = "/sitemap.xml"
+  [headers.values]
+    Cache-Control = "public, max-age=300"

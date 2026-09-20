@@ -59,22 +59,35 @@ notice this only later, as an exposure time of several hours.
 **Distance** covers 0.01 pc to 1 Mpc. The slider is logarithmic. The field
 beside it takes an exact value. The two stay in step.
 
-**Find what matters.** The sensitivity panel changes one parameter at a time
-and holds the others still. It follows `examples/Sensitivity plot.ipynb`. Each
-range depends on your current value, not on a fixed range. This keeps a panel
-useful whether the camera has 0.2 or 110 e⁻/pix/s of dark current. All panels
-share one vertical scale. A flat curve therefore means that the parameter does
-not matter here.
-
 ## Everything updates as you move a control
 
 Every control recomputes the result. One update takes about 10 ms, so the page
-waits 80 ms after your last change and then runs. The sensitivity panel is
-slower, so it keeps its own button.
+waits 80 ms after your last change and then runs.
 
 Gaia mode reads a star once and keeps the answer. Without this cache the page
 would query VizieR on every slider move. Press Enter in the source_id field to
 load a different star.
+
+## Search engines
+
+A crawler will not wait for 45 MB of Pyodide, so the page carries its meaning in
+plain HTML. With JavaScript switched off it still gives a title, a description,
+a heading structure and about 440 words that explain what the calculator does,
+how the model works and who it is for.
+
+The head holds the title and description, a canonical link, Open Graph and
+Twitter tags, a `WebApplication` record in JSON-LD, an icon and a share image.
+
+The site address is <https://etc.withastra.io/>. It is written down once, in
+the canonical link in `index.html`. `build.py` reads it from there to write
+`robots.txt` and `sitemap.xml`, so the three can never disagree. To deploy the
+same page elsewhere, set `SITE_URL` and it wins over the canonical link.
+
+Cloudflare sits in front of the site and serves its own managed `robots.txt`.
+It prepends that block to the file from the deploy, so the rules and the
+`Sitemap:` line below still reach crawlers. Check
+<https://etc.withastra.io/robots.txt> after a deploy to confirm both parts are
+there.
 
 ## Why the page builds nothing in advance
 
@@ -133,7 +146,3 @@ need a proxy. mphot tries VizieR first, so the normal path works.
 plus the 16 MB wheel. Most of the wheel holds the two files of atmosphere and
 stellar spectra in `datafiles/`. The browser caches all of it after the first
 visit.
-
-**The sensitivity sweep blocks the page.** Pyodide runs on the main thread. The
-sweep takes about 1.5 s, and the page cannot respond during it. A web worker
-would fix this.

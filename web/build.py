@@ -10,6 +10,8 @@ This writes two things into `web/`, both ignored by git:
 * ``dist/`` — the wheel, plus a ``wheel.json`` naming it. The wheel's name
   carries the project version, so the page reads the manifest rather than
   hard-coding a version that a release would invalidate.
+* ``robots.txt`` and ``sitemap.xml``. The site address comes from the
+  canonical link in ``index.html``, so it is written down in one place.
 * ``resources/`` — a copy of the instrument and filter curves the page fetches.
   Copying them means `web/` can be published on its own, rather than having to
   serve the whole repository so that ``../resources`` resolves.
@@ -23,10 +25,13 @@ Usage:
 """
 
 import json
+import os
+import re
 import shutil
 import subprocess
 import sys
 import tempfile
+from datetime import date
 from pathlib import Path
 
 WEB = Path(__file__).resolve().parent
@@ -95,6 +100,53 @@ def copy_curves() -> int:
     return count
 
 
+def site_url() -> str | None:
+    """Return the address this site is served from.
+
+    The address is read from the canonical link in index.html, so it is
+    written down in one place only. ``SITE_URL`` overrides it, which is useful
+    when you deploy the same page somewhere else.
+    """
+    override = os.environ.get("SITE_URL", "").strip()
+    if override.startswith("http"):
+        return override.rstrip("/")
+
+    page = (WEB / "index.html").read_text()
+    found = re.search(r'<link\s+rel="canonical"\s+href="(https?://[^"]+)"', page)
+    return found.group(1).rstrip("/") if found else None
+
+
+def write_robots_and_sitemap() -> str | None:
+    """Write robots.txt, and sitemap.xml when the address is known."""
+    url = site_url()
+
+    lines = [
+        "User-agent: *",
+        "Allow: /",
+        "",
+        "# Build output, of no use to a crawler.",
+        "Disallow: /dist/",
+        "Disallow: /resources/",
+    ]
+    if url:
+        lines += ["", f"Sitemap: {url}/sitemap.xml"]
+    (WEB / "robots.txt").write_text("\n".join(lines) + "\n")
+
+    sitemap = WEB / "sitemap.xml"
+    if url:
+        sitemap.write_text(
+            '<?xml version="1.0" encoding="UTF-8"?>\n'
+            '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+            f"  <url><loc>{url}/</loc>"
+            f"<lastmod>{date.today().isoformat()}</lastmod>"
+            "<changefreq>monthly</changefreq></url>\n"
+            "</urlset>\n"
+        )
+    elif sitemap.exists():
+        sitemap.unlink()
+    return url
+
+
 def build() -> tuple[Path, int]:
     """Build the wheel and stage the curves. Returns the wheel and curve count."""
     return build_wheel(), copy_curves()
@@ -102,8 +154,16 @@ def build() -> tuple[Path, int]:
 
 if __name__ == "__main__":
     wheel, curves = build()
+    url = write_robots_and_sitemap()
     size = wheel.stat().st_size / 1e6
     print(f"built {wheel.relative_to(REPO)} ({size:.1f} MB)")
     print(f"staged {curves} response curves in {RESOURCES.relative_to(REPO)}")
+    if url:
+        print(f"wrote robots.txt and sitemap.xml for {url}")
+    else:
+        print(
+            "wrote robots.txt; no sitemap, because index.html has no "
+            "absolute canonical link and SITE_URL is unset"
+        )
     print("now serve web/ and open it:")
     print("    python -m http.server --directory web 8000")
