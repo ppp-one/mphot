@@ -34,6 +34,14 @@
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
   <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
 
+  <!-- The whole boot sequence waits on these. Starting them while the browser
+       is still parsing the page removes that wait from the front of the chain.
+       build.json matters most: it names the wheel, so nothing can be fetched
+       until it arrives. -->
+  <link rel="preload" as="fetch" crossorigin href="build.json">
+  <link rel="modulepreload" href="https://cdn.jsdelivr.net/pyodide/v0.29.5/full/pyodide.mjs" crossorigin>
+  <link rel="preload" as="fetch" crossorigin href="https://cdn.jsdelivr.net/pyodide/v0.29.5/full/pyodide.asm.wasm">
+
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
@@ -68,6 +76,8 @@
       --series-1: #2a78d6;
       --series-2: #eb6834;
       --series-3: #1baf7a;
+      --series-4: #8257d9;
+      --series-5: #a1730a;
       --gridline: #e1e0d9;
       --baseline: #c3c2b7;
       --border: rgba(11, 11, 11, 0.10);
@@ -88,6 +98,8 @@
         --series-1: #3987e5;
         --series-2: #d95926;
         --series-3: #199e70;
+        --series-4: #9b75e8;
+        --series-5: #c99a2e;
         --gridline: #2c2c2a;
         --baseline: #383835;
         --border: rgba(255, 255, 255, 0.10);
@@ -107,6 +119,8 @@
       --series-1: #3987e5;
       --series-2: #d95926;
       --series-3: #199e70;
+      --series-4: #9b75e8;
+      --series-5: #c99a2e;
       --gridline: #2c2c2a;
       --baseline: #383835;
       --border: rgba(255, 255, 255, 0.10);
@@ -256,7 +270,16 @@
       align-items: start;
     }
 
-    @media (max-width: 900px) {
+    /* A narrower control column keeps the result beside the controls on a small
+     laptop window, instead of pushing it a screen below them. */
+    @media (max-width: 1023px) {
+      .cols {
+        grid-template-columns: 264px minmax(0, 1fr);
+        gap: 14px;
+      }
+    }
+
+    @media (max-width: 720px) {
       .cols {
         grid-template-columns: 1fr;
       }
@@ -292,7 +315,7 @@
       background: var(--surface-1);
     }
 
-    #summary.busy {
+    #summary-body.busy {
       opacity: 0.55;
       transition: opacity 120ms linear 80ms;
     }
@@ -309,11 +332,124 @@
       margin-top: 8px;
     }
 
-    @media (max-width: 900px) {
+    .bin-row {
+      display: grid;
+      grid-template-columns: 148px minmax(0, 1fr);
+      align-items: center;
+      gap: 4px 16px;
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid var(--gridline);
+    }
+
+    .bin-row label {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 8px;
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin: 0;
+    }
+
+    /* The stacked bar repeats the noise budget in one line. Above 720px the
+     full chart is already beside the controls, so it only earns its space on a
+     narrow screen. */
+    #summary .mini {
+      display: none;
+    }
+
+    .mini {
+      display: flex;
+      height: 6px;
+      margin-top: 8px;
+      border-radius: 3px;
+      overflow: hidden;
+      background: var(--surface-2);
+    }
+
+    .mini i {
+      display: block;
+      height: 100%;
+    }
+
+    #summary .jump {
+      display: none;
+      order: 99;
+    }
+
+    /* Below 720px the controls sit above the results, so this strip is the only
+     thing on screen while you move a slider. It carries the numbers and the
+     shape of the noise budget, and it scrolls you to the rest. */
+    @media (max-width: 720px) {
       #summary {
-        position: static;
-        border-radius: 12px;
-        border-top: 1px solid var(--border);
+        padding: 9px 14px 11px;
+      }
+
+      #summary .stats {
+        grid-template-columns: repeat(3, auto);
+        justify-content: space-between;
+        gap: 10px;
+      }
+
+      #summary .stat .k {
+        font-size: 11px;
+        margin-bottom: 0;
+      }
+
+      #summary .stat .v {
+        font-size: 21px;
+      }
+
+      #summary .stat .u {
+        font-size: 11px;
+      }
+
+      #summary .meta {
+        display: none;
+      }
+
+      #summary .mini {
+        display: flex;
+      }
+
+      /* Side by side rather than stacked. The strip is sticky, so every row it
+       grows by is a row of controls pushed off the screen. */
+      .bin-row {
+        grid-template-columns: 116px minmax(0, 1fr);
+        gap: 10px;
+        margin-top: 8px;
+        padding-top: 8px;
+      }
+
+      .bin-row label {
+        font-size: 12px;
+      }
+
+      #summary .jump {
+        display: block;
+        width: 100%;
+        padding: 4px 0 0;
+        margin: 0;
+        font: inherit;
+        font-size: 11px;
+        color: var(--text-muted);
+        background: none;
+        border: 0;
+        cursor: pointer;
+      }
+    }
+
+    /* The sticky strip would otherwise cover the heading of whatever the jump
+     button scrolls to. render() measures the strip and sets the exact value;
+     this is the fallback until the first result arrives. */
+    html {
+      scroll-padding-top: 130px;
+    }
+
+    @media (prefers-reduced-motion: no-preference) {
+      html {
+        scroll-behavior: smooth;
       }
     }
 
@@ -387,6 +523,16 @@
       gap: 10px;
     }
 
+    /* The control column is at its narrowest in this band, and two steppers
+     side by side leave the value itself about 36px, which clips a well depth.
+     Vertical space is cheap here, because the results are beside the controls
+     rather than below them. */
+    @media (min-width: 721px) and (max-width: 1023px) {
+      .grid2 {
+        grid-template-columns: 1fr;
+      }
+    }
+
     .unit {
       color: var(--text-muted);
       font-weight: 400;
@@ -424,6 +570,33 @@
 
     .hint.err {
       color: var(--bad);
+    }
+
+    /* The archive answered and these are the values it gave. */
+    .hint.ok {
+      color: var(--good);
+    }
+
+    #gaia-report {
+      margin: 10px 0 12px;
+    }
+
+    label.check {
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 8px;
+      font-size: 13px;
+      color: var(--text-secondary);
+      cursor: pointer;
+      margin: 0;
+    }
+
+    label.check input {
+      flex: none;
+      width: auto;
+      margin: 0;
+      accent-color: var(--series-1);
     }
 
     .seg {
@@ -557,6 +730,8 @@
       position: relative;
     }
 
+    /* One colour per noise source, shared by this chart and the stacked strip
+     in the summary, so the two read as the same object. */
     .bars .fill {
       position: absolute;
       inset: 0 auto 0 0;
@@ -696,6 +871,124 @@
       outline-offset: 3px;
     }
 
+    /* Dark current, read noise and well depth each cover several decades, so
+     one fixed step is wrong at one end of the range. These fields step by a
+     fraction of their own value instead. The native spinner cannot do that, so
+     it is replaced, and a phone gets a stepper where it had none. */
+    .stepper {
+      display: flex;
+      gap: 6px;
+    }
+
+    .stepper input[type="number"] {
+      flex: 1;
+      min-width: 0;
+      text-align: center;
+      appearance: textfield;
+      -moz-appearance: textfield;
+    }
+
+    .stepper input[type="number"]::-webkit-outer-spin-button,
+    .stepper input[type="number"]::-webkit-inner-spin-button {
+      appearance: none;
+      margin: 0;
+    }
+
+    .stepper button {
+      flex: none;
+      width: 28px;
+      padding: 0;
+      font-size: 16px;
+      line-height: 1;
+      color: var(--text-secondary);
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .stepper button:hover {
+      color: var(--text-primary);
+      border-color: var(--baseline);
+    }
+
+    .stepper button:focus-visible {
+      outline: 2px solid var(--series-1);
+      outline-offset: 2px;
+    }
+
+    input[type="file"] {
+      width: 100%;
+      font: inherit;
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    input[type="file"]::file-selector-button {
+      width: auto;
+      margin-right: 10px;
+      padding: 5px 10px;
+      font: inherit;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-primary);
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    .uploads {
+      margin: 10px 0 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .uploads li {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      padding: 8px 0 0;
+      border-top: 1px solid var(--gridline);
+      margin-top: 8px;
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    .uploads .who {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .uploads .who b {
+      display: block;
+      color: var(--text-primary);
+      font-weight: 560;
+      overflow-wrap: anywhere;
+    }
+
+    .uploads .drop {
+      flex: none;
+      width: auto;
+      padding: 2px 7px;
+      font: inherit;
+      font-size: 13px;
+      color: var(--text-muted);
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    .uploads .drop:hover {
+      color: var(--bad);
+      border-color: var(--bad);
+    }
+
+    #up-report .hint {
+      margin-top: 8px;
+    }
+
     .about {
       max-width: 72ch;
       margin: 32px 0 0;
@@ -759,7 +1052,14 @@
     <div id="status" data-state="loading"><span class="spinner"></span><span id="status-text">Python
         starts&hellip;</span></div>
 
-    <div id="summary" class="card" hidden></div>
+    <div id="summary" class="card" hidden>
+      <div id="summary-body"></div>
+      <div class="bin-row">
+        <label for="binning">Bin length <span class="val" id="binning-v"></span></label>
+        <input type="range" id="binning" min="1" max="60" step="1" value="10">
+      </div>
+      <button type="button" class="jump">Noise budget and system response &darr;</button>
+    </div>
 
     <div class="cols">
       <div class="controls">
@@ -784,20 +1084,39 @@
             The ETC multiplies these two curves together. The result is the system
             response. A new pair takes a moment to build the first time.
           </p>
-        </div>
 
-        <div class="card">
-          <h2>Telescope and camera</h2>
-          <div class="grid2" id="telescope-fields"></div>
-          <p class="hint err" id="mirror-hint" hidden></p>
-          <div class="grid2" id="camera-fields" style="margin-top:12px"></div>
+          <details id="upload" style="margin-top:12px">
+            <summary>Use your own curves</summary>
+            <div class="field" style="margin-top:10px">
+              <label for="up-filter">Filter transmission</label>
+              <input type="file" id="up-filter" accept=".csv,.txt,.dat,.tsv,text/csv,text/plain">
+            </div>
+            <div class="field">
+              <label for="up-system">Telescope, optics and detector</label>
+              <input type="file" id="up-system" accept=".csv,.txt,.dat,.tsv,text/csv,text/plain">
+            </div>
+            <p class="hint">
+              Two columns: wavelength, then the fraction of light that passes.
+              The ETC reads nanometres, ångströms or microns, and percent or a
+              fraction, and says which it used.
+              <a href="#" id="up-template" download="mphot_curve_template.csv">Download a template</a>.
+            </p>
+            <div id="up-report"></div>
+          </details>
         </div>
 
         <div class="card">
           <h2>Sky</h2>
           <div class="field">
             <label for="pwv">Water vapour <span class="val" id="pwv-v"></span></label>
-            <input type="range" id="pwv" min="0.05" max="30" step="0.05" value="2.5">
+            <!-- Logarithmic. The model tabulates water vapour at 13 values from
+             0.05 mm to 30 mm, most of them below 5 mm, so a linear slider spends
+             most of its travel where the model has no detail. The datalist marks
+             the real values. The ends overshoot the range a little so that the
+             opening value of 2.5 mm lands exactly on a step; readPwv() clamps. -->
+            <input type="range" id="pwv" min="-1.30206" max="1.47794" step="0.005" value="0.39794"
+              list="pwv-nodes">
+            <datalist id="pwv-nodes"></datalist>
           </div>
           <div class="field">
             <label for="airmass">Airmass <span class="val" id="airmass-v"></span></label>
@@ -820,11 +1139,22 @@
           <div id="model-fields">
             <div class="field">
               <label for="teff">Temperature <span class="val" id="teff-v"></span></label>
-              <input type="range" id="teff" min="450" max="36500" step="10" value="2560">
+              <!-- Logarithmic, for the same reason as the water vapour slider.
+               The model's temperature axis is 50 K apart at the bottom and
+               1500 K apart at the top, so a linear slider gives the dwarf stars
+               most people come here for about 3% of its travel. -->
+              <input type="range" id="teff" min="2.65224" max="4.56324" step="0.001" value="3.40824">
             </div>
             <div class="field">
               <label for="dist-num">Distance <span class="val" id="dist-v"></span></label>
-              <input type="number" id="dist-num" min="0.01" max="1e6" step="any" value="12.5">
+              <div class="stepper">
+                <button type="button" class="nudge" data-key="dist-num" data-dir="-1"
+                  tabindex="-1" aria-label="Nearer">&minus;</button>
+                <input type="number" id="dist-num" min="0.01" max="1e6" step="any"
+                  value="12.5" inputmode="decimal" data-proportional="1">
+                <button type="button" class="nudge" data-key="dist-num" data-dir="1"
+                  tabindex="-1" aria-label="Further">+</button>
+              </div>
               <input type="range" id="dist" min="-2" max="6" step="0.001" value="1.0969"
                 aria-label="Distance, logarithmic" style="margin-top:6px">
               <p class="hint">The slider covers 0.01 pc to 1 Mpc. You can also type a value.</p>
@@ -837,31 +1167,62 @@
               <p class="hint">Press Enter to load the star. The ETC reads its distance and
                 brightness from Gaia, then scales the model to match.</p>
             </div>
+            <p class="hint" id="gaia-report" hidden></p>
             <div class="field">
-              <label for="gaia-teff">Temperature <span class="val" id="gaia-teff-v"></span></label>
-              <input type="range" id="gaia-teff" min="450" max="36500" step="10" value="5780">
-              <p class="hint">The ETC uses this value if Gaia has no temperature for the star.</p>
+              <label class="check"><input type="checkbox" id="gaia-teff-on">
+                Set the temperature myself</label>
+              <div id="gaia-teff-manual" hidden style="margin-top:10px">
+                <label for="gaia-teff">Temperature <span class="val" id="gaia-teff-v"></span></label>
+                <input type="range" id="gaia-teff" min="2.65224" max="4.56324" step="0.001" value="3.76224">
+                <p class="hint">Gaia's own temperature is ignored while this is ticked.</p>
+              </div>
             </div>
           </div>
         </div>
 
         <div class="card">
-          <h2>Exposure</h2>
-          <div class="field">
-            <label for="binning">Bin length <span class="val" id="binning-v"></span></label>
-            <input type="range" id="binning" min="1" max="60" step="1" value="10">
-          </div>
+          <h2>Exposure limits</h2>
           <div class="grid2">
             <div class="field">
               <label for="min_exp">Shortest <span class="unit">s</span></label>
-              <input type="number" id="min_exp" min="0" step="any" placeholder="none">
+              <div class="stepper">
+                <button type="button" class="nudge" data-key="min_exp" data-dir="-1"
+                  tabindex="-1" aria-label="Less Shortest">&minus;</button>
+                <input type="number" id="min_exp" min="0" step="1" placeholder="none"
+                  inputmode="decimal">
+                <button type="button" class="nudge" data-key="min_exp" data-dir="1"
+                  tabindex="-1" aria-label="More Shortest">+</button>
+              </div>
             </div>
             <div class="field">
               <label for="max_exp">Longest <span class="unit">s</span></label>
-              <input type="number" id="max_exp" min="0" step="any" placeholder="none">
+              <div class="stepper">
+                <button type="button" class="nudge" data-key="max_exp" data-dir="-1"
+                  tabindex="-1" aria-label="Less Longest">&minus;</button>
+                <input type="number" id="max_exp" min="0" step="1" placeholder="none"
+                  inputmode="decimal">
+                <button type="button" class="nudge" data-key="max_exp" data-dir="1"
+                  tabindex="-1" aria-label="More Longest">+</button>
+              </div>
             </div>
           </div>
           <p class="hint">Leave these empty to let the ETC pick any exposure time.</p>
+        </div>
+
+        <!-- Last, and closed on a narrow screen. It is the longest card and the
+         one people touch least once they have picked a preset, so leaving it
+         open at the top pushes the sky and the star off the screen. -->
+        <div class="card">
+          <details id="instrument" open>
+            <summary>
+              <h2 style="display:inline; margin:0">Telescope and camera</h2>
+            </summary>
+            <div style="margin-top:12px">
+              <div class="grid2" id="telescope-fields"></div>
+              <p class="hint err" id="mirror-hint" hidden></p>
+              <div class="grid2" id="camera-fields" style="margin-top:12px"></div>
+            </div>
+          </details>
         </div>
       </div>
 
@@ -941,6 +1302,9 @@
     // These are declared here because the first preset is applied before boot(),
     // and it reaches code that reads them.
     let pyodide;
+    // Pyodide exists some time before mphot is installed and the module is run.
+    // Nothing may call into Python until this is true.
+    let ready = false;
 
     // Every control recomputes as you move it. One update takes about 10 ms, so a
     // short pause after the last change keeps the page smooth.
@@ -964,35 +1328,43 @@
     const FILTERS = ["I+z", "z", "i", "r", "g", "u", "clear", "luminance", "halpha",
       "zYJ", "J", "SPC_J", "SPC_H"];
 
+    // `step` is what one arrow key or spinner click changes. Without it the
+    // browser uses 1, which moves the plate scale from 0.35 to 1.35 and the well
+    // depth from 64000 to 64001. Each value below is chosen so that the preset
+    // values land on it.
+    //
+    // `proportional` marks the fields that cover several decades, where no
+    // single step works at both ends. Those step by a fraction of their own
+    // value instead; see nudge().
     const TELESCOPE = [
       {
-        key: "r0", label: "Primary radius", unit: "m", min: 0.02, max: 5, step: "any"
+        key: "r0", label: "Primary radius", unit: "m", min: 0.02, max: 5, step: 0.05
       },
       {
-        key: "r1", label: "Secondary radius", unit: "m", min: 0, max: 4, step: "any"
+        key: "r1", label: "Secondary radius", unit: "m", min: 0, max: 4, step: 0.01
       },
     ];
     const CAMERA = [
       {
-        key: "plate_scale", label: "Plate scale", unit: "″/pix", min: 0.01, max: 5, step: "any"
+        key: "plate_scale", label: "Plate scale", unit: "″/pix", min: 0.01, max: 5, step: 0.01
       },
       {
-        key: "N_dc", label: "Dark current", unit: "e⁻/pix/s", min: 0, max: 5000, step: "any"
+        key: "N_dc", label: "Dark current", unit: "e⁻/pix/s", min: 0, max: 5000, proportional: true
       },
       {
-        key: "N_rn", label: "Read noise", unit: "e⁻ rms", min: 0, max: 500, step: "any"
+        key: "N_rn", label: "Read noise", unit: "e⁻ rms", min: 0, max: 500, proportional: true
       },
       {
-        key: "well_depth", label: "Well depth", unit: "e⁻/pix", min: 100, max: 1e7, step: "any"
+        key: "well_depth", label: "Well depth", unit: "e⁻/pix", min: 100, max: 1e7, proportional: true
       },
       {
         key: "well_fill", label: "Well fill", unit: "", min: 0.01, max: 1, step: 0.01
       },
       {
-        key: "read_time", label: "Read time", unit: "s", min: 0, max: 120, step: "any"
+        key: "read_time", label: "Read time", unit: "s", min: 0, max: 120, step: 0.1
       },
       {
-        key: "ap_rad", label: "Aperture", unit: "FWHM", min: 0.2, max: 8, step: "any"
+        key: "ap_rad", label: "Aperture", unit: "FWHM", min: 0.2, max: 8, step: 0.1
       },
     ];
     const INSTRUMENT = [...TELESCOPE, ...CAMERA];
@@ -1025,15 +1397,74 @@
     ];
 
     // ------------------------------------------------------------------ controls
+    const clamp = (v, lo, hi) => Math.min(Math.max(v, lo), hi);
+
+    // Every number field gets the same pair of buttons, so they all behave
+    // alike and a phone gets a stepper where it had none. What one press
+    // changes is the only difference: `step` for most, and a fraction of the
+    // field's own value for the ones that cover several decades.
+    function stepper(p) {
+      return `<div class="stepper">
+        <button type="button" class="nudge" data-key="${p.key}" data-dir="-1" tabindex="-1"
+          aria-label="Less ${p.label}">&minus;</button>
+        <input type="number" id="${p.key}" min="${p.min}" max="${p.max}"
+          step="${p.proportional ? "any" : p.step}" inputmode="decimal"
+          ${p.proportional ? 'data-proportional="1"' : ""}>
+        <button type="button" class="nudge" data-key="${p.key}" data-dir="1" tabindex="-1"
+          aria-label="More ${p.label}">+</button>
+      </div>`;
+    }
+
     function buildNumberFields(container, params) {
       container.innerHTML = params.map(p => `
     <div class="field">
       <label for="${p.key}">${p.label} ${p.unit ? `<span class="unit">${p.unit}</span>` : ""}</label>
-      <input type="number" id="${p.key}" min="${p.min}" max="${p.max}" step="${p.step}">
+      ${stepper(p)}
     </div>`).join("");
     }
     buildNumberFields($("telescope-fields"), TELESCOPE);
     buildNumberFields($("camera-fields"), CAMERA);
+
+    // One press moves the value by `step`, or, for a field marked proportional,
+    // by a tenth of its own leading digit. Dark current runs from 0.1 to 5000
+    // and well depth from 64000 to 1048560; no fixed step serves both ends of
+    // those, while a tenth of the leading digit is about 1% to 10% of the value
+    // and always lands on a round number.
+    function nudge(input, dir) {
+      const current = +input.value || 0;
+      const min = input.min === "" ? -Infinity : +input.min;
+      const max = input.max === "" ? Infinity : +input.max;
+
+      let inc;
+      if (input.dataset.proportional) {
+        const scale = Math.abs(current) || Math.abs(min) || 1;
+        inc = 10 ** (Math.floor(Math.log10(scale)) - 1);
+      } else {
+        inc = +input.step || 1;
+      }
+
+      // Rounding the quotient snaps a typed off-step value onto the step grid,
+      // which is what a spinner does. A power of ten is not exact in binary, so
+      // the product carries a tail that has to go.
+      const next = +(Math.round(current / inc + dir) * inc).toPrecision(12);
+      input.value = clamp(next, min, max);
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+    }
+
+    // Arrow keys go through nudge as well, so the keyboard and the buttons can
+    // never disagree about what one step is.
+    function wireStepper(el) {
+      el.addEventListener("keydown", event => {
+        if (event.key !== "ArrowUp" && event.key !== "ArrowDown") return;
+        event.preventDefault();
+        nudge(el, event.key === "ArrowUp" ? 1 : -1);
+      });
+    }
+    for (const p of INSTRUMENT) wireStepper($(p.key));
+    for (const id of ["min_exp", "max_exp", "dist-num"]) wireStepper($(id));
+    for (const button of document.querySelectorAll("button.nudge")) {
+      button.addEventListener("click", () => nudge($(button.dataset.key), +button.dataset.dir));
+    }
 
     for (const s of SYSTEMS) $("system").add(new Option(s.label, s.id));
     for (const f of FILTERS) $("filter").add(new Option(f, f));
@@ -1070,14 +1501,17 @@
     const CONTROL_IDS = [
       "preset", "system", "filter", ...INSTRUMENT.map(p => p.key),
       "pwv", "airmass", "seeing", "teff", "dist-num", "dist",
-      "gaia-teff", "source-id", "binning", "min_exp", "max_exp",
+      "gaia-teff-on", "gaia-teff", "source-id", "binning", "min_exp", "max_exp",
     ];
+
+    // A checkbox always reports value "on", so its state has to be read another way.
+    const controlValue = el => el.type === "checkbox" ? String(el.checked) : el.value;
 
     let startState = null;
     let restoring = false;
 
     function readControls() {
-      const values = Object.fromEntries(CONTROL_IDS.map(id => [id, $(id).value]));
+      const values = Object.fromEntries(CONTROL_IDS.map(id => [id, controlValue($(id))]));
       values.mode = document.querySelector('input[name="mode"]:checked').value;
       return values;
     }
@@ -1096,7 +1530,12 @@
       restoring = true;
       for (const id of CONTROL_IDS) {
         const el = $(id);
-        if (el.value === startState[id]) continue;
+        if (controlValue(el) === startState[id]) continue;
+        if (el.type === "checkbox") {
+          el.checked = startState[id] === "true";
+          el.dispatchEvent(new Event("change"));
+          continue;
+        }
         el.value = startState[id];
         // Let the read-outs beside the sliders follow the new value.
         el.dispatchEvent(new Event("input"));
@@ -1127,6 +1566,15 @@
     // A source_id is only useful once it is complete, so wait for Enter or blur.
     $("source-id").addEventListener("change", () => scheduleUpdate(0));
 
+    // Unticked, the model reads the temperature Gaia holds for the star, and
+    // the slider would only mislead, so it is not shown.
+    $("gaia-teff-on").addEventListener("change", event => {
+      $("gaia-teff-manual").hidden = !event.target.checked;
+      if (restoring) return;
+      updateResetButton();
+      scheduleUpdate(0);
+    });
+
     function checkMirrors() {
       const r0 = +$("r0").value, r1 = +$("r1").value;
       const bad = !(r0 > 0) || !(r1 >= 0) || r1 >= r0;
@@ -1137,12 +1585,31 @@
     }
     applyPreset(PRESETS[0].id);
 
+    // The water vapour and temperature sliders carry log10 of their value, so
+    // their travel is spread the way the model's own axes are. Both converters
+    // clamp: griddata returns NaN for water vapour outside 0.05-30 mm, and
+    // interpolate_grid has no temperature to bracket outside 450-36500 K.
+    //
+    // The rounding is what keeps the numbers honest. The slider is quantised,
+    // so 2.5 mm off the grid would read as 2.5 and compute as 2.4999. Rounding
+    // first means the value shown and the value sent are the same one, at the
+    // same granularity the linear sliders used to have.
+    const readPwv = v => clamp(+(10 ** +v).toPrecision(3), 0.05, 30);
+    const readTeff = v => clamp(Math.round(10 ** +v / 10) * 10, 450, 36500);
+
+    // The 13 water vapour values the model is tabulated at. The slider shows
+    // them as notches, so it is clear where the model has data and where it is
+    // interpolating between points.
+    const PWV_NODES = [0.05, 0.1, 0.25, 0.5, 1, 1.5, 2.5, 3.5, 5, 7.5, 10, 20, 30];
+    $("pwv-nodes").innerHTML = PWV_NODES
+      .map(v => `<option value="${Math.log10(v).toFixed(5)}"></option>`).join("");
+
     const sliderFmt = {
-      pwv: v => `${(+v).toFixed(2)} mm`,
+      pwv: v => `${readPwv(v)} mm`,
       airmass: v => (+v).toFixed(2),
       seeing: v => `${(+v).toFixed(2)}″`,
-      teff: v => `${Math.round(v)} K`,
-      "gaia-teff": v => `${Math.round(v)} K`,
+      teff: v => `${readTeff(v)} K`,
+      "gaia-teff": v => `${readTeff(v)} K`,
       binning: v => `${Math.round(v)} min`,
     };
     for (const [id, f] of Object.entries(sliderFmt)) {
@@ -1195,13 +1662,363 @@
       if (maxExp !== "") props.max_exp = +maxExp;
       return {
         system: $("system").value, filter: $("filter").value, props, mode,
-        pwv: +$("pwv").value, airmass: +$("airmass").value, seeing: +$("seeing").value,
+        pwv: readPwv($("pwv").value),
+        airmass: +$("airmass").value, seeing: +$("seeing").value,
         binning: +$("binning").value,
-        teff: mode === "gaia" ? +$("gaia-teff").value : +$("teff").value,
+        teff: readTeff($("teff").value),
+        // null lets mphot read the temperature Gaia holds for the star.
+        teff_override: mode === "gaia" && $("gaia-teff-on").checked
+          ? readTeff($("gaia-teff").value) : null,
         distance: +distNum.value,
         source_id: $("source-id").value.trim(),
       };
     }
+
+    // ------------------------------------------------------------- your curves
+    // A curve is two columns: wavelength, then the fraction of light that
+    // passes. The page reads whatever the file holds, converts it to the
+    // microns-and-fraction form the built-in curves use, and writes that. Python
+    // therefore needs no change: it reads an uploaded curve by path, exactly as
+    // it reads a built-in one.
+    const CURVE_KINDS = {
+      filter: { dir: "filters", select: "filter", what: "filter" },
+      system: { dir: "systems", select: "system", what: "telescope, optics and detector" },
+    };
+
+    // The model integrates over 0.3 to 3 microns. A curve has to say something
+    // inside that window to be of any use.
+    const LAM_LO = 0.3, LAM_HI = 3;
+
+    const WAVELENGTH_UNITS = [
+      { id: "um", label: "microns", factor: 1 },
+      { id: "nm", label: "nanometres", factor: 1e-3 },
+      { id: "A", label: "ångströms", factor: 1e-4 },
+    ];
+
+    const MAX_CURVE_BYTES = 5e6;
+    const MAX_CURVE_ROWS = 200000;
+    const MAX_CURVE_TOTAL = 20e6;
+
+    let uploads = [];
+
+    const curvePath = (kind, id) => `resources/${CURVE_KINDS[kind].dir}/${id}.csv`;
+
+    function numberPair(cells) {
+      if (cells.length < 2) return null;
+      const lam = Number(cells[0]), value = Number(cells[1]);
+      return Number.isFinite(lam) && Number.isFinite(value) ? [lam, value] : null;
+    }
+
+    // Guessing the wavelength unit from the size of the numbers alone needs
+    // thresholds that get 3000 angstroms and 3000 nanometres wrong. Scoring each
+    // unit by how much of the curve it would put inside the model's window does
+    // not: only one reading of a real instrument curve lands there.
+    function guessUnit(lo, hi) {
+      let best = WAVELENGTH_UNITS[0], bestScore = -1;
+      for (const unit of WAVELENGTH_UNITS) {
+        const a = lo * unit.factor, b = hi * unit.factor;
+        const inside = Math.max(0, Math.min(b, LAM_HI) - Math.max(a, LAM_LO));
+        const score = inside / Math.max(b - a, 1e-12);
+        if (score > bestScore) { bestScore = score; best = unit; }
+      }
+      return best;
+    }
+
+    const fmtLam = v => v >= 10 ? v.toFixed(1) : v.toFixed(3).replace(/0+$/, "");
+
+    /**
+     * Read a curve file. Returns { rows, unit, notes } or { error }.
+     * `rows` is already in microns and fractions, sorted, with no duplicates.
+     */
+    function parseCurve(text, unitId) {
+      const lines = text.replace(/^﻿/, "").replace(/\r/g, "").split("\n")
+        .map(line => line.trim())
+        .filter(line => line && !line.startsWith("#"));
+
+      if (!lines.length) return { error: "The file holds no rows." };
+      if (lines.length > MAX_CURVE_ROWS) {
+        return {
+          error: `The file has ${lines.length} rows. The limit is `
+            + `${MAX_CURVE_ROWS}. Thin the curve out and try again.`
+        };
+      }
+
+      // Whichever separator it uses, a good row ends up as two numbers. Trying
+      // them all and keeping the best is more forgiving than reading the first
+      // line and guessing.
+      const sample = lines.slice(0, 50);
+      const chosen = [/\s*,\s*/, /\s*;\s*/, /\t+/, /\s+/]
+        .map(sep => ({ sep, score: sample.filter(l => numberPair(l.split(sep))).length }))
+        .sort((a, b) => b.score - a.score)[0];
+      if (!chosen.score) {
+        return { error: "No row in the file holds two numbers side by side." };
+      }
+
+      const notes = [];
+      let rows = [], skipped = 0;
+      for (const line of lines) {
+        const pair = numberPair(line.split(chosen.sep));
+        if (pair) rows.push(pair); else skipped++;
+      }
+      // A header row is the usual reason, so one skipped line is not worth a note.
+      if (skipped > 1) notes.push(`${skipped} rows held no pair of numbers and were left out.`);
+
+      rows = rows.filter(([lam]) => lam > 0).sort((a, b) => a[0] - b[0]);
+      // interpolate_dfs keeps the first of a repeated index, so this matches
+      // what Python would have done with the file anyway.
+      let duplicates = 0;
+      rows = rows.filter(([lam], i) => {
+        if (i && lam === rows[i - 1][0]) { duplicates++; return false; }
+        return true;
+      });
+      if (duplicates) notes.push(`${duplicates} repeated wavelengths were left out.`);
+      if (rows.length < 2) return { error: "Fewer than two usable rows remain." };
+
+      const unit = WAVELENGTH_UNITS.find(u => u.id === unitId)
+        || guessUnit(rows[0][0], rows[rows.length - 1][0]);
+      if (unit.factor !== 1) {
+        notes.push(`Wavelengths read as ${unit.label} and divided by ${Math.round(1 / unit.factor)}.`);
+      } else {
+        notes.push("Wavelengths read as microns.");
+      }
+
+      const peak = Math.max(...rows.map(r => r[1]));
+      let scale = 1;
+      if (peak > 100) {
+        return {
+          error: `The largest throughput in the file is ${sig(peak)}. A curve `
+            + "gives the fraction of light that passes, so it cannot go above "
+            + "1, or above 100 as a percentage."
+        };
+      }
+      if (peak > 1.5) { scale = 0.01; notes.push("Throughput read as percent and divided by 100."); }
+
+      let negatives = 0;
+      rows = rows.map(([lam, value]) => {
+        if (value < 0) negatives++;
+        return [lam * unit.factor, Math.max(0, value) * scale];
+      });
+      if (negatives) notes.push(`${negatives} negative values were read as zero.`);
+
+      const lo = rows[0][0], hi = rows[rows.length - 1][0];
+      if (hi < LAM_LO || lo > LAM_HI) {
+        return {
+          error: `The curve covers ${fmtLam(lo)} to ${fmtLam(hi)} microns. The `
+            + `model works from ${LAM_LO} to ${LAM_HI} microns, so the two do `
+            + "not meet. Check the wavelength unit."
+        };
+      }
+
+      return { rows, unit, peak: peak * scale, lo, hi, notes };
+    }
+
+    // The name becomes a file name in the browser's Python file system, and
+    // mphot builds its system response and grid file names from it. Nothing
+    // that could climb out of a directory may survive this.
+    function curveName(fileName, kind) {
+      const base = fileName.replace(/\.[^.]*$/, "").toLowerCase();
+      const safe = base.replace(/[^a-z0-9._+-]+/g, "_").replace(/^_+|_+$/g, "").slice(0, 60);
+      const stem = `custom_${safe || kind}`;
+      const taken = new Set([
+        ...SYSTEMS.map(s => s.id), ...FILTERS, ...uploads.map(u => u.id),
+      ]);
+      let id = stem, n = 2;
+      while (taken.has(id)) id = `${stem}_${n++}`;
+      return id;
+    }
+
+    function curveToCsv(rows) {
+      // Five decimals of a micron is 0.01 nm, far finer than the model's own
+      // 1 nm support points, and it keeps a large file small.
+      return rows.map(([lam, value]) => `${lam.toFixed(5)},${value.toFixed(6)}`).join("\n") + "\n";
+    }
+
+    // ------------------------------------------------------------- storing them
+    // Uploads live in IndexedDB so they are still there next visit. Every call
+    // is guarded: private browsing can refuse to open a database at all, and an
+    // upload that works only for this tab is better than one that fails.
+    let dbBroken = false;
+
+    function openCurveDB() {
+      return new Promise((resolve, reject) => {
+        const request = indexedDB.open("mphot-curves", 1);
+        request.onupgradeneeded = () => request.result.createObjectStore("curves", { keyPath: "id" });
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+      });
+    }
+
+    async function dbRun(mode, work) {
+      if (dbBroken) return null;
+      try {
+        const db = await openCurveDB();
+        const result = await new Promise((resolve, reject) => {
+          const tx = db.transaction("curves", mode);
+          const request = work(tx.objectStore("curves"));
+          tx.onerror = () => reject(tx.error);
+          tx.onabort = () => reject(tx.error);
+          if (request) request.onsuccess = () => resolve(request.result);
+          else tx.oncomplete = () => resolve(null);
+        });
+        db.close();
+        return result;
+      } catch {
+        dbBroken = true;
+        return null;
+      }
+    }
+
+    // ---------------------------------------------------------------- using them
+    function systemLabel(id) {
+      return SYSTEMS.find(s => s.id === id)?.label
+        ?? uploads.find(u => u.id === id)?.label
+        ?? id;
+    }
+
+    function refreshCurveOptions(kind) {
+      const select = $(CURVE_KINDS[kind].select);
+      const wanted = select.value;
+      select.querySelector("optgroup.mine")?.remove();
+
+      const mine = uploads.filter(u => u.kind === kind);
+      if (mine.length) {
+        const group = document.createElement("optgroup");
+        group.className = "mine";
+        group.label = "Yours";
+        for (const upload of mine) group.appendChild(new Option(upload.label, upload.id));
+        select.appendChild(group);
+      }
+
+      select.value = wanted;
+      // The chosen curve was just removed. Fall back to the opening preset's.
+      if (!select.value) select.value = PRESETS[0][kind === "filter" ? "filter" : "system"];
+    }
+
+    function renderUploads() {
+      const report = $("up-report");
+      if (!uploads.length) { report.innerHTML = ""; return; }
+
+      report.innerHTML = `<ul class="uploads">${uploads.map(upload => `
+      <li>
+        <span class="who">
+          <b>${escapeHtml(upload.label)}</b>
+          ${escapeHtml(upload.summary)}
+          ${upload.warning ? `<span class="hint err" style="display:block;margin:2px 0 0">${escapeHtml(upload.warning)}</span>` : ""}
+        </span>
+        <button type="button" class="drop" data-id="${upload.id}"
+          aria-label="Remove ${escapeHtml(upload.label)}">&times;</button>
+      </li>`).join("")}</ul>
+      ${dbBroken ? '<p class="hint">These are kept for this tab only. The browser would not open a store for them.</p>' : ""}`;
+
+      for (const button of report.querySelectorAll("button.drop")) {
+        button.addEventListener("click", () => removeUpload(button.dataset.id));
+      }
+    }
+
+    const escapeHtml = s => String(s).replace(/[&<>"]/g,
+      c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+    /** Put a parsed curve into the Pyodide file system and offer it in its select. */
+    function installCurve(upload) {
+      const path = curvePath(upload.kind, upload.id);
+      if (pyodide) {
+        pyodide.FS.writeFile(`/data/${path}`, new TextEncoder().encode(upload.csv));
+        curvesLoaded.set(path, Promise.resolve());
+      }
+      refreshCurveOptions(upload.kind);
+    }
+
+    async function acceptCurve(kind, file, unitId) {
+      const report = $("up-report");
+      if (file.size > MAX_CURVE_BYTES) {
+        return showCurveError(`${file.name} is ${(file.size / 1e6).toFixed(1)} MB. `
+          + `The limit is ${MAX_CURVE_BYTES / 1e6} MB.`);
+      }
+      const used = uploads.reduce((total, u) => total + u.csv.length, 0);
+      if (used + file.size > MAX_CURVE_TOTAL) {
+        return showCurveError("Your curves would take more than "
+          + `${MAX_CURVE_TOTAL / 1e6} MB together. Remove one first.`);
+      }
+
+      const parsed = parseCurve(await file.text(), unitId);
+      if (parsed.error) return showCurveError(`${file.name}: ${parsed.error}`);
+
+      const partial = parsed.lo > LAM_LO || parsed.hi < LAM_HI;
+      const upload = {
+        id: curveName(file.name, kind),
+        kind,
+        label: file.name.replace(/\.[^.]*$/, ""),
+        csv: curveToCsv(parsed.rows),
+        summary: `${parsed.rows.length} points, ${fmtLam(parsed.lo)} to `
+          + `${fmtLam(parsed.hi)} µm, peak ${sig(parsed.peak)}. `
+          + parsed.notes.join(" "),
+        warning: partial
+          ? `Outside ${fmtLam(parsed.lo)} to ${fmtLam(parsed.hi)} µm the ETC `
+          + "sees no light through this curve."
+          : "",
+      };
+
+      upload.addedAt = Date.now();
+      uploads.push(upload);
+      installCurve(upload);
+      $(CURVE_KINDS[kind].select).value = upload.id;
+      $("preset").value = "custom";
+      renderUploads();
+      await dbRun("readwrite", store => store.put({
+        id: upload.id, kind: upload.kind, label: upload.label, csv: upload.csv,
+        summary: upload.summary, warning: upload.warning, addedAt: upload.addedAt,
+      }));
+      updateResetButton();
+      updateResponse();
+      scheduleUpdate(0);
+    }
+
+    // The list of accepted curves is replaced by the message, so the reader sees
+    // one thing at a time. The next upload, or a removal, brings the list back.
+    function showCurveError(message) {
+      $("up-report").innerHTML = `<p class="hint err">${escapeHtml(message)}</p>`;
+    }
+
+    function removeUpload(id) {
+      const upload = uploads.find(u => u.id === id);
+      if (!upload) return;
+      uploads = uploads.filter(u => u.id !== id);
+
+      const path = curvePath(upload.kind, upload.id);
+      curvesLoaded.delete(path);
+      if (pyodide) { try { pyodide.FS.unlink(`/data/${path}`); } catch { /* already gone */ } }
+
+      refreshCurveOptions(upload.kind);
+      renderUploads();
+      dbRun("readwrite", store => store.delete(id));
+      updateResetButton();
+      updateResponse();
+      scheduleUpdate(0);
+    }
+
+    for (const kind of Object.keys(CURVE_KINDS)) {
+      const input = $(`up-${kind}`);
+      input.addEventListener("change", async () => {
+        const file = input.files[0];
+        if (!file) return;
+        try {
+          await acceptCurve(kind, file);
+        } catch (err) {
+          showCurveError(`${file.name} could not be read: ${err.message}`);
+        }
+        // Let the same file be chosen again after a fix.
+        input.value = "";
+      });
+    }
+
+    $("up-template").href = URL.createObjectURL(new Blob([
+      "# Two columns: wavelength, then the fraction of light that passes.\n",
+      "# Wavelengths may be in microns, nanometres or angstroms, and the\n",
+      "# throughput may be a fraction or a percentage. The page works out\n",
+      "# which and tells you what it used.\n",
+      "0.300,0.00\n0.400,0.35\n0.500,0.88\n0.600,0.92\n0.700,0.90\n",
+      "0.800,0.71\n0.900,0.40\n1.000,0.05\n1.100,0.00\n",
+    ], { type: "text/csv" }));
 
     // ------------------------------------------------------------------- Pyodide
     const PY = `
@@ -1238,13 +2055,53 @@ def _run(spec, props=None):
     props = dict(props or spec["props"], name=_system_name(spec["system"], spec["filter"]))
     props_sky = {"pwv": spec["pwv"], "airmass": spec["airmass"], "seeing": spec["seeing"]}
     if spec["mode"] == "gaia":
+        # Teff=None is what makes get_precision_gaia read the temperature Gaia
+        # holds for the star. Passing a number always wins over the archive, so
+        # the page sends one only when the reader has asked to set it.
         return mphot.get_precision_gaia(
             props, props_sky, source_id=int(spec["source_id"]),
-            Teff=spec["teff"], binning=spec["binning"],
+            Teff=spec["teff_override"], binning=spec["binning"],
         )
     return mphot.get_precision(
         props, props_sky, spec["teff"], spec["distance"], binning=spec["binning"],
     )
+
+# get_precision_gaia substitutes 3000 K and 10 pc when the archive has neither,
+# and says so only in a log the page never shows. These are the same rules, so
+# the page can report what the model actually used.
+_TEFF_FALLBACK = 3000.0
+_DISTANCE_FALLBACK = 10.0
+
+def _gaia_report(spec):
+    """What the archive gave for this star, and which values were used."""
+    params = mphot.gaia.query_gaia_source(int(spec["source_id"]))
+
+    teff_gaia = float(params["teff_gspphot"])
+    parallax = float(params["parallax"])
+    distance = 1 / (parallax * 1e-3) if parallax > 0 else float("nan")
+
+    override = spec["teff_override"]
+    if override is not None:
+        teff_used, teff_from = float(override), "you"
+    elif teff_gaia == teff_gaia:
+        teff_used, teff_from = teff_gaia, "gaia"
+    else:
+        teff_used, teff_from = _TEFF_FALLBACK, "fallback"
+
+    if distance == distance:
+        distance_used, distance_from = distance, "parallax"
+    else:
+        distance_used, distance_from = _DISTANCE_FALLBACK, "fallback"
+
+    return {
+        "source_id": spec["source_id"],
+        "teff_gaia": _finite(teff_gaia),
+        "teff_used": teff_used,
+        "teff_from": teff_from,
+        "parallax": _finite(parallax),
+        "distance": distance_used,
+        "distance_from": distance_from,
+    }
 
 def _dumps(payload):
     return json.dumps(payload, default=_plain)
@@ -1277,7 +2134,7 @@ def compute(spec_json):
         "frames_per_bin": components["binned images"],
         "well_fill": components["peak well_fill"],
         "binning": spec["binning"],
-        "gaia": spec["source_id"] if spec["mode"] == "gaia" else None,
+        "gaia": _gaia_report(spec) if spec["mode"] == "gaia" else None,
         "components": [
             {"name": k, "image": image[k], "binned": binned[k]} for k in order
         ],
@@ -1317,69 +2174,267 @@ def response_curves(system, filt, points):
 
 `;
 
-    // The wheel's name carries the project version, so build.py records it in a
-    // manifest rather than the page hard-coding a version that a release changes.
-    async function installWheel() {
-      let name;
-      try {
-        const res = await fetch(new URL("dist/wheel.json", location.href).href,
-          { cache: "no-cache" });
+    // ----------------------------------------------------------------- fetching
+    // Nothing below needs Pyodide to exist, so all of it downloads at the same
+    // time as Pyodide rather than after it. boot() waits on each promise only at
+    // the point where it needs the bytes.
+    const PYODIDE_URL = "https://cdn.jsdelivr.net/pyodide/v0.29.5/full/";
+
+    // build.json names the wheel and holds a content hash for every resource.
+    // The whole boot sequence waits on it, so it is asked for first, and the
+    // page preloads it in the head as well.
+    const manifestReady = fetch(new URL("build.json", location.href).href,
+      { cache: "no-cache" })
+      .then(res => {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        ({ wheel: name } = await res.json());
-      } catch {
-        throw new Error(
-          "No wheel in web/dist. Run `python web/build.py`, then reload this page.");
+        return res.json();
+      })
+      .catch(() => {
+        throw new Error("No build.json. Run `python web/build.py`, then reload this page.");
+      });
+
+    function assetURL(manifest, path) {
+      const version = manifest.files[path];
+      if (!version) {
+        throw new Error(`build.json does not list ${path}. Run \`python web/build.py\` again.`);
+      }
+      return new URL(`${path}?v=${version}`, location.href).href;
+    }
+
+    // A file this size stays in the browser's own cache only for as long as the
+    // browser feels like keeping it. Cache Storage is explicit, so a second
+    // visit is reliably quick. Every address carries a version, so an entry can
+    // never be stale, only unused.
+    let assetCache = null;
+    const cacheReady = caches.open("mphot-v1")
+      .then(store => { assetCache = store; })
+      .catch(() => { assetCache = null; });
+
+    async function readAll(res, onProgress) {
+      const total = +res.headers.get("content-length") || 0;
+      if (!onProgress || !total || !res.body) return new Uint8Array(await res.arrayBuffer());
+
+      const reader = res.body.getReader();
+      const chunks = [];
+      let got = 0;
+      for (; ;) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        chunks.push(value);
+        got += value.length;
+        onProgress(got, total);
+      }
+      const bytes = new Uint8Array(got);
+      let at = 0;
+      for (const chunk of chunks) { bytes.set(chunk, at); at += chunk.length; }
+      return bytes;
+    }
+
+    async function grab(url, onProgress) {
+      await cacheReady;
+      if (assetCache) {
+        try {
+          const hit = await assetCache.match(url);
+          if (hit) return new Uint8Array(await hit.arrayBuffer());
+        } catch { /* a broken cache is not a reason to fail; use the network */ }
       }
 
-      const res = await fetch(new URL(`dist/${name}`, location.href).href);
+      const res = await fetch(url);
       if (!res.ok) {
-        throw new Error(`The server has no ${name} (HTTP ${res.status}). ` +
-          "Run `python web/build.py` again, then reload this page.");
+        throw new Error(`${new URL(url).pathname} is missing (HTTP ${res.status}). `
+          + "Run `python web/build.py` again, then reload this page.");
       }
-      const bytes = new Uint8Array(await res.arrayBuffer());
-      // A missing file is answered with an HTML page, which micropip would report
-      // only as "File is not a zip file".
-      if (bytes[0] !== 0x50 || bytes[1] !== 0x4b) {
-        throw new Error(`${name} is not a wheel file. ` +
-          "Check which directory the server shows.");
+      const bytes = await readAll(res, onProgress);
+      if (assetCache) {
+        try { await assetCache.put(url, new Response(bytes)); } catch { /* quota */ }
       }
+      return bytes;
+    }
 
+    // Addresses carry a version, so an old one is simply never asked for again.
+    // Without this the cache would grow by the size of the data on every build.
+    async function pruneCache(keep) {
+      await cacheReady;
+      if (!assetCache) return;
+      try {
+        for (const request of await assetCache.keys()) {
+          if (!keep.has(request.url)) await assetCache.delete(request);
+        }
+      } catch { /* nothing here is worth failing the boot for */ }
+    }
+
+    // One line of status for two things happening at once: which stage Pyodide
+    // is at, and how much of our own data has arrived.
+    let phase = "Python starts…";
+    let bytesGot = 0, bytesTotal = 0, bytesShown = "";
+    const perURL = new Map();
+
+    function paintStatus() {
+      const mb = bytesTotal
+        ? ` · mphot data ${(bytesGot / 1e6).toFixed(1)}/${(bytesTotal / 1e6).toFixed(1)} MB`
+        : "";
+      // A download still running must not paint over "Ready" or over a failure.
+      if (statusEl.dataset.state !== "loading") return;
+      setStatus(phase + mb);
+    }
+
+    function setPhase(text) { phase = text; paintStatus(); }
+
+    function countBytes(url) {
+      return (got, total) => {
+        if (!perURL.has(url)) { perURL.set(url, 0); bytesTotal += total; }
+        bytesGot += got - perURL.get(url);
+        perURL.set(url, got);
+        // Repainting per chunk would be hundreds of writes for no visible gain.
+        const shown = (bytesGot / 1e6).toFixed(1);
+        if (shown !== bytesShown) { bytesShown = shown; paintStatus(); }
+      };
+    }
+
+    // Only the curves in use are needed to draw the first result. The other
+    // fourteen follow in the background once the page is working.
+    //
+    // Downloading and writing are kept apart, because the download can start
+    // before Pyodide exists and the write cannot. The two the page opens with
+    // are therefore already on their way by the time boot() asks for them.
+    const curveBytes = new Map();
+    const curvesLoaded = new Map();
+
+    function fetchCurve(manifest, path) {
+      if (!curveBytes.has(path)) curveBytes.set(path, grab(assetURL(manifest, path)));
+      return curveBytes.get(path);
+    }
+
+    function ensureCurve(kind, id) {
+      const path = curvePath(kind, id);
+      if (!curvesLoaded.has(path)) {
+        curvesLoaded.set(path, (async () => {
+          const manifest = await manifestReady;
+          pyodide.FS.writeFile(`/data/${path}`, await fetchCurve(manifest, path));
+        })().catch(err => {
+          // A failed curve must not be remembered as loaded, or picking it again
+          // would silently do nothing.
+          curvesLoaded.delete(path);
+          curveBytes.delete(path);
+          throw err;
+        }));
+      }
+      return curvesLoaded.get(path);
+    }
+
+    const ensureSelectedCurves = () => Promise.all([
+      ensureCurve("system", $("system").value),
+      ensureCurve("filter", $("filter").value),
+    ]);
+
+    function loadRemainingCurves() {
+      manifestReady.then(manifest => {
+        for (const path of Object.keys(manifest.files)) {
+          const kind = path.startsWith("resources/systems/") ? "system"
+            : path.startsWith("resources/filters/") ? "filter" : null;
+          if (kind) ensureCurve(kind, path.slice(path.lastIndexOf("/") + 1, -4)).catch(() => { });
+        }
+      }, () => { });
+    }
+
+    // Started here rather than inside boot(), so the downloads are already in
+    // flight while the Pyodide module is still being fetched and compiled. The
+    // opening selection is read from the controls, which the first preset has
+    // already filled in.
+    const assetsReady = manifestReady.then(manifest => {
+      const wheelURL = new URL(`dist/${manifest.wheel}`, location.href).href;
+      const dataPaths = Object.keys(manifest.files)
+        .filter(path => path.startsWith("resources/datafiles/"));
+
+      pruneCache(new Set([wheelURL,
+        ...Object.keys(manifest.files).map(path => assetURL(manifest, path))]));
+
+      // The opening pair is started here too, so it arrives with the rest
+      // rather than waiting for micropip to finish first.
+      fetchCurve(manifest, curvePath("system", $("system").value));
+      fetchCurve(manifest, curvePath("filter", $("filter").value));
+
+      return {
+        wheel: { name: manifest.wheel, bytes: grab(wheelURL, countBytes(wheelURL)) },
+        data: dataPaths.map(path => ({
+          name: path.slice(path.lastIndexOf("/") + 1),
+          bytes: grab(assetURL(manifest, path), countBytes(assetURL(manifest, path))),
+        })),
+      };
+    });
+
+    async function installWheel(wheel) {
+      const bytes = await wheel.bytes;
+      // A missing file is answered with an HTML page, which micropip would
+      // report only as "File is not a zip file".
+      if (bytes[0] !== 0x50 || bytes[1] !== 0x4b) {
+        throw new Error(`${wheel.name} is not a wheel file. `
+          + "Check which directory the server shows.");
+      }
       pyodide.FS.mkdirTree("/wheels");
-      pyodide.FS.writeFile(`/wheels/${name}`, bytes);
+      pyodide.FS.writeFile(`/wheels/${wheel.name}`, bytes);
       await pyodide.runPythonAsync(
-        `import micropip\nawait micropip.install("emfs:/wheels/${name}")`);
+        `import micropip\nawait micropip.install("emfs:/wheels/${wheel.name}")`);
+    }
+
+    // build.py takes the grid ingredients out of the wheel, because they are
+    // 15 MB of it and holding them there means nothing can download until
+    // micropip has finished. They are put back here instead. The destination
+    // comes from the installed package, so no path is written down twice.
+    async function restoreDataFiles(files) {
+      const target = pyodide.runPython("import mphot.paths; str(mphot.paths.DATAFILES_DIR)");
+      for (const file of files) {
+        pyodide.FS.writeFile(`${target}/${file.name}`, await file.bytes);
+      }
+    }
+
+    async function restoreUploads() {
+      const saved = await dbRun("readonly", store => store.getAll()) || [];
+      // Anything already in `uploads` was added while the page was still
+      // booting. Keep it, and do not list it twice.
+      const seen = new Set(uploads.map(u => u.id));
+      uploads = [...uploads, ...saved.filter(u => !seen.has(u.id))]
+        .sort((a, b) => a.addedAt - b.addedAt);
+      if (!uploads.length) return;
+      // installCurve does nothing before Pyodide exists, so a curve added
+      // during the boot is written to the file system here instead.
+      for (const upload of uploads) installCurve(upload);
+      renderUploads();
     }
 
     async function boot() {
-      const { loadPyodide } = await import(
-        "https://cdn.jsdelivr.net/pyodide/v0.29.5/full/pyodide.mjs");
+      const [{ loadPyodide }, assets] = await Promise.all([
+        import("https://cdn.jsdelivr.net/pyodide/v0.29.5/full/pyodide.mjs"),
+        assetsReady,
+      ]);
 
-      setStatus("Python starts…");
-      pyodide = await loadPyodide({ indexURL: "https://cdn.jsdelivr.net/pyodide/v0.29.5/full/" });
+      setPhase("Python and its packages start…");
+      pyodide = await loadPyodide({
+        indexURL: PYODIDE_URL,
+        packages: ["numpy", "pandas", "scipy", "micropip"],
+      });
 
-      setStatus("numpy, pandas and scipy load…");
-      await pyodide.loadPackage(["numpy", "pandas", "scipy", "micropip"]);
+      setPhase("mphot installs…");
+      await installWheel(assets.wheel);
+      await restoreDataFiles(assets.data);
 
-      setStatus("mphot installs…");
-      await installWheel();
-
-      setStatus("Response curves load…");
-      const paths = [
-        ...SYSTEMS.map(s => `resources/systems/${s.id}.csv`),
-        ...FILTERS.map(f => `resources/filters/${f}.csv`),
-      ];
-      for (const path of paths) {
-        const res = await fetch(new URL(path, location.href));
-        if (!res.ok) throw new Error(`The server has no ${path} (HTTP ${res.status})`);
-        pyodide.FS.mkdirTree(`/data/${path.substring(0, path.lastIndexOf("/"))}`);
-        pyodide.FS.writeFile(`/data/${path}`, new Uint8Array(await res.arrayBuffer()));
+      for (const dir of Object.values(CURVE_KINDS)) {
+        pyodide.FS.mkdirTree(`/data/resources/${dir.dir}`);
       }
+      await restoreUploads();
+
+      setPhase("Response curves load…");
+      await ensureSelectedCurves();
 
       await pyodide.runPythonAsync(PY);
-      setStatus("Ready", "ready");
+      ready = true;
       checkMirrors();
-      updateResponse();
-      update();
+      await updateResponse();
+      // update() reports Ready itself. Saying it any earlier would hide the
+      // status row while the results were still blank.
+      await update();
+      setStatus("Ready", "ready");
+      loadRemainingCurves();
     }
 
     function callPython(fn, ...args) {
@@ -1408,21 +2463,42 @@ def response_curves(system, filt, points):
     let lastResult = null;
     let budgetView = "binned";
 
+    $("summary").querySelector(".jump").addEventListener("click",
+      () => resultsEl.scrollIntoView({ block: "start" }));
+
+    // One colour for each noise source, used by the chart and by the strip in
+    // the summary, so the two read as the same object. These are the tokens the
+    // rest of the page already uses; no new palette.
+    const NOISE_COLORS = ["var(--series-1)", "var(--series-2)", "var(--series-3)",
+      "var(--series-4)", "var(--series-5)"];
+
     function render(data) {
       lastResult = data;
-      const comps = data.components.map(c => ({ name: c.name, v: ppt(c[budgetView]) }));
+      const comps = data.components.map((c, i) => ({
+        name: c.name, v: ppt(c[budgetView]), color: NOISE_COLORS[i % NOISE_COLORS.length],
+      }));
       const max = Math.max(...comps.map(c => c.v));
       const total = ppt(budgetView === "binned" ? data.binned_all : data.image_all);
       const [expValue, expUnit] = duration(data.exposure);
 
       const bars = comps.map(c => `
       <div class="name">${c.name}</div>
-      <div class="track"><div class="fill" style="width:${max > 0 ? (c.v / max) * 100 : 0}%"></div></div>
+      <div class="track"><div class="fill"
+        style="width:${max > 0 ? (c.v / max) * 100 : 0}%;background:${c.color}"></div></div>
       <div class="num">${sig(c.v)}</div>
       <div class="row-gap"></div>`).join("");
 
+      // The noise sources add in quadrature, so their squares are the parts of
+      // the total and they sum to it exactly. That makes a stacked bar the one
+      // honest way to show the budget in a single line.
+      const variance = comps.map(c => c.v * c.v);
+      const varianceSum = variance.reduce((a, b) => a + b, 0);
+      const mini = varianceSum > 0 ? comps.map((c, i) => `<i
+        style="width:${(variance[i] / varianceSum) * 100}%;background:${c.color}"
+        title="${c.name} ${sig(c.v)} ppt"></i>`).join("") : "";
+
       $("summary").hidden = false;
-      $("summary").innerHTML = `
+      $("summary-body").innerHTML = `
     <div class="stats">
       <div class="stat lead">
         <div class="k">Exposure time</div>
@@ -1440,13 +2516,23 @@ def response_curves(system, filt, points):
         <div class="u">ppt</div>
       </div>
     </div>
+    <div class="mini" role="img"
+      aria-label="Noise budget: ${comps.map(c => `${c.name} ${sig(c.v)}`).join(", ")} ppt">${mini}</div>
     <p class="meta">
       ${sig(data.frames_per_bin)} frames in each bin &middot;
       the brightest pixel fills ${sig(data.well_fill * 100, 2)}% of the well
       ${data.frames_per_bin < 1
           ? '<br><span class="warn">The bin is shorter than one exposure. Binning cannot improve the result.</span>' : ""}
-      ${data.gaia ? `<br>Scaled to the Gaia DR3 brightness of star ${data.gaia}.` : ""}
+      ${data.gaia ? `<br>${gaiaSentence(data.gaia)}` : ""}
     </p>`;
+
+      showGaiaReport(data.gaia);
+
+      // The strip is sticky, so anything scrolled to has to clear it. Its height
+      // depends on the width and on how many lines the warnings take, so it is
+      // measured rather than guessed.
+      document.documentElement.style.scrollPaddingTop =
+        `${$("summary").offsetHeight + 8}px`;
 
       resultsEl.innerHTML = `
     <h2>Noise</h2>
@@ -1489,6 +2575,44 @@ def response_curves(system, filt, points):
       }
     }
 
+    // The archive answered, and these are the numbers it gave. Saying so matters
+    // because get_precision_gaia quietly substitutes 3000 K and 10 pc when Gaia
+    // holds neither, and because a temperature set by hand overrides the
+    // archive rather than filling a gap in it.
+    function gaiaSentence(g) {
+      const teff = `${sig(g.teff_used, 4)} K`;
+      const where = g.teff_from === "you"
+        ? `${teff} set by you${g.teff_gaia ? `, not the ${sig(g.teff_gaia, 4)} K Gaia gives` : ""}`
+        : g.teff_from === "gaia"
+          ? `${teff} from Gaia`
+          : `${teff}, because Gaia has no temperature for this star`;
+      const far = g.distance_from === "parallax"
+        ? `${sig(g.distance, 3)} pc from a parallax of ${sig(g.parallax, 4)} mas`
+        : `${sig(g.distance, 3)} pc, because Gaia has no usable parallax`;
+      return `Scaled to Gaia DR3 ${g.source_id}: ${where}, ${far}.`;
+    }
+
+    function showGaiaReport(g) {
+      const report = $("gaia-report");
+      report.hidden = !g;
+      reportedSource = g ? g.source_id : null;
+      if (!g) return;
+      report.className = "hint ok";
+      report.textContent = gaiaSentence(g);
+    }
+
+    // The first read of a star goes to VizieR and takes a moment. Until it
+    // answers, the report belongs to the star before it.
+    let reportedSource = null;
+
+    function awaitGaiaReport(sourceId) {
+      if (sourceId === reportedSource) return;
+      const report = $("gaia-report");
+      report.hidden = false;
+      report.className = "hint";
+      report.textContent = `Reading Gaia DR3 ${sourceId}\u2026`;
+    }
+
     // Detector-plus-optics, filter, and their product against wavelength.
     const RESPONSE_SERIES = [
       { key: "eff", label: "Detector + optics", color: "var(--series-3)" },
@@ -1496,8 +2620,10 @@ def response_curves(system, filt, points):
       { key: "sr", label: "System response", color: "var(--series-1)", fill: true },
     ];
 
+    const NARROW_CHART = 640;
+
     function renderResponse(data, subtitle) {
-      const narrow = window.innerWidth < 640;
+      const narrow = window.innerWidth < NARROW_CHART;
       const W = narrow ? 360 : 560, H = narrow ? 200 : 216;
       const L = 34, R = 12, T = 10, B = 36;
       const lam = data.lam;
@@ -1597,18 +2723,38 @@ def response_curves(system, filt, points):
       });
     }
 
-    function updateResponse() {
-      if (!pyodide) return;
+    let lastResponse = null;
+
+    async function updateResponse() {
+      if (!ready) return;
       const system = $("system").value, filt = $("filter").value;
-      const label = SYSTEMS.find(x => x.id === system).label;
       try {
-        renderResponse(callPython("response_curves", system, filt, 480),
-          `${label}, with the ${filt} filter. `
-          + "The vertical axis is the fraction of light that passes.");
+        await ensureSelectedCurves();
+        lastResponse = {
+          data: callPython("response_curves", system, filt, 480),
+          subtitle: `${systemLabel(system)}, with the ${filt} filter. `
+            + "The vertical axis is the fraction of light that passes.",
+        };
+        renderResponse(lastResponse.data, lastResponse.subtitle);
       } catch (err) {
+        lastResponse = null;
         $("response").innerHTML = '<p class="placeholder">These curves did not load.</p>';
       }
     }
+
+    // The chart picks its shape from the window width, so a rotated phone would
+    // otherwise keep drawing at the width it had when the page opened.
+    let wasNarrow = window.innerWidth < NARROW_CHART;
+    let resizeTimer = null;
+    window.addEventListener("resize", () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        const narrow = window.innerWidth < NARROW_CHART;
+        if (narrow === wasNarrow || !lastResponse) return;
+        wasNarrow = narrow;
+        renderResponse(lastResponse.data, lastResponse.subtitle);
+      }, 150);
+    });
 
     // ------------------------------------------------------------------- actions
     function reportError(err) {
@@ -1616,6 +2762,9 @@ def response_curves(system, filt, points):
       // prefixed by the dotted exception class, which readers do not need.
       const last = String(err).split("\n").filter(Boolean).pop() || "Computation failed";
       setStatus(last.replace(/^[\w.]*Error:\s*|^[\w.]+:\s*/, ""), "error");
+      // Nothing was read from the archive, so last time's report is not about
+      // this star and must not stay on screen looking like it is.
+      showGaiaReport(null);
     }
 
     function scheduleUpdate(delay = 80) {
@@ -1624,8 +2773,8 @@ def response_curves(system, filt, points):
       updateTimer = setTimeout(update, delay);
     }
 
-    function update() {
-      if (!pyodide) return;
+    async function update() {
+      if (!ready) return;
       if (updating) { updateQueued = true; return; }   // a drag can outrun a run
       if (!checkMirrors()) return;
 
@@ -1639,6 +2788,17 @@ def response_curves(system, filt, points):
       updating = true;
       setBusy(true);
       try {
+        // Usually a no-op. It only waits when you pick a curve the page has not
+        // downloaded yet, in the first moments after it becomes ready.
+        await ensureSelectedCurves();
+        if (spec.mode === "gaia") {
+          awaitGaiaReport(spec.source_id);
+          // The first read of a star goes over the network and can take
+          // seconds, and the Python call blocks the main thread while it waits.
+          // Give the browser a frame first, or neither this message nor the
+          // dimming above would ever be drawn.
+          await new Promise(requestAnimationFrame);
+        }
         render(callPython("compute", JSON.stringify(spec)));
         setStatus("Ready", "ready");
       } catch (err) {
@@ -1653,7 +2813,7 @@ def response_curves(system, filt, points):
     // Redraw the numbers dimmed while a run is in flight, so a slow first Gaia
     // call does not look like a frozen page.
     function setBusy(busy) {
-      $("summary").classList.toggle("busy", busy);
+      $("summary-body").classList.toggle("busy", busy);
       resultsEl.classList.toggle("busy", busy);
     }
 
