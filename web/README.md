@@ -13,10 +13,15 @@ python -m http.server --directory web 8000   # serve web/
 
 Then open <http://localhost:8000/>.
 
-`build.py` makes `web/` complete on its own. It writes the wheel and a manifest
-to `web/dist/`, and it copies the instrument and filter curves to
-`web/resources/`. Git ignores both directories. `build.py` rebuilds them from
-the source tree.
+`build.py` makes `web/` complete on its own. It writes the wheel to
+`web/dist/`, copies the instrument and filter curves and the grid ingredients to
+`web/resources/`, and writes `web/build.json`. Git ignores all three.
+`build.py` rebuilds them from the source tree.
+
+`build.json` names the wheel and holds a content hash for every file in
+`resources/`. The page reads it first and asks for each resource as
+`<path>?v=<hash>`, so an address changes whenever its contents do. That is what
+lets `netlify.toml` serve everything else with a one-year immutable cache.
 
 ## Deploy to Netlify
 
@@ -32,8 +37,8 @@ fields in the Netlify user interface empty.
 | Functions directory | *(not used)* |
 
 `PYTHON_VERSION` is set to 3.11. mphot needs Python 3.11 or later. The default
-version in the build image is older. The deploy is about 18 MB: a 16 MB wheel,
-2.7 MB of curves, and the page.
+version in the build image is older. The deploy is about 19 MB: 16.5 MB of grid
+ingredients, 2.7 MB of curves, a 0.3 MB wheel, and the page.
 
 ## What you can do
 
@@ -44,10 +49,28 @@ radius, plate scale, dark current, read noise, well depth, well fill, read time
 and aperture radius. These are the same keys that `get_precision` takes. Three
 presets fill them in. If you change a value, the preset becomes Custom.
 
+**Bound the exposure.** The bin length is in the strip at the top. The shortest
+and longest exposure are in the Exposure limits card; leave them empty to let
+the ETC pick any exposure time.
+
 **Read the result.** The exposure time and the binned precision stay at the top
-of the page as you scroll. Beside them is the precision of one frame. Below
-them are the number of frames in each bin, and how full the brightest pixel
-gets. The noise chart shows one bin or one frame.
+of the page as you scroll, at every width. Beside them is the precision of one
+frame. Below them are the number of frames in each bin, and how full the
+brightest pixel gets. The noise chart shows one bin or one frame.
+
+Below 720px the strip shrinks to one line and grows a stacked bar of the noise
+budget, so you can watch the budget shift while you drag a slider further down
+the page without scrolling back. Each source keeps the same colour in the strip
+and in the chart. The squares of the sources are the parts of the total, because
+they add in quadrature, so the stacked bar is exact rather than indicative.
+
+The bin length lives in the strip as well, because the headline binned precision
+is a precision over it. It is markup of its own rather than part of what the
+strip redraws, so a drag is never cut short by the update it causes.
+
+The two-column layout now survives down to 721px on a narrower control column.
+The instrument card is the longest and the one you touch least once a preset is
+chosen, so it sits last.
 
 **See the optics.** The system response panel draws three curves against
 wavelength: the detector with the optics, the filter, and the two multiplied
@@ -55,6 +78,26 @@ together. It redraws when you change either choice. Point at it to read the
 values. It warns you when a filter passes light where the detector cannot see
 it. A J filter on a silicon CCD is one example. Without the warning you would
 notice this only later, as an exposure time of several hours.
+
+**Bring your own curves.** Under **Use your own curves** you can load a filter
+transmission curve, an efficiency curve for the telescope, optics and detector,
+or both. A curve is two columns: wavelength, then the fraction of light that
+passes. The page works out whether the wavelengths are microns, nanometres or
+ångströms, and whether the throughput is a fraction or a percentage, by scoring
+each reading against the 0.3 to 3 micron window the model uses. Only one reading
+of a real instrument curve lands there. It also copes with a header row, with
+commas, semicolons, tabs or spaces, with a byte order mark, and with rows out of
+order or repeated.
+
+It then says what it did: how many points it kept, what span they cover, the
+peak, and which units it read. It warns when a curve covers less than the whole
+window, because outside the file the ETC sees no light through it. It refuses a
+curve with a throughput above 100, one that does not reach the window at all,
+and one over 5 MB or 200000 rows.
+
+Your curves are kept in the browser, so they are still there next visit, and
+each has a button to remove it. Nothing is uploaded anywhere; the page has no
+server.
 
 **Start again.** A **Reset all** button appears next to the Preset heading as
 soon as any value differs from the one the page opened with. It puts every
@@ -65,6 +108,37 @@ it.
 **Distance** covers 0.01 pc to 1 Mpc. The slider is logarithmic. The field
 beside it takes an exact value. The two stay in step.
 
+## How the controls move
+
+Every number field has the same pair of buttons, and the arrow keys go through
+the same code, so the keyboard and the buttons can never disagree. A phone gets
+a stepper where the native spinner gave it none.
+
+What one press changes is the only difference between fields. Most carry a
+`step`: 0.01 for the plate scale, 0.05 m for the primary radius, 0.1 s for the
+read time, 1 s for the exposure limits. Without one the browser steps by 1,
+which took the plate scale from 0.35 to 1.35 in a single press. A typed value
+that misses the step is still kept and still computes; the next press snaps it
+onto the grid, which is what a spinner does.
+
+Dark current, read noise, well depth and distance each cover several decades, so
+no single step works at both ends. They step by a tenth of their own leading
+digit instead, which is about 1% to 10% of the value and always lands on a round
+number: 64000 to 65000, and 0.2 to 0.21.
+
+Between 721px and 1023px the control column is at its narrowest, and two
+steppers side by side would leave the value about 36px, which clips a well
+depth. The paired fields stack there instead. Vertical space is cheap in that
+band, because the results are beside the controls rather than below them.
+
+The water vapour and temperature sliders are logarithmic, because the model's
+own axes are. Water vapour is tabulated at 13 values from 0.05 mm to 30 mm, most
+of them below 5 mm; the slider marks them. Temperature runs from 450 K to
+36500 K with nodes 50 K apart at the bottom and 1500 K apart at the top, so a
+linear slider gave the dwarf stars most people come here for about 5% of its
+travel. They now get 16%. Both converters clamp and round, so the value shown
+and the value computed are the same one, at the same granularity as before.
+
 ## Everything updates as you move a control
 
 Every control recomputes the result. One update takes about 10 ms, so the page
@@ -74,9 +148,19 @@ Gaia mode reads a star once and keeps the answer. Without this cache the page
 would query VizieR on every slider move. Press Enter in the source_id field to
 load a different star.
 
+When the archive answers, the page prints what it gave: the temperature, the
+parallax and the distance that follows from it. This matters, because
+`get_precision_gaia` quietly substitutes 3000 K when Gaia holds no temperature
+for a star, and 10 pc when it holds no usable parallax. Both substitutions used
+to reach only a log that the page never showed.
+
+The temperature comes from Gaia unless you tick **Set the temperature myself**.
+A temperature passed to `get_precision_gaia` always wins over the archive, so
+the page sends one only when you have asked it to, and says so when it does.
+
 ## Search engines
 
-A crawler will not wait for 45 MB of Pyodide, so the page carries its meaning in
+A crawler will not wait for 47 MB of WebAssembly, so the page carries its meaning in
 plain HTML. With JavaScript switched off it still gives a title, a description,
 a heading structure and about 440 words that explain what the calculator does,
 how the model works and who it is for.
@@ -109,9 +193,11 @@ browser:
 | The coords array inside it | 1.40 MB, **the same for every instrument** |
 
 Three detectors and thirteen filters make 39 pairs. That is about 18 MB of grid
-data. It would roughly double the 16 MB wheel, and it would save a fifth of a
-second once per pair per session. The page therefore builds each pair when you
-first ask for it, and keeps it for the session.
+data, more than the 16.5 MB of ingredients the page already fetches, and it
+would save a fifth of a second once per pair per session. The page therefore
+builds each pair when you first ask for it, and keeps it for the session. It has
+to build them anyway, because an uploaded curve is a pair nobody could have
+shipped in advance.
 
 The same holds for the package. The grids are caches, so `build.py` leaves them
 out of the wheel.
@@ -126,8 +212,10 @@ wheel.
 `build.py` builds a wheel from the source tree. The page therefore runs the
 code you have checked out, not the last release. The page then:
 
+0. reads `build.json` and starts every download at once,
 1. loads Pyodide with numpy, pandas and scipy,
-2. installs the wheel with `micropip`,
+2. installs the wheel with `micropip`, then writes the grid ingredients back
+   into the installed package,
 3. copies the response curves into the Pyodide file system,
 4. calls `generate_system_response`, then `get_precision` or
    `get_precision_gaia`.
@@ -148,7 +236,32 @@ VizieR sends `Access-Control-Allow-Origin: *`, so it works. The ESA archive
 sends no such header, so the browser blocks it. To reach ESA from a page you
 need a proxy. mphot tries VizieR first, so the normal path works.
 
-**First load** downloads about 45 MB: Pyodide with numpy, pandas and scipy,
-plus the 16 MB wheel. Most of the wheel holds the two files of atmosphere and
-stellar spectra in `datafiles/`. The browser caches all of it after the first
-visit.
+**First load** downloads about 47 MB: 29.5 MB of Pyodide with numpy, pandas and
+scipy from the CDN, and 17.5 MB of ours.
+
+Ours used to wait for theirs. The page fetched Pyodide, then the packages, then
+the wheel, then all sixteen curves one at a time. On a 20 Mbit link the wheel
+did not start until 13.7 s, and the page was ready at 25.2 s.
+
+Three changes remove that wait, and none of them touches the model:
+
+* `build.py` takes the two grid ingredient files out of the wheel and stages
+  them beside the page. They are 15.5 MB of a 16.2 MB wheel, and holding them
+  inside it meant nothing could download until micropip had finished. The wheel
+  is now 0.3 MB, and the page writes the files back into the installed package
+  at a path it reads from `mphot.paths`. It also drops the Vega spectrum, which
+  only `vega_mag` reads and the page never calls.
+* Every download starts while the module is still being evaluated, so all of it
+  runs beside Pyodide instead of after it.
+* Only the two curves in use are fetched before the first result. The other
+  fourteen follow in the background.
+
+On the same link everything of ours now starts at 0.12 s and is finished at
+15.7 s, comfortably before the CDN finishes at 19.0 s, and the page is ready at
+22.3 s. What is left is the CDN download and the grid build, neither of which
+the page can shorten.
+
+The wheel and the staged files also go into Cache Storage, keyed by the same
+versioned addresses. The browser's own cache may drop a file this size whenever
+it likes; this one is explicit, so a second visit is reliably quick. A second
+visit downloads only `build.json`.

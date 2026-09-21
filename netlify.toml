@@ -18,16 +18,20 @@
   [headers.values]
     Cache-Control = "public, max-age=31536000, immutable"
 
-# The manifest names the current wheel. A stale copy would break the page.
+# The manifest names the current wheel and holds a content hash for every
+# resource. A stale copy would break the page, so it is the one file that is
+# always revalidated.
 [[headers]]
-  for = "/dist/wheel.json"
+  for = "/build.json"
   [headers.values]
     Cache-Control = "no-cache"
 
+# The page asks for each resource as `<path>?v=<hash from build.json>`, so its
+# address changes whenever its contents do. A stale copy can never be used.
 [[headers]]
   for = "/resources/*"
   [headers.values]
-    Cache-Control = "public, max-age=3600"
+    Cache-Control = "public, max-age=31536000, immutable"
 
 # The icon and the share image change only when the page does.
 [[headers]]
