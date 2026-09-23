@@ -37,6 +37,7 @@ Usage:
 """
 
 import hashlib
+import importlib.util
 import json
 import os
 import re
@@ -62,6 +63,23 @@ HOISTED_DATAFILES = "*.pkl"
 
 # Read only by `vega_mag`, which the page never calls.
 UNUSED_DATAFILES = ("vega_03_to_3_microns.csv",)
+
+
+def wheel_command() -> list[str]:
+    """Return the command that builds a wheel into web/dist.
+
+    pip is used where it exists, as on Netlify. A uv environment has no pip, so
+    ``uv run web/build.py`` builds with uv instead.
+    """
+
+    if importlib.util.find_spec("pip") is not None:
+        return [sys.executable, "-m", "pip", "wheel", "--no-deps", "-w", str(DIST), "."]
+
+    uv = shutil.which("uv")
+    if uv:
+        return [uv, "build", "--wheel", "--out-dir", str(DIST), "."]
+
+    raise RuntimeError("building the wheel needs pip or uv, and neither was found")
 
 
 def build_wheel() -> Path:
@@ -112,7 +130,7 @@ def build_wheel() -> Path:
         DIST.mkdir(parents=True)
 
         subprocess.run(
-            [sys.executable, "-m", "pip", "wheel", "--no-deps", "-w", str(DIST), "."],
+            wheel_command(),
             cwd=stage,
             check=True,
             stdout=subprocess.DEVNULL,

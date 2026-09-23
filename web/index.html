@@ -99,7 +99,7 @@
         --series-2: #d95926;
         --series-3: #199e70;
         --series-4: #9b75e8;
-        --series-5: #c99a2e;
+        --series-5: #b8891f;
         --gridline: #2c2c2a;
         --baseline: #383835;
         --border: rgba(255, 255, 255, 0.10);
@@ -120,7 +120,7 @@
       --series-2: #d95926;
       --series-3: #199e70;
       --series-4: #9b75e8;
-      --series-5: #c99a2e;
+      --series-5: #b8891f;
       --gridline: #2c2c2a;
       --baseline: #383835;
       --border: rgba(255, 255, 255, 0.10);
@@ -780,6 +780,12 @@
       font-variant-numeric: tabular-nums;
     }
 
+    th[scope="row"] {
+      font-weight: 400;
+      color: var(--text-secondary);
+    }
+
+    tr:last-child th,
     tr:last-child td {
       border-bottom: 0;
     }
@@ -829,6 +835,104 @@
       color: var(--text-secondary);
       min-height: 1.5em;
       margin: 6px 0 0;
+    }
+
+    #plots {
+      margin-bottom: 14px;
+    }
+
+    .plots-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 16px;
+      margin-bottom: 14px;
+    }
+
+    .plots-head h2 {
+      margin-bottom: 4px;
+    }
+
+    .plots-head .hint {
+      margin: 0;
+    }
+
+    .plots-controls {
+      display: flex;
+      gap: 10px;
+      flex: none;
+    }
+
+    .plots-controls .seg {
+      width: 210px;
+    }
+
+    /* Each chart is a subgrid of four rows: title, subtitle, legend and plot.
+     The rows line up across the charts, so the three plots start at the same
+     height even when one legend wraps onto a second line. renderChart() writes
+     the last three straight into the chart's div, which takes no box. */
+    .plots {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      column-gap: 22px;
+    }
+
+    .plot {
+      display: grid;
+      grid-template-rows: subgrid;
+      grid-row: span 4;
+      align-content: start;
+      min-width: 0;
+    }
+
+    .plot>div {
+      display: contents;
+    }
+
+    /* Right above the chart it picks, apart from the range toggle, so the two
+     rows of buttons do not read as one. */
+    .plot-tabs {
+      display: none;
+      margin-bottom: 14px;
+    }
+
+    @media (max-width: 1023px) {
+      .plots {
+        grid-template-columns: minmax(0, 1fr);
+      }
+
+      .plot:not(.active) {
+        display: none;
+      }
+
+      .plot-tabs {
+        display: flex;
+      }
+
+      .plots-head {
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      .plots-controls {
+        width: 100%;
+        flex-wrap: wrap;
+      }
+
+      .plots-controls .seg {
+        flex: 1 1 210px;
+        width: auto;
+      }
+    }
+
+    .card h3 {
+      font-size: 13px;
+      font-weight: 600;
+      margin: 0 0 4px;
+    }
+
+    #spectra-csv {
+      color: var(--series-1);
     }
 
     #results.busy {
@@ -1058,8 +1162,57 @@
         <label for="binning">Bin length <span class="val" id="binning-v"></span></label>
         <input type="range" id="binning" min="1" max="60" step="1" value="10">
       </div>
-      <button type="button" class="jump">Noise budget and system response &darr;</button>
+      <button type="button" class="jump">Noise budget &darr;</button>
     </div>
+
+    <!-- The curves the model integrates, for the instrument, the sky and the
+     star now chosen. They come from the grid ingredient files the page
+     downloads for the model anyway, so they add nothing to the download.
+     Below 1024px there is room for one chart at a time, so tabs pick it. -->
+    <section class="card" id="plots" aria-label="Transmission, sky and star against wavelength">
+      <div class="plots-head">
+        <div>
+          <h2>Transmission, sky and star</h2>
+          <p class="hint" id="spectra-sub">The curves the model uses for this instrument, sky and star.</p>
+        </div>
+        <div class="plots-controls">
+          <div class="seg" role="group" aria-label="Wavelength range of the charts">
+            <label><input type="radio" name="spectra-range" value="band" checked> Filter band</label>
+            <label><input type="radio" name="spectra-range" value="full"> 0.3–3 µm</label>
+          </div>
+        </div>
+      </div>
+      <div class="seg plot-tabs" role="group" aria-label="Which chart to show">
+        <label><input type="radio" name="plot-tab" value="trans" checked> Transmission</label>
+        <label><input type="radio" name="plot-tab" value="sky"> Sky</label>
+        <label><input type="radio" name="plot-tab" value="star"> Star</label>
+      </div>
+      <div class="plots">
+        <section class="plot active" data-plot="trans">
+          <h3>Transmission and system response</h3>
+          <div id="chart-trans">
+            <p class="placeholder">Python is still loading.</p>
+          </div>
+        </section>
+        <section class="plot" data-plot="sky">
+          <h3>Sky radiance</h3>
+          <div id="chart-sky">
+            <p class="placeholder">Python is still loading.</p>
+          </div>
+        </section>
+        <section class="plot" data-plot="star">
+          <h3>Star</h3>
+          <div id="chart-star">
+            <p class="placeholder">Python is still loading.</p>
+          </div>
+        </section>
+      </div>
+      <p class="hint">
+        The sky and the star are in photons, and the detected curves in electrons.
+        <a href="#" id="spectra-csv" download="mphot_spectra.csv">Download these curves as CSV</a>,
+        at every 1 nm point from 0.3 to 3 µm.
+      </p>
+    </section>
 
     <div class="cols">
       <div class="controls">
@@ -1114,8 +1267,7 @@
              most of its travel where the model has no detail. The datalist marks
              the real values. The ends overshoot the range a little so that the
              opening value of 2.5 mm lands exactly on a step; readPwv() clamps. -->
-            <input type="range" id="pwv" min="-1.30206" max="1.47794" step="0.005" value="0.39794"
-              list="pwv-nodes">
+            <input type="range" id="pwv" min="-1.30206" max="1.47794" step="0.005" value="0.39794" list="pwv-nodes">
             <datalist id="pwv-nodes"></datalist>
           </div>
           <div class="field">
@@ -1148,12 +1300,12 @@
             <div class="field">
               <label for="dist-num">Distance <span class="val" id="dist-v"></span></label>
               <div class="stepper">
-                <button type="button" class="nudge" data-key="dist-num" data-dir="-1"
-                  tabindex="-1" aria-label="Nearer">&minus;</button>
-                <input type="number" id="dist-num" min="0.01" max="1e6" step="any"
-                  value="12.5" inputmode="decimal" data-proportional="1">
-                <button type="button" class="nudge" data-key="dist-num" data-dir="1"
-                  tabindex="-1" aria-label="Further">+</button>
+                <button type="button" class="nudge" data-key="dist-num" data-dir="-1" tabindex="-1"
+                  aria-label="Nearer">&minus;</button>
+                <input type="number" id="dist-num" min="0.01" max="1e6" step="any" value="12.5" inputmode="decimal"
+                  data-proportional="1">
+                <button type="button" class="nudge" data-key="dist-num" data-dir="1" tabindex="-1"
+                  aria-label="Further">+</button>
               </div>
               <input type="range" id="dist" min="-2" max="6" step="0.001" value="1.0969"
                 aria-label="Distance, logarithmic" style="margin-top:6px">
@@ -1186,23 +1338,21 @@
             <div class="field">
               <label for="min_exp">Shortest <span class="unit">s</span></label>
               <div class="stepper">
-                <button type="button" class="nudge" data-key="min_exp" data-dir="-1"
-                  tabindex="-1" aria-label="Less Shortest">&minus;</button>
-                <input type="number" id="min_exp" min="0" step="1" placeholder="none"
-                  inputmode="decimal">
-                <button type="button" class="nudge" data-key="min_exp" data-dir="1"
-                  tabindex="-1" aria-label="More Shortest">+</button>
+                <button type="button" class="nudge" data-key="min_exp" data-dir="-1" tabindex="-1"
+                  aria-label="Less Shortest">&minus;</button>
+                <input type="number" id="min_exp" min="0" step="1" placeholder="none" inputmode="decimal">
+                <button type="button" class="nudge" data-key="min_exp" data-dir="1" tabindex="-1"
+                  aria-label="More Shortest">+</button>
               </div>
             </div>
             <div class="field">
               <label for="max_exp">Longest <span class="unit">s</span></label>
               <div class="stepper">
-                <button type="button" class="nudge" data-key="max_exp" data-dir="-1"
-                  tabindex="-1" aria-label="Less Longest">&minus;</button>
-                <input type="number" id="max_exp" min="0" step="1" placeholder="none"
-                  inputmode="decimal">
-                <button type="button" class="nudge" data-key="max_exp" data-dir="1"
-                  tabindex="-1" aria-label="More Longest">+</button>
+                <button type="button" class="nudge" data-key="max_exp" data-dir="-1" tabindex="-1"
+                  aria-label="Less Longest">&minus;</button>
+                <input type="number" id="max_exp" min="0" step="1" placeholder="none" inputmode="decimal">
+                <button type="button" class="nudge" data-key="max_exp" data-dir="1" tabindex="-1"
+                  aria-label="More Longest">+</button>
               </div>
             </div>
           </div>
@@ -1229,12 +1379,6 @@
       <div class="output">
         <div class="card" id="results">
           <p class="placeholder">Python is still loading.</p>
-        </div>
-        <div class="card" id="response-card">
-          <h2>System response</h2>
-          <div id="response">
-            <p class="placeholder">Python is still loading.</p>
-          </div>
         </div>
       </div>
     </div>
@@ -1275,8 +1419,7 @@
         It suits anyone who plans photometry of stars, transiting exoplanets or
         other variable sources, and anyone who designs an instrument and wants
         to know which parameter limits the precision. The stellar parameters
-        come from a modern dwarf star sequence. Temperatures from 1278 K to
-        3042 K are calibrated for the SPECULOOS target list with 2MASS.
+        come from a modern dwarf star sequence.
       </p>
       <p>
         The calculator runs the open-source <a href="https://github.com/ppp-one/mphot">mphot</a> Python package. It
@@ -1478,7 +1621,6 @@
       $("filter").value = p.filter;
       for (const param of INSTRUMENT) $(param.key).value = p.props[param.key];
       checkMirrors();
-      updateResponse();
       scheduleUpdate(0);
     }
 
@@ -1493,7 +1635,7 @@
     }
     $("preset").addEventListener("change", e => applyPreset(e.target.value));
     for (const el of [$("system"), $("filter")]) {
-      el.addEventListener("change", () => { updateResponse(); scheduleUpdate(0); });
+      el.addEventListener("change", () => scheduleUpdate(0));
     }
 
     // Everything the user can set. The starting values are kept so the page can
@@ -1549,7 +1691,6 @@
       $("preset").value = startState.preset;
       checkMirrors();
       updateResetButton();
-      updateResponse();
       update();
     }
 
@@ -1969,7 +2110,6 @@
         summary: upload.summary, warning: upload.warning, addedAt: upload.addedAt,
       }));
       updateResetButton();
-      updateResponse();
       scheduleUpdate(0);
     }
 
@@ -1992,7 +2132,6 @@
       renderUploads();
       dbRun("readwrite", store => store.delete(id));
       updateResetButton();
-      updateResponse();
       scheduleUpdate(0);
     }
 
@@ -2141,35 +2280,159 @@ def compute(spec_json):
         "table": {k: v for k, v in components.items() if k != "name"},
     })
 
-def response_curves(system, filt, points):
-    """Return the detector-plus-optics curve, the filter, and their product."""
+_FRAMES = {}
+
+def _curve_frame(system, filt):
+    """The detector-plus-optics curve, the filter, and their product.
+
+    The charts redraw on every move of the sky sliders, so each pair is read
+    once. The key holds the modification time of both files, because a curve
+    removed and uploaded again under the same name is a different curve.
+    """
+    import os
     import pandas as pd
     from mphot.constants import WAVELENGTHS
     from mphot.utils import interpolate_dfs
 
-    eff = pd.read_csv(f"/data/resources/systems/{system}.csv", header=None)
-    flt = pd.read_csv(f"/data/resources/filters/{filt}.csv", header=None)
-    frame = interpolate_dfs(
-        WAVELENGTHS,
-        pd.DataFrame({"eff": eff[1].values}, index=eff[0]),
-        pd.DataFrame({"filt": flt[1].values}, index=flt[0]),
-    )
-    frame["sr"] = frame["eff"] * frame["filt"]
+    paths = (f"/data/resources/systems/{system}.csv", f"/data/resources/filters/{filt}.csv")
+    key = tuple((path, os.stat(path).st_mtime) for path in paths)
+    if key not in _FRAMES:
+        eff = pd.read_csv(paths[0], header=None)
+        flt = pd.read_csv(paths[1], header=None)
+        frame = interpolate_dfs(
+            WAVELENGTHS,
+            pd.DataFrame({"eff": eff[1].values}, index=eff[0]),
+            pd.DataFrame({"filt": flt[1].values}, index=flt[0]),
+        )
+        frame["sr"] = frame["eff"] * frame["filt"]
+        _FRAMES[key] = frame
+    return _FRAMES[key]
 
-    # Show only where the filter passes something, with a little air either side.
+def _band_limits(frame):
+    """Where the system response passes something, with a little air either side."""
     peak = float(frame["sr"].max())
     live = frame.index[frame["sr"] > peak * 1e-3]
-    if len(live):
-        pad = (live[-1] - live[0]) * 0.08 + 0.02
-        frame = frame[(frame.index >= live[0] - pad) & (frame.index <= live[-1] + pad)]
+    if not len(live):
+        return float(frame.index[0]), float(frame.index[-1])
+    pad = (live[-1] - live[0]) * 0.08 + 0.02
+    return float(live[0] - pad), float(live[-1] + pad)
 
-    step = max(1, len(frame) // points)
-    frame = frame.iloc[::step]
-    col = lambda c: [None if v != v else round(float(v), 5) for v in frame[c]]
+# The two grid ingredient files hold every atmosphere and every star on the
+# model's grid axes. The page downloads them for the model anyway, so the
+# spectra cost no extra bytes, and they show the curves the model integrates.
+_SPECTRA = {}
+
+def _ingredients():
+    """Transmission, sky radiance and star spectra, as arrays on the grid axes."""
+    if not _SPECTRA:
+        import pandas as pd
+        from mphot.constants import (
+            AIRMASS_VALUES, GRID_FLUX_INGREDIENTS_NAME,
+            GRID_RADIANCE_INGREDIENTS_NAME, PWV_VALUES, TEFF_VALUES,
+        )
+        from mphot.paths import DATAFILES_DIR
+
+        # The same column names as mphot.grid._generate_grid reads.
+        atmospheres = [
+            str(pwv) + "_" + str(airmass)
+            for pwv in PWV_VALUES for airmass in AIRMASS_VALUES
+        ]
+        shape = (len(PWV_VALUES), len(AIRMASS_VALUES), -1)
+
+        loaded = {}
+        for key, name in (
+            ("trans", GRID_FLUX_INGREDIENTS_NAME),
+            ("sky", GRID_RADIANCE_INGREDIENTS_NAME),
+        ):
+            frame = pd.read_pickle(DATAFILES_DIR / name)
+            loaded[key] = frame[atmospheres].to_numpy().T.reshape(shape).copy()
+            # The star columns are the same in both files.
+            if "star" not in loaded:
+                stars = [f"{t}K" for t in TEFF_VALUES]
+                loaded["star"] = frame[stars].to_numpy().T.copy()
+                loaded["lam"] = frame.index.to_numpy()
+            del frame
+        _SPECTRA.update(loaded)
+    return _SPECTRA
+
+def _bracket(axis, value):
+    """The grid nodes either side of value, and the weight of the upper one."""
+    import numpy as np
+
+    value = min(max(float(value), float(axis[0])), float(axis[-1]))
+    upper = int(np.searchsorted(axis, value))
+    if axis[upper] == value:
+        return upper, upper, 0.0
+    return upper - 1, upper, (value - axis[upper - 1]) / (axis[upper] - axis[upper - 1])
+
+def _atmosphere(cube, pwv, airmass):
+    """Bilinear between the four nodes around (pwv, airmass)."""
+    from mphot.constants import AIRMASS_VALUES, PWV_VALUES
+
+    i0, i1, u = _bracket(PWV_VALUES, pwv)
+    j0, j1, v = _bracket(AIRMASS_VALUES, airmass)
+    return (
+        (1 - u) * (1 - v) * cube[i0, j0] + (1 - u) * v * cube[i0, j1]
+        + u * (1 - v) * cube[i1, j0] + u * v * cube[i1, j1]
+    )
+
+def spectra(spec_json):
+    """Transmission, sky radiance and the star, for one configuration.
+
+    Every 1 nm point is returned. Taking every nth point would drop the
+    emission and absorption lines, which are about one point wide.
+    """
+    import numpy as np
+    from scipy.integrate import simpson
+    from mphot.constants import PC, TEFF_VALUES
+    from mphot.precision import convert_airmass
+
+    spec = json.loads(spec_json)
+    data = _ingredients()
+    lam = data["lam"]
+
+    frame = _curve_frame(spec["system"], spec["filter"])
+    if len(frame) != len(lam):
+        raise ValueError("the curves and the grid ingredients have different wavelengths")
+    sr = np.nan_to_num(frame["sr"].to_numpy())
+
+    # get_precision converts to the airmass at Paranal. The page keeps the
+    # default altitude, where this changes nothing, but it stays in step.
+    airmass = convert_airmass(spec["airmass"], 2440)
+    trans = _atmosphere(data["trans"], spec["pwv"], airmass)
+    sky = _atmosphere(data["sky"], spec["pwv"], airmass)
+    sr_atm = sr * trans
+
+    # Linear in temperature between the two nearest grid stars, with the same
+    # weights as mphot.grid.interpolate_grid.
+    k0, k1, w = _bracket(TEFF_VALUES, spec["teff"])
+    star = (1 - w) * data["star"][k0] + w * data["star"][k1]
+
+    # Scale the star to the rate the model reports, so the detected curve
+    # integrates to that number. In Gaia mode the rate includes the
+    # calibration to the archive, so one rule covers both modes.
+    detected = simpson(star * sr_atm, x=lam)
+    if detected > 0:
+        star = star * (spec["star_flux"] / detected)
+    else:
+        star = star / (spec["distance"] * PC) ** 2
+
+    total = simpson(sr, x=lam)
+    col = lambda a: [v if v == v else None for v in a.tolist()]
     return _dumps({
-        "lam": [round(float(v), 5) for v in frame.index],
-        "eff": col("eff"), "filt": col("filt"), "sr": col("sr"),
-        "peak": peak,
+        "lam": lam.tolist(),
+        "band": _band_limits(frame),
+        "peak": float(sr.max()),
+        "peak_lam": float(lam[sr.argmax()]),
+        "eff": col(frame["eff"].to_numpy()),
+        "filt": col(frame["filt"].to_numpy()),
+        "atm": col(trans),
+        "sr_atm": col(sr_atm),
+        "sky": col(sky),
+        "sky_det": col(sky * sr),
+        "star": col(star),
+        "star_det": col(star * sr_atm),
+        "band_trans": simpson(sr_atm, x=lam) / total if total > 0 else None,
     })
 
 `;
@@ -2429,7 +2692,6 @@ def response_curves(system, filt, points):
       await pyodide.runPythonAsync(PY);
       ready = true;
       checkMirrors();
-      await updateResponse();
       // update() reports Ready itself. Saying it any earlier would hide the
       // status row while the results were still blank.
       await update();
@@ -2471,6 +2733,28 @@ def response_curves(system, filt, points):
     // rest of the page already uses; no new palette.
     const NOISE_COLORS = ["var(--series-1)", "var(--series-2)", "var(--series-3)",
       "var(--series-4)", "var(--series-5)"];
+
+    // Model values that repeat a control, so the table leaves them out. The
+    // altitude is not a control, but it is a fixed setting, not a result.
+    const INPUT_KEYS = new Set([
+      "seeing [arcsec]", "pwv [mm]", "airmass", 'plate_scale ["/pix]',
+      "N_dc [e/pix/s]", "N_rn [e_rms/pix]", "r0 [m]", "r1 [m]",
+      "well_depth [e/pix]", "binning [mins]", "read_time [s]", "altitude [m]",
+    ]);
+
+    /** The model values the reader did not type in, in the model's order. */
+    function calculatedValues(data) {
+      const typed = new Set(INPUT_KEYS);
+      // A model star takes both from its controls. A Gaia star takes them from
+      // the archive, unless the reader has set the temperature.
+      if (!data.gaia) {
+        typed.add("Teff [K]");
+        typed.add("distance [pc]");
+      } else if (data.gaia.teff_from === "you") {
+        typed.add("Teff [K]");
+      }
+      return Object.entries(data.table).filter(([k]) => !typed.has(k));
+    }
 
     function render(data) {
       lastResult = data;
@@ -2559,12 +2843,11 @@ def response_curves(system, filt, points):
         </tbody>
       </table>
     </details>
-    <details style="margin-top:12px">
-      <summary>Show every model value</summary>
-      <table><tbody>${Object.entries(data.table)
+    <h3 style="margin-top:20px">Calculated by the model</h3>
+    <p class="hint" style="margin:0 0 6px">The values you set are not repeated here.</p>
+    <table><tbody>${calculatedValues(data)
           .map(([k, v]) => `<tr><th scope="row">${k}</th><td>${sig(v)}</td></tr>`).join("")}
-      </tbody></table>
-    </details>`;
+    </tbody></table>`;
 
       for (const r of resultsEl.querySelectorAll('input[name="budget"]')) {
         r.addEventListener("change", e => {
@@ -2613,107 +2896,185 @@ def response_curves(system, filt, points):
       report.textContent = `Reading Gaia DR3 ${sourceId}\u2026`;
     }
 
-    // Detector-plus-optics, filter, and their product against wavelength.
-    const RESPONSE_SERIES = [
-      { key: "eff", label: "Detector + optics", color: "var(--series-3)" },
-      { key: "filt", label: "Filter", color: "var(--series-2)" },
-      { key: "sr", label: "System response", color: "var(--series-1)", fill: true },
-    ];
+    // ------------------------------------------------------- curves against λ
+    // Every chart that draws curves against wavelength goes through
+    // renderChart(). A fraction of light is drawn on a linear axis; a spectrum,
+    // which spans decades, on a log axis.
 
-    const NARROW_CHART = 640;
+    // A log axis spans at most this many powers of ten. Below that the pen
+    // lifts, so a detected curve fades out at the edges of the band instead of
+    // pushing everything else into the top of the chart.
+    const LOG_DECADES = 6;
 
-    function renderResponse(data, subtitle) {
-      const narrow = window.innerWidth < NARROW_CHART;
-      const W = narrow ? 360 : 560, H = narrow ? 200 : 216;
-      const L = 34, R = 12, T = 10, B = 36;
-      const lam = data.lam;
-      if (!lam.length) { $("response").innerHTML = '<p class="placeholder">These two curves do not overlap.</p>'; return; }
+    const SUPERSCRIPT = { "-": "⁻", 0: "⁰", 1: "¹", 2: "²", 3: "³", 4: "⁴", 5: "⁵", 6: "⁶", 7: "⁷", 8: "⁸", 9: "⁹" };
+    const decade = e => "10" + [...String(e)].map(c => SUPERSCRIPT[c]).join("");
+
+    /** Round steps between lo and hi: 1, 2, 2.5 or 5 times a power of ten. */
+    function niceTicks(lo, hi, count) {
+      if (!(hi > lo)) return [{ t: lo, label: sig(lo) }];
+      const raw = (hi - lo) / Math.max(1, count - 1);
+      const mag = 10 ** Math.floor(Math.log10(raw));
+      // The round step nearest the ideal one, in ratio, so the count of ticks
+      // stays close to `count` either way.
+      const unit = [1, 2, 2.5, 5, 10].reduce((best, m) =>
+        Math.abs(Math.log(m * mag / raw)) < Math.abs(Math.log(best * mag / raw)) ? m : best);
+      const step = unit * mag;
+      const digits = Math.max(0, -Math.floor(Math.log10(step) + 1e-9) + (unit === 2.5 ? 1 : 0));
+      const ticks = [];
+      for (let i = Math.ceil(lo / step - 1e-9); i * step <= hi + 1e-9; i++) {
+        ticks.push({ t: i * step, label: (i * step).toFixed(digits) });
+      }
+      return ticks;
+    }
+
+    /** Index of the value in the sorted array xs that is nearest to x. */
+    function nearestIndex(xs, x) {
+      let lo = 0, hi = xs.length - 1;
+      while (hi - lo > 1) {
+        const mid = (lo + hi) >> 1;
+        if (xs[mid] < x) lo = mid; else hi = mid;
+      }
+      return Math.abs(xs[hi] - x) < Math.abs(xs[lo] - x) ? hi : lo;
+    }
+
+    /**
+     * Draw curves against wavelength into `el`, with a crosshair that reads
+     * every series at the nearest point.
+     *
+     * `series` lists {key, label, color, fill, width}. On a log axis the lowest
+     * value of the `floorKeys` series sets the bottom; by default every series.
+     * `resting` is the line under the chart while nothing is pointed at.
+     */
+    function renderChart(el, { lam, data, series, scale = "linear", floorKeys,
+      subtitle = "", aria, resting = "", after = "" }) {
+      if (!lam.length) {
+        el.innerHTML = '<p class="placeholder">These two curves do not overlap.</p>';
+        return;
+      }
+      const log = scale === "log";
+      // One unit of the drawing is one CSS pixel, so the labels keep their size
+      // at any width. A hidden chart has no width; it is drawn again when it
+      // is shown.
+      const W = Math.max(260, Math.round((el.closest(".plot") || el).clientWidth));
+      const H = Math.round(Math.min(280, Math.max(200, W * 0.5)));
+      const L = log ? 38 : 34, R = 12, T = 10, B = 36;
+
+      const peaks = series.map(s2 => Math.max(0, ...data[s2.key].filter(v => v !== null)));
+      const top = Math.max(...peaks);
+      let bottom = Infinity;
+      for (const key of floorKeys || series.map(s2 => s2.key)) {
+        for (const v of data[key]) if (v !== null && v > 0 && v < bottom) bottom = v;
+      }
+      // Keep at least a decade under the peak of every series, so a faint
+      // detected curve is not lost under a bright sky.
+      for (const peak of peaks) if (peak > 0) bottom = Math.min(bottom, peak / 10);
+      if (log && !(top > 0)) {
+        el.innerHTML = '<p class="placeholder">No light reaches the detector here.</p>';
+        return;
+      }
+
+      let sy, yTicks, floor;
+      if (log) {
+        const hiExp = Math.ceil(Math.log10(top));
+        let loExp = bottom < Infinity ? Math.floor(Math.log10(bottom)) : -Infinity;
+        loExp = Math.max(loExp, hiExp - LOG_DECADES);
+        if (loExp >= hiExp) loExp = hiExp - 1;
+        floor = 10 ** loExp;
+        sy = v => T + (1 - (Math.log10(v) - loExp) / (hiExp - loExp)) * (H - T - B);
+        yTicks = [];
+        for (let e = loExp; e <= hiExp; e++) yTicks.push({ t: 10 ** e, label: decade(e) });
+      } else {
+        const yMax = Math.max(0.1, Math.ceil(top * 10) / 10);
+        floor = -Infinity;
+        sy = v => T + (1 - v / yMax) * (H - T - B);
+        yTicks = [0, 0.25, 0.5, 0.75, 1].map(f => ({ t: f * yMax, label: (f * yMax).toFixed(2) }));
+      }
+      const shown = v => v !== null && v >= floor;
 
       const x0 = lam[0], x1 = lam[lam.length - 1];
-      let top = 0;
-      for (const s2 of RESPONSE_SERIES) for (const v of data[s2.key]) if (v !== null && v > top) top = v;
-      const yMax = Math.max(0.1, Math.ceil(top * 10) / 10);
-
       const sx = v => L + ((v - x0) / (x1 - x0 || 1)) * (W - L - R);
-      const sy = v => T + (1 - v / yMax) * (H - T - B);
+      const xTicks = niceTicks(x0, x1, Math.max(4, Math.round(W / 50)));
 
       const path = key => {
         let d = "", pen = false;
         lam.forEach((xv, i) => {
           const yv = data[key][i];
-          if (yv === null) { pen = false; return; }
+          if (!shown(yv)) { pen = false; return; }
           d += `${pen ? "L" : "M"}${sx(xv).toFixed(1)} ${sy(yv).toFixed(1)} `;
           pen = true;
         });
         return d;
       };
+      // Filled down to the axis, one piece for each unbroken run of points.
+      const base = (H - B).toFixed(1);
       const area = key => {
-        const pts = lam.map((xv, i) => [xv, data[key][i]]).filter(([, y]) => y !== null);
-        if (!pts.length) return "";
-        return `M${sx(pts[0][0]).toFixed(1)} ${sy(0).toFixed(1)} `
-          + pts.map(([xv, yv]) => `L${sx(xv).toFixed(1)} ${sy(yv).toFixed(1)}`).join(" ")
-          + ` L${sx(pts[pts.length - 1][0]).toFixed(1)} ${sy(0).toFixed(1)} Z`;
+        let d = "", run = [];
+        const close = () => {
+          if (run.length) {
+            d += `M${run[0][0]} ${base} L${run.map(p => p.join(" ")).join(" L")} `
+              + `L${run[run.length - 1][0]} ${base} Z `;
+          }
+          run = [];
+        };
+        lam.forEach((xv, i) => {
+          const yv = data[key][i];
+          if (shown(yv)) run.push([sx(xv).toFixed(1), sy(yv).toFixed(1)]);
+          else close();
+        });
+        close();
+        return d;
       };
 
-      const yTicks = [0, 0.25, 0.5, 0.75, 1].map(f => f * yMax);
-      const nx = narrow ? 3 : 5;
-      const xTicks = Array.from({ length: nx }, (_, i) => x0 + (x1 - x0) * i / (nx - 1));
-
-      $("response").innerHTML = `
-    <p class="hint" style="margin:0 0 10px">${subtitle}</p>
-    <div class="legend">${RESPONSE_SERIES.map(s2 =>
+      el.innerHTML = `
+    ${subtitle ? `<p class="hint" style="margin:0 0 10px">${subtitle}</p>` : ""}
+    <div class="legend">${series.map(s2 =>
         `<span><i style="background:${s2.color}"></i>${s2.label}</span>`).join("")}</div>
     <figure class="chart">
-      <svg viewBox="0 0 ${W} ${H}" role="img"
-           aria-label="Transmission against wavelength for the detector, the filter and their product">
-        ${yTicks.map(t => `<line x1="${L}" y1="${sy(t).toFixed(1)}" x2="${W - R}" y2="${sy(t).toFixed(1)}"
+      <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${aria}">
+        ${yTicks.map(({ t, label }) => `<line x1="${L}" y1="${sy(t).toFixed(1)}" x2="${W - R}" y2="${sy(t).toFixed(1)}"
             stroke="var(--gridline)" stroke-width="1"/>
           <text x="${L - 6}" y="${(sy(t) + 3).toFixed(1)}" text-anchor="end" font-size="9"
-            fill="var(--text-muted)">${t.toFixed(2)}</text>`).join("")}
-        ${xTicks.map(t => `<text x="${sx(t).toFixed(1)}" y="${H - 20}" text-anchor="middle"
-            font-size="9" fill="var(--text-muted)">${t.toFixed(2)}</text>`).join("")}
+            fill="var(--text-muted)">${label}</text>`).join("")}
+        ${xTicks.map(({ t, label }) => `<text x="${sx(t).toFixed(1)}" y="${H - 20}" text-anchor="middle"
+            font-size="9" fill="var(--text-muted)">${label}</text>`).join("")}
         <text x="${(L + (W - R - L) / 2).toFixed(0)}" y="${H - 6}" text-anchor="middle"
               font-size="9" fill="var(--text-muted)">wavelength [µm]</text>
-        <path d="${area("sr")}" fill="var(--series-1)" opacity="0.10"/>
-        ${RESPONSE_SERIES.map(s2 => `<path d="${path(s2.key)}" fill="none" stroke="${s2.color}"
-            stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`).join("")}
+        ${series.filter(s2 => s2.fill).map(s2 =>
+          `<path d="${area(s2.key)}" fill="${s2.color}" opacity="0.10"/>`).join("")}
+        ${series.map(s2 => `<path d="${path(s2.key)}" fill="none" stroke="${s2.color}"
+            stroke-width="${s2.width || 2}" stroke-linejoin="round" stroke-linecap="round"/>`).join("")}
         <line class="cross" x1="0" y1="${T}" x2="0" y2="${H - B}" stroke="var(--baseline)"
               stroke-width="1" opacity="0"/>
-        ${RESPONSE_SERIES.map(s2 => `<circle class="hd" data-key="${s2.key}" r="4" fill="${s2.color}"
+        ${series.map(s2 => `<circle class="hd" data-key="${s2.key}" r="4" fill="${s2.color}"
             stroke="var(--surface-1)" stroke-width="2" opacity="0"/>`).join("")}
         <rect class="hit" x="${L}" y="${T}" width="${W - L - R}" height="${H - T - B}" fill="transparent"/>
       </svg>
-      <p class="readout" id="response-readout">Highest system response ${sig(data.peak)} at ${sig(lam[data.sr.indexOf(Math.max(...data.sr.filter(v => v !== null)))])} µm.</p>
-    </figure>
-    ${data.peak < 0.01 ? `<p class="hint err">The detector has almost no response
-      where this filter passes light. The star flux is near zero. The exposure
-      time has no meaning.</p>` : ""}`;
+      <p class="readout">${resting}</p>
+      ${after}
+    </figure>`;
 
-      const svg = $("response").querySelector("svg");
+      const svg = el.querySelector("svg");
       const cross = svg.querySelector(".cross");
       const dots = [...svg.querySelectorAll(".hd")];
-      const readout = $("response-readout");
-      const resting = readout.textContent;
+      const readout = el.querySelector(".readout");
 
       svg.addEventListener("pointermove", event => {
         const box = svg.getBoundingClientRect();
         const vx = ((event.clientX - box.left) / box.width) * W;
-        let near = 0;
-        lam.forEach((xv, i) => {
-          if (Math.abs(sx(xv) - vx) < Math.abs(sx(lam[near]) - vx)) near = i;
-        });
-        cross.setAttribute("x1", sx(lam[near]).toFixed(1));
-        cross.setAttribute("x2", sx(lam[near]).toFixed(1));
+        const near = nearestIndex(lam, x0 + ((vx - L) / (W - L - R)) * (x1 - x0));
+        const cx = sx(lam[near]).toFixed(1);
+        cross.setAttribute("x1", cx);
+        cross.setAttribute("x2", cx);
         cross.setAttribute("opacity", "1");
         for (const dot of dots) {
           const v = data[dot.dataset.key][near];
-          if (v === null) { dot.setAttribute("opacity", "0"); continue; }
-          dot.setAttribute("cx", sx(lam[near]).toFixed(1));
+          if (!shown(v)) { dot.setAttribute("opacity", "0"); continue; }
+          dot.setAttribute("cx", cx);
           dot.setAttribute("cy", sy(v).toFixed(1));
           dot.setAttribute("opacity", "1");
         }
-        readout.textContent = `${sig(lam[near])} µm · ` + RESPONSE_SERIES
-          .map(s2 => `${s2.label} ${data[s2.key][near] === null ? "\u2014" : sig(data[s2.key][near])}`)
+        readout.textContent = `${sig(lam[near])} µm · ` + series
+          .map(s2 => `${s2.label} ${data[s2.key][near] === null ? "—" : sig(data[s2.key][near])}`)
           .join(" · ");
       });
       svg.addEventListener("pointerleave", () => {
@@ -2723,37 +3084,173 @@ def response_curves(system, filt, points):
       });
     }
 
-    let lastResponse = null;
+    // ------------------------------------------------------ transmission, sky, star
+    // One colour for each thing across the three charts. The atmosphere is
+    // green, the filter orange and the star gold, and blue is always the light
+    // that reaches the detector. The detector-plus-optics curve is grey: it is
+    // context, and no fifth colour stays apart from the rest for colour-blind
+    // readers. Purple is never beside blue, and gold never beside orange, for
+    // the same reason.
+    const SPECTRUM_LINE = 1.25;   // 1 nm lines at about 5 points a pixel
+    const TRANSMISSION_SERIES = [
+      { key: "eff", label: "Detector + optics", color: "var(--text-secondary)", width: 1.5 },
+      { key: "filt", label: "Filter", color: "var(--series-2)" },
+      { key: "atm", label: "Atmosphere", color: "var(--series-3)", width: SPECTRUM_LINE },
+      {
+        key: "sr_atm", label: "System response × atmosphere", color: "var(--series-1)",
+        fill: true, width: SPECTRUM_LINE
+      },
+    ];
+    const SKY_SERIES = [
+      { key: "sky", label: "Sky", color: "var(--series-3)", width: SPECTRUM_LINE },
+      { key: "sky_det", label: "Detected", color: "var(--series-1)", fill: true, width: SPECTRUM_LINE },
+    ];
+    const STAR_SERIES = [
+      { key: "star", label: "Above the atmosphere", color: "var(--series-5)", width: SPECTRUM_LINE },
+      { key: "star_det", label: "Detected", color: "var(--series-1)", fill: true, width: SPECTRUM_LINE },
+    ];
+    const SPECTRUM_KEYS = ["eff", "filt", "atm", "sr_atm", "sky", "sky_det", "star", "star_det"];
 
-    async function updateResponse() {
-      if (!ready) return;
-      const system = $("system").value, filt = $("filter").value;
+    // What the charts show, "band" or "full". It is a way of looking, not an
+    // input to the model, so Reset all leaves it alone.
+    let spectraRange = "band";
+    // The configuration the charts were drawn for, and what Python returned.
+    let lastSpectra = null;
+
+    function spectraView(data) {
+      let a = 0, b = data.lam.length - 1;
+      if (spectraRange === "band") {
+        a = nearestIndex(data.lam, data.band[0]);
+        b = nearestIndex(data.lam, data.band[1]);
+      }
+      const view = { lam: data.lam.slice(a, b + 1) };
+      for (const key of SPECTRUM_KEYS) view[key] = data[key].slice(a, b + 1);
+      return view;
+    }
+
+    function renderSpectra() {
+      if (!lastSpectra) return;
+      const { data, table, spec } = lastSpectra;
+      const view = spectraView(data);
+
+      $("spectra-sub").textContent = `${systemLabel(spec.system)}, with the ${spec.filter} `
+        + `filter, under the Paranal sky at ${sig(spec.pwv)} mm of water vapour and `
+        + `airmass ${spec.airmass.toFixed(2)}. Between the tabulated values the curves `
+        + "are interpolated.";
+
+      renderChart($("chart-trans"), {
+        lam: view.lam, data: view, series: TRANSMISSION_SERIES,
+        subtitle: "The fraction of light that passes.",
+        aria: "Transmission of the detector and optics, the filter and the atmosphere, "
+          + "and of the whole system, against wavelength",
+        resting: `Peak system response ${sig(data.peak)} at ${sig(data.peak_lam)} µm.`
+          + (data.band_trans === null ? "" : ` The atmosphere passes `
+            + `${sig(data.band_trans * 100)}% of the light in the band.`),
+        after: data.peak < 0.01 ? `<p class="hint err">The detector has almost no response
+      where this filter passes light. The star flux is near zero. The exposure
+      time has no meaning.</p>` : "",
+      });
+
+      renderChart($("chart-sky"), {
+        lam: view.lam, data: view, series: SKY_SERIES, scale: "log", floorKeys: ["sky"],
+        subtitle: "Per second, m², µm and arcsec². Log scale.",
+        aria: "Sky radiance, and the part of it the detector records, against wavelength, "
+          + "on a log scale",
+        resting: `The model counts ${sig(table["sky_radiance [e/m2/arcsec2/s]"])} e⁻/s/m²/arcsec² `
+          + `of sky, which is ${sig(table["N_sky [e/pix/s]"])} e⁻/s in each pixel.`,
+      });
+
+      renderChart($("chart-star"), {
+        lam: view.lam, data: view, series: STAR_SERIES, scale: "log", floorKeys: ["star"],
+        subtitle: `A ${sig(table["Teff [K]"], 4)} K star at ${sig(table["distance [pc]"])} pc`
+          + (spec.mode === "gaia" ? ", scaled to its Gaia fluxes" : "")
+          + ". Per second, m² and µm. Log scale.",
+        aria: "Spectrum of the star above the atmosphere, and the part of it the "
+          + "detector records, against wavelength, on a log scale",
+        resting: `The model counts ${sig(table["star_flux [e/m2/s]"])} e⁻/s/m² from the star.`,
+      });
+    }
+
+    /** Draw the three charts for the configuration of a result. */
+    function updateSpectra(spec, result) {
+      const table = result.table;
+      // Python needs only these. A change to the camera, say, redraws the
+      // read-outs but does not ask Python again.
+      const request = JSON.stringify({
+        system: spec.system, filter: spec.filter, pwv: spec.pwv, airmass: spec.airmass,
+        teff: table["Teff [K]"], star_flux: table["star_flux [e/m2/s]"],
+        distance: table["distance [pc]"],
+      });
       try {
-        await ensureSelectedCurves();
-        lastResponse = {
-          data: callPython("response_curves", system, filt, 480),
-          subtitle: `${systemLabel(system)}, with the ${filt} filter. `
-            + "The vertical axis is the fraction of light that passes.",
-        };
-        renderResponse(lastResponse.data, lastResponse.subtitle);
+        const data = lastSpectra && lastSpectra.request === request
+          ? lastSpectra.data : callPython("spectra", request);
+        lastSpectra = { request, data, table, spec };
+        renderSpectra();
       } catch (err) {
-        lastResponse = null;
-        $("response").innerHTML = '<p class="placeholder">These curves did not load.</p>';
+        lastSpectra = null;
+        for (const id of ["chart-trans", "chart-sky", "chart-star"]) {
+          $(id).innerHTML = '<p class="placeholder">These curves did not load.</p>';
+        }
       }
     }
 
-    // The chart picks its shape from the window width, so a rotated phone would
-    // otherwise keep drawing at the width it had when the page opened.
-    let wasNarrow = window.innerWidth < NARROW_CHART;
+    for (const radio of document.querySelectorAll('input[name="spectra-range"]')) {
+      radio.addEventListener("change", e => {
+        if (!e.target.checked) return;
+        spectraRange = e.target.value;
+        renderSpectra();
+      });
+    }
+
+    // Below 1024px the charts take turns: the tab picks one and the CSS hides
+    // the others. The one that appears is drawn at its new width at once.
+    for (const radio of document.querySelectorAll('input[name="plot-tab"]')) {
+      radio.addEventListener("change", e => {
+        if (!e.target.checked) return;
+        for (const plot of document.querySelectorAll(".plot")) {
+          plot.classList.toggle("active", plot.dataset.plot === e.target.value);
+        }
+        renderSpectra();
+      });
+    }
+
+    // Each chart is drawn at the width of its column, so it is drawn again when
+    // a column changes width: a resized window, or a rotated phone.
+    const plotWidths = new WeakMap();
     let resizeTimer = null;
-    window.addEventListener("resize", () => {
+    const plotObserver = new ResizeObserver(entries => {
+      let changed = false;
+      for (const entry of entries) {
+        const width = Math.round(entry.contentRect.width);
+        if (plotWidths.get(entry.target) !== width) {
+          plotWidths.set(entry.target, width);
+          changed = true;
+        }
+      }
+      if (!changed) return;
       clearTimeout(resizeTimer);
-      resizeTimer = setTimeout(() => {
-        const narrow = window.innerWidth < NARROW_CHART;
-        if (narrow === wasNarrow || !lastResponse) return;
-        wasNarrow = narrow;
-        renderResponse(lastResponse.data, lastResponse.subtitle);
-      }, 150);
+      resizeTimer = setTimeout(renderSpectra, 100);
+    });
+    for (const plot of document.querySelectorAll(".plot")) plotObserver.observe(plot);
+
+    // Every 1 nm point of all eight curves, over the whole range, whatever the
+    // charts show. The link is built when it is pressed, so it is never stale.
+    $("spectra-csv").addEventListener("click", event => {
+      if (!lastSpectra) { event.preventDefault(); return; }
+      const { data, table, spec } = lastSpectra;
+      const link = event.currentTarget;
+      if (link.href.startsWith("blob:")) URL.revokeObjectURL(link.href);
+      const lines = [
+        `# mphot ${systemLabel(spec.system)}, ${spec.filter} filter`,
+        `# Paranal sky: ${spec.pwv} mm water vapour, airmass ${spec.airmass}`,
+        `# Star: ${table["Teff [K]"]} K at ${table["distance [pc]"]} pc`,
+        "# Sky in photons/s/m2/um/arcsec2, star in photons/s/m2/um; detected curves in electrons.",
+        "wavelength_um,detector_optics,filter,atmosphere,system_response_x_atmosphere,"
+        + "sky,sky_detected,star,star_detected",
+        ...data.lam.map((l, i) =>
+          [l, ...SPECTRUM_KEYS.map(k => data[k][i] ?? "")].join(",")),
+      ];
+      link.href = URL.createObjectURL(new Blob([lines.join("\n") + "\n"], { type: "text/csv" }));
     });
 
     // ------------------------------------------------------------------- actions
@@ -2799,7 +3296,9 @@ def response_curves(system, filt, points):
           // dimming above would ever be drawn.
           await new Promise(requestAnimationFrame);
         }
-        render(callPython("compute", JSON.stringify(spec)));
+        const result = callPython("compute", JSON.stringify(spec));
+        render(result);
+        updateSpectra(spec, result);
         setStatus("Ready", "ready");
       } catch (err) {
         reportError(err);
