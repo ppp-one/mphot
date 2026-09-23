@@ -6,6 +6,7 @@ authors = [
 ]
 repository = "https://github.com/ppp-one/mphot"
 readme = "README.md"
+description = "A Python package to model photometry for ground or space-based astronomy. Exposure time calculator (ETC) built in."
 license = { text = "MIT License" }
 requires-python = ">=3.11"
 # The Gaia lookup uses the TAP standard over plain HTTP from the standard

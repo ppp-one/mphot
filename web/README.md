@@ -11,6 +11,9 @@ python web/build.py                          # build the wheel, copy the curves
 python -m http.server --directory web 8000   # serve web/
 ```
 
+`uv run web/build.py` works too. A uv environment has no pip, so `build.py`
+then builds the wheel with `uv build`. Both give the same wheel.
+
 Then open <http://localhost:8000/>.
 
 `build.py` makes `web/` complete on its own. It writes the wheel to
@@ -56,7 +59,11 @@ the ETC pick any exposure time.
 **Read the result.** The exposure time and the binned precision stay at the top
 of the page as you scroll, at every width. Beside them is the precision of one
 frame. Below them are the number of frames in each bin, and how full the
-brightest pixel gets. The noise chart shows one bin or one frame.
+brightest pixel gets. The noise chart shows one bin or one frame. Below it, a
+table that is always open lists every value the model calculated, such as the
+star and sky rates, the aperture and the collecting area. It leaves out the
+values that only repeat a control. In Gaia mode it also shows the temperature
+and distance from the archive, and the weights of the Gaia bands.
 
 Below 720px the strip shrinks to one line and grows a stacked bar of the noise
 budget, so you can watch the budget shift while you drag a slider further down
@@ -72,12 +79,40 @@ The two-column layout now survives down to 721px on a narrower control column.
 The instrument card is the longest and the one you touch least once a preset is
 chosen, so it sits last.
 
-**See the optics.** The system response panel draws three curves against
-wavelength: the detector with the optics, the filter, and the two multiplied
-together. It redraws when you change either choice. Point at it to read the
-values. It warns you when a filter passes light where the detector cannot see
-it. A J filter on a silicon CCD is one example. Without the warning you would
-notice this only later, as an exposure time of several hours.
+**See the optics, the sky and the star.** A row of three charts sits under the
+strip at the top, so they are the first thing below the numbers:
+
+* **Transmission and system response**: the detector with the optics, the
+  filter, the atmosphere, and all three multiplied together;
+* **Sky radiance** on a log axis, and the part of it the detector records;
+* **Star** above the atmosphere on a log axis, and the part of it the detector
+  records.
+
+They redraw when you change the instrument, the sky or the star. A toggle
+switches all three between the filter band and the whole model range of 0.3 to
+3 µm. Point at a chart to read the values, or download all eight curves as a CSV
+file. The first chart warns you when a filter passes light where the detector
+cannot see it. A J filter on a silicon CCD is one example. Without the warning
+you would notice this only later, as an exposure time of several hours.
+
+The three plots line up across the row even when one legend takes two lines,
+because each chart is a subgrid of the same four rows. Each chart is drawn at
+the width of its column, one unit to one pixel, so the labels keep their size
+at any width. Below 1024px there is room for one chart at a time, and tabs above
+it pick which.
+
+These are the curves the model integrates. They come from the two grid
+ingredient files, which the page downloads for the model anyway, so the charts
+add nothing to the download. The files hold 13 water vapour values and 21
+airmass values. Between them the page interpolates the curves linearly, while
+the model interpolates its integrals with a cubic method, so the two can differ
+by about 1%. At a tabulated value they agree exactly. The star is scaled so
+that its detected curve integrates to the star rate the model reports. In Gaia
+mode that rate includes the calibration to the archive, so the same rule covers
+both modes.
+
+The charts draw every 1 nm point. Taking every nth point would drop the sky
+emission lines and the absorption lines, which are about one point wide.
 
 **Bring your own curves.** Under **Use your own curves** you can load a filter
 transmission curve, an efficiency curve for the telescope, optics and detector,
@@ -142,7 +177,9 @@ and the value computed are the same one, at the same granularity as before.
 ## Everything updates as you move a control
 
 Every control recomputes the result. One update takes about 10 ms, so the page
-waits 80 ms after your last change and then runs.
+waits 80 ms after your last change and then runs. When the sky, the star or the
+instrument changes, the spectra add about 12 ms. Any other change only redraws
+them, which takes 1 to 7 ms.
 
 Gaia mode reads a star once and keeps the answer. Without this cache the page
 would query VizieR on every slider move. Press Enter in the source_id field to
