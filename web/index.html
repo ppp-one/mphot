@@ -1223,7 +1223,8 @@
           </div>
           <div class="field">
             <select id="preset"></select>
-            <p class="hint">If you change a value below, the preset becomes Custom.</p>
+            <p class="hint">A preset also sets the site: altitude, water vapour and seeing.
+              If you change the telescope, camera or filter, the preset becomes Custom.</p>
           </div>
           <div class="field">
             <label for="system">Telescope, optics and detector</label>
@@ -1259,7 +1260,9 @@
         </div>
 
         <div class="card">
-          <h2>Sky</h2>
+          <h2>Site and sky</h2>
+          <div id="site-fields"></div>
+          <p class="hint" id="site-hint" style="margin-bottom:12px"></p>
           <div class="field">
             <label for="pwv">Water vapour <span class="val" id="pwv-v"></span></label>
             <!-- Logarithmic. The model tabulates water vapour at 13 values from
@@ -1407,7 +1410,9 @@
         models of sky transmission and sky radiance for Paranal at 2400 m.
       </p>
       <p>
-        Water vapour and airmass set the state of the atmosphere. The effective
+        Water vapour and airmass set the state of the atmosphere. For a site
+        below Paranal, the model counts the extra air above the telescope as
+        extra airmass. The altitude also sets the scintillation. The effective
         temperature and the distance set the star. You can instead give a Gaia
         DR3 <code>source_id</code>. The page then reads that star's parallax
         and its BP, G and RP fluxes from VizieR, and scales the model to match
@@ -1474,7 +1479,8 @@
     // `step` is what one arrow key or spinner click changes. Without it the
     // browser uses 1, which moves the plate scale from 0.35 to 1.35 and the well
     // depth from 64000 to 64001. Each value below is chosen so that the preset
-    // values land on it.
+    // values land on it. The CDK20 radii are the exception: they are the
+    // maker's values, and the first press snaps them onto the step.
     //
     // `proportional` marks the fields that cover several decades, where no
     // single step works at both ends. Those step by a fraction of their own
@@ -1512,10 +1518,24 @@
     ];
     const INSTRUMENT = [...TELESCOPE, ...CAMERA];
 
+    // The sky model is tabulated for Paranal at airmass 1 to 3. mphot moves it
+    // to a lower site by multiplying the airmass by exp((2440 - h) / 8000): the
+    // extra air above the site, in an isothermal atmosphere with an 8 km scale
+    // height. A lower site therefore runs off the table at a lower airmass, and
+    // griddata returns NaN there. A higher site would need an airmass below 1.
+    const PARANAL_ALTITUDE = 2440;
+    const MAX_GRID_AIRMASS = 3;
+    const SITE = [
+      {
+        key: "altitude", label: "Altitude", unit: "m", min: 0, max: PARANAL_ALTITUDE, step: 10
+      },
+    ];
+
+    const PARANAL = { altitude: PARANAL_ALTITUDE, pwv: 2.5, seeing: 1.35 };
     const PRESETS = [
       {
         id: "spec-iz", label: "SPECULOOS 1 m · I+z",
-        system: SYSTEMS[0].id, filter: "I+z",
+        system: SYSTEMS[0].id, filter: "I+z", site: PARANAL,
         props: {
           r0: 0.5, r1: 0.14, plate_scale: 0.35, N_dc: 0.2, N_rn: 6.328,
           well_depth: 64000, well_fill: 0.7, read_time: 10.5, ap_rad: 3
@@ -1523,17 +1543,20 @@
       },
       {
         id: "spec-nir", label: "SPECULOOS NIR · zYJ",
-        system: SYSTEMS[1].id, filter: "zYJ",
+        system: SYSTEMS[1].id, filter: "zYJ", site: PARANAL,
         props: {
           r0: 0.5, r1: 0.14, plate_scale: 0.31, N_dc: 110, N_rn: 90,
           well_depth: 56000, well_fill: 0.7, read_time: 0.1, ap_rad: 3
         }
       },
       {
-        id: "small-cmos", label: "50 cm · IMX461 CMOS · luminance",
+        // A PlaneWave CDK20: 508 mm aperture, central obstruction 39% of the
+        // primary diameter.
+        id: "eth-cdk20", label: "ETH 0.5 m · CDK20 · IMX461 CMOS · luminance",
         system: SYSTEMS[2].id, filter: "luminance",
+        site: { altitude: 569, pwv: 30, seeing: 3 },
         props: {
-          r0: 0.25, r1: 0.1, plate_scale: 0.9, N_dc: 0.1, N_rn: 8.47,
+          r0: 0.254, r1: 0.099, plate_scale: 0.9, N_dc: 0.1, N_rn: 8.47,
           well_depth: 1048560, well_fill: 0.7, read_time: 5, ap_rad: 3
         }
       },
@@ -1567,6 +1590,7 @@
     }
     buildNumberFields($("telescope-fields"), TELESCOPE);
     buildNumberFields($("camera-fields"), CAMERA);
+    buildNumberFields($("site-fields"), SITE);
 
     // One press moves the value by `step`, or, for a field marked proportional,
     // by a tenth of its own leading digit. Dark current runs from 0.1 to 5000
@@ -1603,7 +1627,7 @@
         nudge(el, event.key === "ArrowUp" ? 1 : -1);
       });
     }
-    for (const p of INSTRUMENT) wireStepper($(p.key));
+    for (const p of [...INSTRUMENT, ...SITE]) wireStepper($(p.key));
     for (const id of ["min_exp", "max_exp", "dist-num"]) wireStepper($(id));
     for (const button of document.querySelectorAll("button.nudge")) {
       button.addEventListener("click", () => nudge($(button.dataset.key), +button.dataset.dir));
@@ -1620,6 +1644,12 @@
       $("system").value = p.system;
       $("filter").value = p.filter;
       for (const param of INSTRUMENT) $(param.key).value = p.props[param.key];
+      $("altitude").value = p.site.altitude;
+      $("pwv").value = Math.log10(p.site.pwv);
+      $("seeing").value = p.site.seeing;
+      // The read-outs beside the sliders follow, and the airmass slider takes
+      // the range of the new altitude. None of these make the preset Custom.
+      for (const id of ["altitude", "pwv", "seeing"]) $(id).dispatchEvent(new Event("input"));
       checkMirrors();
       scheduleUpdate(0);
     }
@@ -1642,7 +1672,7 @@
     // tell when something has changed, and can put it all back.
     const CONTROL_IDS = [
       "preset", "system", "filter", ...INSTRUMENT.map(p => p.key),
-      "pwv", "airmass", "seeing", "teff", "dist-num", "dist",
+      "altitude", "pwv", "airmass", "seeing", "teff", "dist-num", "dist",
       "gaia-teff-on", "gaia-teff", "source-id", "binning", "min_exp", "max_exp",
     ];
 
@@ -1697,8 +1727,8 @@
     $("reset").addEventListener("click", resetAll);
 
     // Sky, star and exposure controls all recompute as they move.
-    for (const id of ["pwv", "airmass", "seeing", "teff", "gaia-teff", "binning",
-      "dist", "dist-num", "min_exp", "max_exp"]) {
+    for (const id of ["altitude", "pwv", "airmass", "seeing", "teff", "gaia-teff",
+      "binning", "dist", "dist-num", "min_exp", "max_exp"]) {
       $(id).addEventListener("input", () => scheduleUpdate());
     }
     for (const radio of document.querySelectorAll('input[name="mode"]')) {
@@ -1782,6 +1812,43 @@
     distSlider.addEventListener("input", distanceFromSlider);
     distanceFromNumber();
 
+    // An empty altitude means Paranal. A value outside the range is clamped,
+    // and the hint says which altitude the model used.
+    function readAltitude() {
+      const raw = $("altitude").value.trim();
+      return raw === "" ? PARANAL_ALTITUDE : clamp(+raw, 0, PARANAL_ALTITUDE);
+    }
+
+    // The same factor as mphot.precision.convert_airmass.
+    const paranalAirmassFactor = h => Math.exp((PARANAL_ALTITUDE - h) / 8000);
+
+    function updateSite() {
+      const raw = $("altitude").value.trim();
+      const h = readAltitude();
+
+      // Rounded down, so the top of the slider stays on the table.
+      const airmass = $("airmass");
+      const before = airmass.value;
+      const top = Math.floor(MAX_GRID_AIRMASS / paranalAirmassFactor(h) * 100) / 100;
+      airmass.max = top;
+      // A range input clamps its own value to the new maximum.
+      if (airmass.value !== before) airmass.dispatchEvent(new Event("input"));
+
+      const hint = $("site-hint");
+      const outside = raw !== "" && +raw !== h;
+      hint.classList.toggle("err", outside);
+      hint.textContent = outside
+        ? `Enter an altitude from 0 to ${PARANAL_ALTITUDE} m. The ETC uses ${h} m.`
+        : h < PARANAL_ALTITUDE
+          ? `The sky model is for Paranal. At ${h} m there is more air above the `
+          + "telescope, and the ETC counts it as extra airmass. So the airmass slider "
+          + `stops at ${top.toFixed(2)}. The sky glow is still Paranal's, with no light `
+          + "pollution."
+          : "The sky model is for Paranal.";
+    }
+    $("altitude").addEventListener("input", updateSite);
+    updateSite();
+
     // Taken here, after the first preset and every read-out are set.
     startState = readControls();
 
@@ -1803,6 +1870,7 @@
       if (maxExp !== "") props.max_exp = +maxExp;
       return {
         system: $("system").value, filter: $("filter").value, props, mode,
+        altitude: readAltitude(),
         pwv: readPwv($("pwv").value),
         airmass: +$("airmass").value, seeing: +$("seeing").value,
         binning: +$("binning").value,
@@ -2199,10 +2267,11 @@ def _run(spec, props=None):
         # the page sends one only when the reader has asked to set it.
         return mphot.get_precision_gaia(
             props, props_sky, source_id=int(spec["source_id"]),
-            Teff=spec["teff_override"], binning=spec["binning"],
+            Teff=spec["teff_override"], binning=spec["binning"], h=spec["altitude"],
         )
     return mphot.get_precision(
         props, props_sky, spec["teff"], spec["distance"], binning=spec["binning"],
+        h=spec["altitude"],
     )
 
 # get_precision_gaia substitutes 3000 K and 10 pc when the archive has neither,
@@ -2396,9 +2465,9 @@ def spectra(spec_json):
         raise ValueError("the curves and the grid ingredients have different wavelengths")
     sr = np.nan_to_num(frame["sr"].to_numpy())
 
-    # get_precision converts to the airmass at Paranal. The page keeps the
-    # default altitude, where this changes nothing, but it stays in step.
-    airmass = convert_airmass(spec["airmass"], 2440)
+    # The same conversion get_precision makes: the extra air above a lower
+    # site counts as extra airmass at Paranal.
+    airmass = convert_airmass(spec["airmass"], spec["altitude"])
     trans = _atmosphere(data["trans"], spec["pwv"], airmass)
     sky = _atmosphere(data["sky"], spec["pwv"], airmass)
     sr_atm = sr * trans
@@ -2734,8 +2803,7 @@ def spectra(spec_json):
     const NOISE_COLORS = ["var(--series-1)", "var(--series-2)", "var(--series-3)",
       "var(--series-4)", "var(--series-5)"];
 
-    // Model values that repeat a control, so the table leaves them out. The
-    // altitude is not a control, but it is a fixed setting, not a result.
+    // Model values that repeat a control, so the table leaves them out.
     const INPUT_KEYS = new Set([
       "seeing [arcsec]", "pwv [mm]", "airmass", 'plate_scale ["/pix]',
       "N_dc [e/pix/s]", "N_rn [e_rms/pix]", "r0 [m]", "r1 [m]",
@@ -3117,6 +3185,14 @@ def spectra(spec_json):
     // The configuration the charts were drawn for, and what Python returned.
     let lastSpectra = null;
 
+    /** For a site below Paranal, the airmass the model looks up instead. */
+    function siteNote(spec) {
+      if (spec.altitude >= PARANAL_ALTITUDE) return "";
+      const paranal = spec.airmass * paranalAirmassFactor(spec.altitude);
+      return ` The site is at ${spec.altitude} m, so the model uses airmass `
+        + `${paranal.toFixed(2)} at Paranal.`;
+    }
+
     function spectraView(data) {
       let a = 0, b = data.lam.length - 1;
       if (spectraRange === "band") {
@@ -3135,8 +3211,8 @@ def spectra(spec_json):
 
       $("spectra-sub").textContent = `${systemLabel(spec.system)}, with the ${spec.filter} `
         + `filter, under the Paranal sky at ${sig(spec.pwv)} mm of water vapour and `
-        + `airmass ${spec.airmass.toFixed(2)}. Between the tabulated values the curves `
-        + "are interpolated.";
+        + `airmass ${spec.airmass.toFixed(2)}.${siteNote(spec)} Between the tabulated `
+        + "values the curves are interpolated.";
 
       renderChart($("chart-trans"), {
         lam: view.lam, data: view, series: TRANSMISSION_SERIES,
@@ -3178,8 +3254,8 @@ def spectra(spec_json):
       // read-outs but does not ask Python again.
       const request = JSON.stringify({
         system: spec.system, filter: spec.filter, pwv: spec.pwv, airmass: spec.airmass,
-        teff: table["Teff [K]"], star_flux: table["star_flux [e/m2/s]"],
-        distance: table["distance [pc]"],
+        altitude: spec.altitude, teff: table["Teff [K]"],
+        star_flux: table["star_flux [e/m2/s]"], distance: table["distance [pc]"],
       });
       try {
         const data = lastSpectra && lastSpectra.request === request
@@ -3242,7 +3318,8 @@ def spectra(spec_json):
       if (link.href.startsWith("blob:")) URL.revokeObjectURL(link.href);
       const lines = [
         `# mphot ${systemLabel(spec.system)}, ${spec.filter} filter`,
-        `# Paranal sky: ${spec.pwv} mm water vapour, airmass ${spec.airmass}`,
+        `# Paranal sky: ${spec.pwv} mm water vapour, airmass ${spec.airmass}.`
+        + siteNote(spec),
         `# Star: ${table["Teff [K]"]} K at ${table["distance [pc]"]} pc`,
         "# Sky in photons/s/m2/um/arcsec2, star in photons/s/m2/um; detected curves in electrons.",
         "wavelength_um,detector_optics,filter,atmosphere,system_response_x_atmosphere,"

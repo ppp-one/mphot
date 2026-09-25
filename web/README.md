@@ -52,6 +52,19 @@ radius, plate scale, dark current, read noise, well depth, well fill, read time
 and aperture radius. These are the same keys that `get_precision` takes. Three
 presets fill them in. If you change a value, the preset becomes Custom.
 
+**Set the site.** A preset also sets the site: altitude, water vapour and
+seeing. The two SPECULOOS presets are at Paranal (2440 m, 2.5 mm, 1.35″). The
+ETH 0.5 m preset is at 569 m, with 30 mm and 3″. You can change all three
+without leaving the preset. The altitude goes to `get_precision` as `h`.
+
+The sky model is for Paranal. For a lower site, `get_precision` multiplies the
+airmass by `exp((2440 - h) / 8000)`, so the extra air counts as extra airmass.
+The table stops at airmass 3, so the airmass slider stops at `3 / exp((2440 -
+h) / 8000)`: 2.37 at 569 m. Past that point, the model returns NaN. A site above
+2440 m would need an airmass below 1, so the altitude field stops at 2440 m.
+The charts use the same converted airmass. Scintillation uses the altitude
+directly.
+
 **Bound the exposure.** The bin length is in the strip at the top. The shortest
 and longest exposure are in the Exposure limits card; leave them empty to let
 the ETC pick any exposure time.
