@@ -337,3 +337,44 @@ def test_get_precision_components_are_json_serialisable():
     for Teff in (on_grid, on_grid + 5):
         _, _, components = mphot.get_precision(props, props_sky, Teff, 12.5)
         json.dumps({k: v for k, v in components.items() if k != "name"})
+
+
+def test_gaia_calibration_does_not_depend_on_site_altitude(monkeypatch):
+    # The inverse atmosphere cancels the Paranal sky at airmass 1. The
+    # calibration run used to take the site altitude too, which converted its
+    # airmass to 1.26 at 569 m and made the calibrated star 1-3% too bright.
+    star = {
+        "teff_gspphot": 3000.0,
+        "parallax": 80.0,
+        "phot_bp_mean_flux": 2e4,
+        "phot_g_mean_flux": 1e5,
+        "phot_rp_mean_flux": 1.5e5,
+    }
+    monkeypatch.setattr(mphot.gaia, "query_gaia_source", lambda *a, **k: star)
+
+    name, _ = mphot.generate_system_response(
+        "resources/systems/speculoos_Andor_iKon-L-936_-60.csv",
+        "resources/filters/I+z.csv",
+    )
+    props = {
+        "name": name,
+        "plate_scale": 0.35,
+        "N_dc": 0.2,
+        "N_rn": 6.328,
+        "well_depth": 64000,
+        "well_fill": 0.7,
+        "read_time": 10.5,
+        "r0": 0.5,
+        "r1": 0.14,
+    }
+    props_sky = {"pwv": 2.5, "airmass": 1.1, "seeing": 1.35}
+
+    factors = []
+    for h in (2440, 569):
+        _, _, raw = mphot.get_precision(props, props_sky, 3000.0, 12.5, h=h)
+        _, _, cal = mphot.get_precision_gaia(
+            props, props_sky, source_id=1, gaia_filter="g", h=h
+        )
+        factors.append(cal["N_star [e/s]"] / raw["N_star [e/s]"])
+
+    assert factors[1] == pytest.approx(factors[0], rel=1e-9)

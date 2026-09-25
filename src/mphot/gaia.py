@@ -522,6 +522,10 @@ def get_precision_gaia(
             "seeing": props["plate_scale"],
         }
 
+        # The inverse atmosphere cancels the Paranal sky at airmass 1, so this
+        # run stays at the default Paranal altitude. At the site altitude, the
+        # airmass would be converted, and the extra extinction would make the
+        # calibrated star too bright.
         _, _, components_gaia = get_precision(
             props_instrument_gaia,
             props_sky_gaia,
@@ -531,7 +535,6 @@ def get_precision_gaia(
             override_grid=override_grid,
             N_sky=N_sky,
             scn=scn,
-            h=h,
             C=C,
             exp_time=exp_time,
         )
