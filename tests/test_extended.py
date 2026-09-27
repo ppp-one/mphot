@@ -360,3 +360,71 @@ def test_high_read_noise_gives_one_exposure_and_a_note(systems):
     result = get_exposure_extended("M51", props, {"pwv": 2.5, "airmass": 1.1})
     assert result["subs"] > 1
     assert result["t_sub set by"] == "max_exp"
+
+
+# ----------------------------------------------------------------------------
+# Pixel binning and sky brightness
+
+
+def test_digital_binning_keeps_the_precision_of_a_star(systems):
+    # Digital binning only adds detector pixels after the readout. The
+    # aperture holds the same pixels, so the precision does not change.
+    props = {**CCD, "name": systems["ccd_r"]}
+    sky = {"pwv": 2.5, "airmass": 1.1, "seeing": 1.35}
+    image, _, parts = mphot.get_precision(props, sky, 5800, 50)
+    binned, _, binned_parts = mphot.get_precision(
+        {**props, "pixel_binning": 4}, sky, 5800, 50
+    )
+
+    assert binned["All"] == pytest.approx(image["All"], rel=1e-9)
+    assert binned_parts["t [s]"] == pytest.approx(parts["t [s]"])
+    assert binned_parts["N_sky [e/pix/s]"] == pytest.approx(
+        16 * parts["N_sky [e/pix/s]"]
+    )
+    assert binned_parts['plate_scale ["/pix]'] == pytest.approx(4 * CCD["plate_scale"])
+
+
+def test_on_chip_binning_reads_once(systems):
+    props = {**CCD, "name": systems["ccd_r"]}
+    sky = {"pwv": 2.5, "airmass": 1.1, "seeing": 1.35}
+    digital, _, _ = mphot.get_precision({**props, "pixel_binning": 4}, sky, 5800, 50)
+    on_chip, _, _ = mphot.get_precision(
+        {**props, "pixel_binning": 4, "pixel_binning_type": "on-chip"}, sky, 5800, 50
+    )
+    # 16 readouts become 1, so the read noise falls by a factor of 4.
+    assert on_chip["Read noise"] == pytest.approx(digital["Read noise"] / 4)
+
+    with pytest.raises(ValueError, match="pixel_binning_type"):
+        mphot.get_precision({**props, "pixel_binning_type": "average"}, sky, 5800, 50)
+
+
+def test_sky_factor_scales_the_sky(systems):
+    props = {**CCD, "name": systems["ccd_r"]}
+    sky = {"pwv": 2.5, "airmass": 1.1, "seeing": 1.35}
+    _, _, dark_site = mphot.get_precision(props, sky, 5800, 50)
+    _, _, bright_site = mphot.get_precision(props, {**sky, "sky_factor": 5}, 5800, 50)
+    assert bright_site["N_sky [e/pix/s]"] == pytest.approx(
+        5 * dark_site["N_sky [e/pix/s]"]
+    )
+
+    plan = get_exposure_extended("M51", props, sky)
+    brighter = get_exposure_extended("M51", props, {**sky, "sky_factor": 5})
+    assert brighter["N_sky [e/pix/s]"] == pytest.approx(5 * plan["N_sky [e/pix/s]"])
+
+
+def test_binning_of_an_extended_source(systems):
+    props = {**CCD, "name": systems["ccd_r"]}
+    sky = {"pwv": 2.5, "airmass": 1.1, "seeing": 1.35}
+    # SNR 100 needs a stack with and without binning. At SNR 10, one binned
+    # exposure is sufficient.
+    plan = get_exposure_extended("M51", props, sky, snr=100)
+    binned = get_exposure_extended("M51", {**props, "pixel_binning": 4}, sky, snr=100)
+
+    # Digital binning changes neither the sub-exposure nor when the detector
+    # pixels fill, but one image pixel collects 16 times the light.
+    assert binned["t_sub [s]"] == pytest.approx(plan["t_sub [s]"])
+    assert binned["t_saturation [s]"] == pytest.approx(plan["t_saturation [s]"])
+    assert binned["saturation magnitude [mag]"] == pytest.approx(
+        plan["saturation magnitude [mag]"]
+    )
+    assert binned["SNR per sub"] == pytest.approx(4 * plan["SNR per sub"])

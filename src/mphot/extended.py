@@ -36,7 +36,7 @@ from mphot.constants import (
     VEGA_FILE,
 )
 from mphot.paths import DATAFILES_DIR, FLUX_CALIBRATION_DIR, system_response_path
-from mphot.precision import _peak_pixel_rate, convert_airmass
+from mphot.precision import _peak_pixel_rate, convert_airmass, image_pixel
 from mphot.targets import Target, resolve_target
 
 H_C = 6.62607015e-34 * 2.99792458e8  # J m
@@ -528,18 +528,19 @@ def get_exposure_extended(
         target (str | Target): Messier, NGC or IC name, for example "M51", or
             a Target from `resolve_target`.
 
-        props (dict): Instrument properties, as for `get_precision`: "name",
-            "plate_scale", "N_dc", "N_rn", "well_depth", "well_fill",
-            "read_time", "r0", "r1", and optionally "min_exp" and "max_exp".
+        props (dict): Instrument properties per detector pixel, as for
+            `get_precision`: "name", "plate_scale", "N_dc", "N_rn",
+            "well_depth", "well_fill", "read_time", "r0", "r1", and optionally
+            "min_exp", "max_exp", "pixel_binning" and "pixel_binning_type".
 
-        props_sky (dict): "pwv" [mm], "airmass" and optionally "seeing"
-            [arcsec], as for `get_precision`. mphot uses the seeing only for
-            "saturation magnitude [mag]".
+        props_sky (dict): "pwv" [mm], "airmass", and optionally "seeing"
+            [arcsec] and "sky_factor", as for `get_precision`. mphot uses the
+            seeing only for "saturation magnitude [mag]".
 
         snr (float, optional): The SNR to get. Default is 10.
 
         area (str | float, optional): Where the SNR applies: "pixel" for one
-            pixel, or an area [arcsec2]. Default is "pixel".
+            image pixel, or an area [arcsec2]. Default is "pixel".
 
         mu_offset (float, optional): The surface brightness to measure, in
             mag/arcsec2 fainter than the catalogue mean. For example, 2 for the
@@ -560,9 +561,10 @@ def get_exposure_extended(
             default from the catalogue, or 0.
 
     Returns:
-        dict: The result. The units are in the keys. "warnings" gives the
-            assumptions that are important for this target. The times are
-            None if the SNR is not possible. "saturation magnitude [mag]" is
+        dict: The result. The units are in the keys. Values per pixel are for
+            one image pixel. "warnings" gives the assumptions that are
+            important for this target. The times are None if the SNR is not
+            possible. "saturation magnitude [mag]" is
             the Vega magnitude, in the filter band, of a star that fills its
             brightest pixel to well_fill in one sub-exposure. The star is on
             the centre of a pixel and has a Gaussian profile with the FWHM of
@@ -619,7 +621,8 @@ def get_exposure_extended(
             "nebula, make sure that a line is in the filter band."
         )
 
-    plate_scale = props["plate_scale"]
+    # The noise is per image pixel, the saturation per detector pixel.
+    k, plate_scale, dark, read_noise = image_pixel(props)
     collecting_area = np.pi * (props["r0"] ** 2 - props["r1"] ** 2)
     per_pixel = collecting_area * plate_scale**2
     vega = _integral(_vega() * response)  # e/s/m2
@@ -643,9 +646,9 @@ def get_exposure_extended(
     mean = rate * per_pixel  # e/s/pixel
     signal = mean * 10 ** (-0.4 * mu_offset)
     peak = mean * 10 ** (0.4 * peak_offset)
-    sky = _integral(sky_radiance * system) * per_pixel
-    dark = props["N_dc"]
-    read_noise = props["N_rn"]
+    sky = (
+        _integral(sky_radiance * system) * per_pixel * props_sky.get("sky_factor", 1.0)
+    )
     read_time = props["read_time"]
     full = props["well_depth"] * props["well_fill"]
 
@@ -660,7 +663,8 @@ def get_exposure_extended(
         BACKGROUND_LIMITED * read_noise**2 / background if background > 0 else math.inf
     )
     t_readout = read_time * (1 - READOUT_FRACTION) / READOUT_FRACTION
-    t_saturation = full / (peak + background)
+    # One detector pixel gets 1 / k^2 of the light and dark of an image pixel.
+    t_saturation = full * k**2 / (peak + background)
     t_sub, t_sub_by = t_background, "background"
     if t_readout > t_sub:
         t_sub, t_sub_by = t_readout, "readout"
@@ -734,8 +738,8 @@ def get_exposure_extended(
     # The brightest star that stays below the well fill in one sub-exposure.
     saturation_magnitude = None
     if seeing is not None:
-        central = _peak_pixel_rate(seeing, 1.0, 0.0, 0.0, plate_scale)
-        star_rate = (full / t_sub - sky - dark) / central  # e/s from the whole star
+        central = _peak_pixel_rate(seeing, 1.0, 0.0, 0.0, props["plate_scale"])
+        star_rate = (full / t_sub - background / k**2) / central  # e/s, whole star
         if star_rate > 0:
             saturation_magnitude = -2.5 * math.log10(
                 star_rate / (collecting_area * vega)
@@ -786,6 +790,8 @@ def get_exposure_extended(
         "seeing [arcsec]": seeing,
         "altitude [m]": h,
         'plate_scale ["/pix]': plate_scale,
+        "pixel_binning": k,
+        "sky_factor": props_sky.get("sky_factor", 1.0),
         "A [m2]": collecting_area,
         "read_time [s]": read_time,
         "flat_error": flat_error,

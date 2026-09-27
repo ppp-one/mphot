@@ -94,13 +94,13 @@ def simulate(
         seeing (float): Seeing at the site [arcsec].
         n_subs (int): Number of sub-exposures.
         bin_factor (int): The image has pixels of bin_factor x bin_factor
-            detector pixels.
+            pixels of the plan. The plan can itself be binned.
         fov (float): Width of the image [arcmin].
         seed (int): Seed of the random numbers.
 
     Returns:
-        tuple: The image [e/s per detector pixel, sky removed], and the mean
-            surface brightness of the target in the same unit.
+        tuple: The image [e/s per pixel of the plan, sky removed], and the
+            mean surface brightness of the target in the same unit.
     """
 
     rng = np.random.default_rng(seed)
@@ -110,7 +110,9 @@ def simulate(
         0.4 * (plan["mu_target [mag/arcsec2]"] - plan["mu_mean [mag/arcsec2]"])
     )
     k2 = bin_factor**2
-    scale = bin_factor * props["plate_scale"]  # arcsec per image pixel
+    scale = bin_factor * plan['plate_scale ["/pix]']  # arcsec per image pixel
+    # A binned plan has pixels of detector_k2 detector pixels, which saturate.
+    detector_k2 = plan["pixel_binning"] ** 2
 
     # Get all of the catalogue ellipse and some sky around it.
     size = max(fov, 1.2 * target.major_axis)
@@ -156,8 +158,9 @@ def simulate(
 
     added = np.sqrt(np.clip(stack_noise(image) ** 2 - survey_sigma**2, 0, None))
     result = image + rng.normal(size=image.shape) * added
-    saturated = (image + b + d) * t > props["well_depth"]
-    result[saturated] = props["well_depth"] / t - b - d
+    full = props["well_depth"] * detector_k2
+    saturated = (image + b + d) * t > full
+    result[saturated] = full / t - b - d
 
     half = round(fov * 60 / scale / 2)
     c = n_pix // 2

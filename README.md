@@ -14,8 +14,8 @@ Simply put,
     - target star parameters (effective temperature + distance)
 
 - using user submitted
-    - telescope/site parameters (primary and secondary diameters, site seeing)
-    - camera parameters (plate scale, dark current, read noise, well depth, target well fill, read time)
+    - telescope/site parameters (primary and secondary diameters, site seeing, sky brightness relative to Paranal with `sky_factor`)
+    - camera parameters per unbinned pixel (plate scale, dark current, read noise, well depth, target well fill, read time), and the binning with `pixel_binning` and `pixel_binning_type` (`"digital"` for CMOS, `"on-chip"` for CCD)
 
 - to calculate the ideal exposure time and expected precision for a given observation.
 

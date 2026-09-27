@@ -1309,12 +1309,22 @@
           </div>
           <div id="model-fields">
             <div class="field">
-              <label for="teff">Temperature <span class="val" id="teff-v"></span></label>
+              <label for="teff-num">Temperature <span class="unit">K</span></label>
+              <div class="stepper">
+                <button type="button" class="nudge" data-key="teff-num" data-dir="-1" tabindex="-1"
+                  aria-label="Cooler">&minus;</button>
+                <input type="number" id="teff-num" min="450" max="36500" step="any" value="2560"
+                  inputmode="decimal" data-proportional="1">
+                <button type="button" class="nudge" data-key="teff-num" data-dir="1" tabindex="-1"
+                  aria-label="Hotter">+</button>
+              </div>
               <!-- Logarithmic, for the same reason as the water vapour slider.
                The model's temperature axis is 50 K apart at the bottom and
                1500 K apart at the top, so a linear slider gives the dwarf stars
                most people come here for about 3% of its travel. -->
-              <input type="range" id="teff" min="2.65224" max="4.56324" step="0.001" value="3.40824">
+              <input type="range" id="teff" min="2.65224" max="4.56324" step="0.001" value="3.40824"
+                aria-label="Temperature, logarithmic" style="margin-top:6px">
+              <p class="hint">The slider covers 450 K to 36 500 K. You can also type a value.</p>
             </div>
             <div class="field">
               <label for="dist-num">Distance <span class="val" id="dist-v"></span></label>
@@ -1423,6 +1433,16 @@
               <div class="grid2" id="telescope-fields"></div>
               <p class="hint err" id="mirror-hint" hidden></p>
               <div class="grid2" id="camera-fields" style="margin-top:12px"></div>
+              <div class="field">
+                <label for="pixel_binning_type">Binning type</label>
+                <select id="pixel_binning_type">
+                  <option value="digital">Digital (CMOS): each pixel is read</option>
+                  <option value="on-chip">On-chip (CCD): one readout per binned pixel</option>
+                </select>
+              </div>
+              <p class="hint">Plate scale, dark current, read noise and well depth are for one
+                unbinned pixel. A camera that averages the binned pixels gives the same SNR
+                as one that adds them.</p>
             </div>
           </details>
         </div>
@@ -1500,6 +1520,20 @@
     const statusEl = $("status"), statusText = $("status-text");
     const resultsEl = $("results");
 
+    // When the page is reloaded, a browser can put back the values from the
+    // last visit. The page always starts from the defaults in its HTML
+    // instead, so that the first result and Reset use the same values.
+    for (const el of document.querySelectorAll("input, select")) {
+      if (el.type === "file") continue;
+      if (el.type === "checkbox" || el.type === "radio") {
+        el.checked = el.defaultChecked;
+      } else if (el.tagName === "SELECT") {
+        el.selectedIndex = Math.max(0, [...el.options].findIndex(o => o.defaultSelected));
+      } else {
+        el.value = el.defaultValue;
+      }
+    }
+
     // These are declared here because the first preset is applied before boot(),
     // and it reaches code that reads them.
     let pyodide;
@@ -1563,6 +1597,9 @@
         key: "well_fill", label: "Well fill", unit: "", min: 0.01, max: 1, step: 0.01
       },
       {
+        key: "pixel_binning", label: "Binning", unit: "k × k", min: 1, max: 16, step: 1
+      },
+      {
         key: "read_time", label: "Read time", unit: "s", min: 0, max: 120, step: 0.1
       },
       {
@@ -1582,16 +1619,20 @@
       {
         key: "altitude", label: "Altitude", unit: "m", min: 0, max: PARANAL_ALTITUDE, step: 10
       },
+      {
+        key: "sky_factor", label: "Sky brightness", unit: "× Paranal", min: 0.1, max: 100, step: 0.1
+      },
     ];
 
-    const PARANAL = { altitude: PARANAL_ALTITUDE, pwv: 2.5, seeing: 1.35 };
+    const PARANAL = { altitude: PARANAL_ALTITUDE, sky_factor: 1, pwv: 2.5, seeing: 1.35 };
     const PRESETS = [
       {
         id: "spec-iz", label: "SPECULOOS 1 m · I+z",
         system: SYSTEMS[0].id, filter: "I+z", site: PARANAL,
         props: {
           r0: 0.5, r1: 0.14, plate_scale: 0.35, N_dc: 0.2, N_rn: 6.328,
-          well_depth: 64000, well_fill: 0.7, read_time: 10.5, ap_rad: 3
+          well_depth: 64000, well_fill: 0.7, read_time: 10.5, ap_rad: 3,
+          pixel_binning: 1, pixel_binning_type: "on-chip"
         }
       },
       {
@@ -1599,18 +1640,22 @@
         system: SYSTEMS[1].id, filter: "zYJ", site: PARANAL,
         props: {
           r0: 0.5, r1: 0.14, plate_scale: 0.31, N_dc: 110, N_rn: 90,
-          well_depth: 56000, well_fill: 0.7, read_time: 0.1, ap_rad: 3
+          well_depth: 56000, well_fill: 0.7, read_time: 0.1, ap_rad: 3,
+          pixel_binning: 1, pixel_binning_type: "digital"
         }
       },
       {
         // A PlaneWave CDK20: 508 mm aperture, central obstruction 39% of the
-        // primary diameter.
+        // primary diameter. The IMX461 values are per unbinned pixel; the
+        // camera is used with 4 x 4 digital binning. The sky at ETH is about
+        // 5 times the Paranal sky.
         id: "eth-cdk20", label: "ETH 0.5 m · CDK20 · IMX461 CMOS · luminance",
         system: SYSTEMS[2].id, filter: "luminance",
-        site: { altitude: 569, pwv: 30, seeing: 3 },
+        site: { altitude: 569, sky_factor: 5, pwv: 30, seeing: 3 },
         props: {
-          r0: 0.254, r1: 0.099, plate_scale: 0.9, N_dc: 0.1, N_rn: 8.47,
-          well_depth: 1048560, well_fill: 0.7, read_time: 5, ap_rad: 3
+          r0: 0.254, r1: 0.099, plate_scale: 0.225, N_dc: 0.003, N_rn: 2.11,
+          well_depth: 50000, well_fill: 0.7, read_time: 5, ap_rad: 3,
+          pixel_binning: 4, pixel_binning_type: "digital"
         }
       },
     ];
@@ -1681,7 +1726,7 @@
       });
     }
     for (const p of [...INSTRUMENT, ...SITE]) wireStepper($(p.key));
-    for (const id of ["min_exp", "max_exp", "dist-num", "snr"]) wireStepper($(id));
+    for (const id of ["min_exp", "max_exp", "teff-num", "dist-num", "snr"]) wireStepper($(id));
     for (const button of document.querySelectorAll("button.nudge")) {
       button.addEventListener("click", () => nudge($(button.dataset.key), +button.dataset.dir));
     }
@@ -1697,18 +1742,23 @@
       $("system").value = p.system;
       $("filter").value = p.filter;
       for (const param of INSTRUMENT) $(param.key).value = p.props[param.key];
+      $("pixel_binning_type").value = p.props.pixel_binning_type;
       $("altitude").value = p.site.altitude;
+      $("sky_factor").value = p.site.sky_factor;
       $("pwv").value = Math.log10(p.site.pwv);
       $("seeing").value = p.site.seeing;
       // The read-outs beside the sliders follow, and the airmass slider takes
       // the range of the new altitude. None of these make the preset Custom.
-      for (const id of ["altitude", "pwv", "seeing"]) $(id).dispatchEvent(new Event("input"));
+      for (const id of ["altitude", "sky_factor", "pwv", "seeing"]) {
+        $(id).dispatchEvent(new Event("input"));
+      }
       checkMirrors();
       scheduleUpdate(0);
     }
 
     // Any manual edit means the configuration is no longer one of the presets.
-    for (const el of [$("system"), $("filter"), ...INSTRUMENT.map(p => $(p.key))]) {
+    for (const el of [$("system"), $("filter"), $("pixel_binning_type"),
+      ...INSTRUMENT.map(p => $(p.key))]) {
       el.addEventListener("input", () => {
         if (restoring) return;
         $("preset").value = "custom";
@@ -1725,7 +1775,8 @@
     // tell when something has changed, and can put it all back.
     const CONTROL_IDS = [
       "preset", "system", "filter", ...INSTRUMENT.map(p => p.key),
-      "altitude", "pwv", "airmass", "seeing", "teff", "dist-num", "dist",
+      "pixel_binning_type", "altitude", "sky_factor", "pwv", "airmass", "seeing", "teff-num", "teff",
+      "dist-num", "dist",
       "gaia-teff-on", "gaia-teff", "source-id", "binning", "min_exp", "max_exp",
       "target-name", "mu-offset", "snr",
     ];
@@ -1787,7 +1838,7 @@
     $("reset").addEventListener("click", resetAll);
 
     // Sky, star and exposure controls all recompute as they move.
-    for (const id of ["altitude", "pwv", "airmass", "seeing", "teff", "gaia-teff",
+    for (const id of ["altitude", "sky_factor", "pwv", "airmass", "seeing", "teff-num", "teff", "gaia-teff",
       "binning", "dist", "dist-num", "min_exp", "max_exp", "mu-offset", "snr"]) {
       $(id).addEventListener("input", () => scheduleUpdate());
     }
@@ -1844,7 +1895,6 @@
       pwv: v => `${readPwv(v)} mm`,
       airmass: v => (+v).toFixed(2),
       seeing: v => `${(+v).toFixed(2)}″`,
-      teff: v => `${readTeff(v)} K`,
       "gaia-teff": v => `${readTeff(v)} K`,
       binning: v => `${Math.round(v)} min`,
       "mu-offset": v => +v === 0 ? "the mean"
@@ -1879,6 +1929,24 @@
     distSlider.addEventListener("input", distanceFromSlider);
     distanceFromNumber();
 
+    // The temperature has the same pair: a logarithmic slider, and a number
+    // field for an exact value. The model covers 450 K to 36 500 K.
+    const teffNum = $("teff-num"), teffSlider = $("teff");
+    const readTeffNumber = () => +teffNum.value > 0
+      ? clamp(+teffNum.value, 450, 36500) : readTeff(teffSlider.value);
+
+    function temperatureFromNumber() {
+      teffSlider.value = Math.log10(readTeffNumber());
+    }
+    function temperatureFromSlider() {
+      teffNum.value = readTeff(teffSlider.value);
+    }
+    teffNum.addEventListener("input", temperatureFromNumber);
+    // Once the value is complete, show the temperature the model uses.
+    teffNum.addEventListener("change", () => { teffNum.value = readTeffNumber(); });
+    teffSlider.addEventListener("input", temperatureFromSlider);
+    temperatureFromNumber();
+
     // An empty altitude means Paranal. A value outside the range is clamped,
     // and the hint says which altitude the model used.
     function readAltitude() {
@@ -1909,9 +1977,9 @@
         : h < PARANAL_ALTITUDE
           ? `The sky model is for Paranal. At ${h} m there is more air above the `
           + "telescope, and the ETC counts it as extra airmass. So the airmass slider "
-          + `stops at ${top.toFixed(2)}. The sky glow is still Paranal's, with no light `
-          + "pollution."
-          : "The sky model is for Paranal.";
+          + `stops at ${top.toFixed(2)}. The sky glow is Paranal's. For light pollution, `
+          + "increase the sky brightness."
+          : "The sky model is for Paranal. For light pollution, increase the sky brightness.";
     }
     $("altitude").addEventListener("input", updateSite);
     updateSite();
@@ -1949,6 +2017,8 @@
       const props = {};
       for (const p of INSTRUMENT) props[p.key] = +$(p.key).value;
       props.well_fill = Math.min(Math.max(props.well_fill, 0.01), 1);
+      props.pixel_binning = Math.max(1, Math.round(props.pixel_binning) || 1);
+      props.pixel_binning_type = $("pixel_binning_type").value;
       const minExp = $("min_exp").value.trim(), maxExp = $("max_exp").value.trim();
       if (minExp !== "") props.min_exp = +minExp;
       if (maxExp !== "") props.max_exp = +maxExp;
@@ -1957,8 +2027,9 @@
         altitude: readAltitude(),
         pwv: readPwv($("pwv").value),
         airmass: +$("airmass").value, seeing: +$("seeing").value,
+        sky_factor: +$("sky_factor").value > 0 ? +$("sky_factor").value : 1,
         binning: +$("binning").value,
-        teff: readTeff($("teff").value),
+        teff: readTeffNumber(),
         // null lets mphot read the temperature Gaia holds for the star.
         teff_override: mode === "gaia" && $("gaia-teff-on").checked
           ? readTeff($("gaia-teff").value) : null,
@@ -2349,7 +2420,10 @@ def _system_name(system, filt):
 
 def _run(spec, props=None):
     props = dict(props or spec["props"], name=_system_name(spec["system"], spec["filter"]))
-    props_sky = {"pwv": spec["pwv"], "airmass": spec["airmass"], "seeing": spec["seeing"]}
+    props_sky = {
+        "pwv": spec["pwv"], "airmass": spec["airmass"], "seeing": spec["seeing"],
+        "sky_factor": spec["sky_factor"],
+    }
     if spec["mode"] == "gaia":
         # Teff=None is what makes get_precision_gaia read the temperature Gaia
         # holds for the star. Passing a number always wins over the archive, so
@@ -2463,7 +2537,10 @@ def compute_extended(spec_json):
     """The exposure plan for a galaxy or nebula."""
     spec = json.loads(spec_json)
     props = dict(spec["props"], name=_system_name(spec["system"], spec["filter"]))
-    props_sky = {"pwv": spec["pwv"], "airmass": spec["airmass"], "seeing": spec["seeing"]}
+    props_sky = {
+        "pwv": spec["pwv"], "airmass": spec["airmass"], "seeing": spec["seeing"],
+        "sky_factor": spec["sky_factor"],
+    }
     try:
         result = mphot.get_exposure_extended(
             spec["target"], props, props_sky,
@@ -2607,7 +2684,7 @@ def spectra(spec_json):
     # site counts as extra airmass at Paranal.
     airmass = convert_airmass(spec["airmass"], spec["altitude"])
     trans = _atmosphere(data["trans"], spec["pwv"], airmass)
-    sky = _atmosphere(data["sky"], spec["pwv"], airmass)
+    sky = _atmosphere(data["sky"], spec["pwv"], airmass) * spec["sky_factor"]
     sr_atm = sr * trans
 
     # Linear in temperature between the two nearest grid stars, with the same
@@ -2957,6 +3034,7 @@ def spectra(spec_json):
       "seeing [arcsec]", "pwv [mm]", "airmass", 'plate_scale ["/pix]',
       "N_dc [e/pix/s]", "N_rn [e_rms/pix]", "r0 [m]", "r1 [m]",
       "well_depth [e/pix]", "binning [mins]", "read_time [s]", "altitude [m]",
+      "pixel_binning",
     ]);
 
     /** The model values the reader did not type in, in the model's order. */
@@ -3106,7 +3184,9 @@ def spectra(spec_json):
     // and the values that set them.
     function renderExtended(data) {
       lastResult = data;
-      const perWhat = data["pixels in area"] === 1 ? "pixel" : "arcsec²";
+      const k = data["pixel_binning"];
+      const perWhat = data["pixels in area"] !== 1 ? "arcsec²"
+        : k > 1 ? `${k}×${k} binned pixel` : "pixel";
       const [subValue, subUnit] = duration(data["t_sub [s]"]);
       const [totalValue, totalUnit] = duration(data["exposure [s]"]);
       const [wallValue, wallUnit] = duration(data["wall time [s]"]);
@@ -3514,7 +3594,7 @@ def spectra(spec_json):
       // read-outs but does not ask Python again.
       const request = JSON.stringify({
         system: spec.system, filter: spec.filter, pwv: spec.pwv, airmass: spec.airmass,
-        altitude: spec.altitude, teff: table["Teff [K]"],
+        altitude: spec.altitude, sky_factor: spec.sky_factor, teff: table["Teff [K]"],
         star_flux: table["star_flux [e/m2/s]"], distance: table["distance [pc]"],
       });
       try {
