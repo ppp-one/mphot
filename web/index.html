@@ -896,6 +896,21 @@
       margin-bottom: 14px;
     }
 
+    /* A galaxy or nebula has no star to draw, so its chart and tab go. Both
+     have a display of their own, which the hidden attribute alone would not
+     override. */
+    #plots.extended .plot[data-plot="star"],
+    #plots.extended .plot-tabs label:has(input[value="star"]),
+    .bin-row[hidden] {
+      display: none;
+    }
+
+    @media (min-width: 1024px) {
+      #plots.extended .plots {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
     @media (max-width: 1023px) {
       .plots {
         grid-template-columns: minmax(0, 1fr);
@@ -1284,11 +1299,12 @@
         </div>
 
         <div class="card">
-          <h2>Star</h2>
+          <h2>Target</h2>
           <div class="field">
             <div class="seg">
               <label><input type="radio" name="mode" value="model" checked> Model star</label>
               <label><input type="radio" name="mode" value="gaia"> Gaia star</label>
+              <label><input type="radio" name="mode" value="extended"> Galaxy or nebula</label>
             </div>
           </div>
           <div id="model-fields">
@@ -1330,6 +1346,39 @@
                 <label for="gaia-teff">Temperature <span class="val" id="gaia-teff-v"></span></label>
                 <input type="range" id="gaia-teff" min="2.65224" max="4.56324" step="0.001" value="3.76224">
                 <p class="hint">Gaia's own temperature is ignored while this is ticked.</p>
+              </div>
+            </div>
+          </div>
+          <div id="extended-fields" hidden>
+            <div class="field">
+              <label for="target-name">Messier, NGC or IC name</label>
+              <input type="text" id="target-name" value="M104" list="target-names" autocomplete="off"
+                spellcheck="false">
+              <datalist id="target-names"></datalist>
+              <p class="hint">For example M51, NGC 7000 or Ring Nebula. Push Enter.</p>
+            </div>
+            <p class="hint" id="target-report" hidden></p>
+            <div class="field">
+              <label for="mu-offset">Surface brightness <span class="val" id="mu-offset-v"></span></label>
+              <input type="range" id="mu-offset" min="-3" max="6" step="0.1" value="0">
+              <p class="hint">The level to measure, relative to the mean of the target.
+                Move to the right for fainter parts.</p>
+            </div>
+            <div class="field">
+              <label for="snr">Target SNR</label>
+              <div class="stepper">
+                <button type="button" class="nudge" data-key="snr" data-dir="-1" tabindex="-1"
+                  aria-label="Less SNR">&minus;</button>
+                <input type="number" id="snr" min="1" max="10000" step="any" value="10"
+                  inputmode="decimal" data-proportional="1">
+                <button type="button" class="nudge" data-key="snr" data-dir="1" tabindex="-1"
+                  aria-label="More SNR">+</button>
+              </div>
+            </div>
+            <div class="field">
+              <div class="seg" role="group" aria-label="What the SNR is measured over">
+                <label><input type="radio" name="snr-area" value="pixel" checked> SNR per pixel</label>
+                <label><input type="radio" name="snr-area" value="arcsec2"> SNR per arcsec²</label>
               </div>
             </div>
           </div>
@@ -1399,6 +1448,10 @@
         scintillation in the atmosphere, the sky background, dark current and
         read noise. The noise sources add in quadrature. The chart shows which
         one limits your observation, so you know what to improve.
+      </p>
+      <p>
+        For a galaxy or nebula, type its Messier, NGC or IC name. The ETC gives
+        the sub-exposure time and the number of sub-exposures for your SNR.
       </p>
 
       <h2>How the model works</h2>
@@ -1628,7 +1681,7 @@
       });
     }
     for (const p of [...INSTRUMENT, ...SITE]) wireStepper($(p.key));
-    for (const id of ["min_exp", "max_exp", "dist-num"]) wireStepper($(id));
+    for (const id of ["min_exp", "max_exp", "dist-num", "snr"]) wireStepper($(id));
     for (const button of document.querySelectorAll("button.nudge")) {
       button.addEventListener("click", () => nudge($(button.dataset.key), +button.dataset.dir));
     }
@@ -1674,7 +1727,12 @@
       "preset", "system", "filter", ...INSTRUMENT.map(p => p.key),
       "altitude", "pwv", "airmass", "seeing", "teff", "dist-num", "dist",
       "gaia-teff-on", "gaia-teff", "source-id", "binning", "min_exp", "max_exp",
+      "target-name", "mu-offset", "snr",
     ];
+
+    // The radio groups, which have no single element to read.
+    const RADIO_GROUPS = ["mode", "snr-area"];
+    const radioValue = name => document.querySelector(`input[name="${name}"]:checked`).value;
 
     // A checkbox always reports value "on", so its state has to be read another way.
     const controlValue = el => el.type === "checkbox" ? String(el.checked) : el.value;
@@ -1684,7 +1742,7 @@
 
     function readControls() {
       const values = Object.fromEntries(CONTROL_IDS.map(id => [id, controlValue($(id))]));
-      values.mode = document.querySelector('input[name="mode"]:checked').value;
+      for (const name of RADIO_GROUPS) values[name] = radioValue(name);
       return values;
     }
 
@@ -1712,9 +1770,11 @@
         // Let the read-outs beside the sliders follow the new value.
         el.dispatchEvent(new Event("input"));
       }
-      for (const radio of document.querySelectorAll('input[name="mode"]')) {
-        radio.checked = radio.value === startState.mode;
-        if (radio.checked) radio.dispatchEvent(new Event("change"));
+      for (const name of RADIO_GROUPS) {
+        for (const radio of document.querySelectorAll(`input[name="${name}"]`)) {
+          radio.checked = radio.value === startState[name];
+          if (radio.checked) radio.dispatchEvent(new Event("change"));
+        }
       }
       restoring = false;
 
@@ -1728,14 +1788,19 @@
 
     // Sky, star and exposure controls all recompute as they move.
     for (const id of ["altitude", "pwv", "airmass", "seeing", "teff", "gaia-teff",
-      "binning", "dist", "dist-num", "min_exp", "max_exp"]) {
+      "binning", "dist", "dist-num", "min_exp", "max_exp", "mu-offset", "snr"]) {
       $(id).addEventListener("input", () => scheduleUpdate());
     }
-    for (const radio of document.querySelectorAll('input[name="mode"]')) {
-      radio.addEventListener("change", () => scheduleUpdate(0));
+    for (const name of RADIO_GROUPS) {
+      for (const radio of document.querySelectorAll(`input[name="${name}"]`)) {
+        radio.addEventListener("change", () => scheduleUpdate(0));
+      }
     }
-    // A source_id is only useful once it is complete, so wait for Enter or blur.
+    // A source_id or a target name is only useful once it is complete, so wait
+    // for Enter or blur.
     $("source-id").addEventListener("change", () => scheduleUpdate(0));
+    $("target-name").addEventListener("change", () => scheduleUpdate(0));
+
 
     // Unticked, the model reads the temperature Gaia holds for the star, and
     // the slider would only mislead, so it is not shown.
@@ -1782,6 +1847,8 @@
       teff: v => `${readTeff(v)} K`,
       "gaia-teff": v => `${readTeff(v)} K`,
       binning: v => `${Math.round(v)} min`,
+      "mu-offset": v => +v === 0 ? "the mean"
+        : `mean ${+v > 0 ? "+" : "−"} ${Math.abs(+v).toFixed(1)} mag/arcsec²`,
     };
     for (const [id, f] of Object.entries(sliderFmt)) {
       const input = $(id), out = $(`${id}-v`);
@@ -1852,12 +1919,29 @@
     // Taken here, after the first preset and every read-out are set.
     startState = readControls();
 
+    // A galaxy or nebula has no bin length and no star to chart.
+    function applyMode() {
+      const mode = radioValue("mode");
+      const extended = mode === "extended";
+      $("model-fields").hidden = mode !== "model";
+      $("gaia-fields").hidden = mode !== "gaia";
+      $("extended-fields").hidden = !extended;
+      $("summary").querySelector(".bin-row").hidden = extended;
+      // The photometric aperture belongs to a star.
+      $("ap_rad").closest(".field").hidden = extended;
+
+      $("plots").classList.toggle("extended", extended);
+      $("plots").querySelector("h2").textContent =
+        extended ? "Transmission and sky" : "Transmission, sky and star";
+      const starTab = document.querySelector('input[name="plot-tab"][value="star"]');
+      if (extended && starTab.checked) {
+        const transTab = document.querySelector('input[name="plot-tab"][value="trans"]');
+        transTab.checked = true;
+        transTab.dispatchEvent(new Event("change"));
+      }
+    }
     for (const radio of document.querySelectorAll('input[name="mode"]')) {
-      radio.addEventListener("change", () => {
-        const gaia = radio.value === "gaia" && radio.checked;
-        $("model-fields").hidden = gaia;
-        $("gaia-fields").hidden = !gaia;
-      });
+      radio.addEventListener("change", applyMode);
     }
 
     function readSpec() {
@@ -1880,6 +1964,11 @@
           ? readTeff($("gaia-teff").value) : null,
         distance: +distNum.value,
         source_id: $("source-id").value.trim(),
+        // A galaxy or nebula.
+        target: $("target-name").value.trim(),
+        mu_offset: +$("mu-offset").value,
+        snr: +$("snr").value,
+        snr_area: radioValue("snr-area"),
       };
     }
 
@@ -2349,6 +2438,55 @@ def compute(spec_json):
         "table": {k: v for k, v in components.items() if k != "name"},
     })
 
+def target_names():
+    """Suggestions for the target box: Messier objects, then common names."""
+    from mphot.targets import target_suggestions
+    return _dumps(target_suggestions())
+
+# mphot's messages name its Python functions and arguments. The page has no
+# control for these.
+_WEB_WORDS = (
+    ("use get_precision for them", "use Model star or Gaia star for them"),
+    ("Use get_precision.", "Use Model star or Gaia star."),
+    (" Use peak_offset to change this.", ""),
+    (" Use av to correct them.", ""),
+    ("Use max_exp to limit the exposure time.", "Set a longest exposure to limit it."),
+    ("the well to well_fill", "the well to the well fill that you set"),
+)
+
+def _web_text(message):
+    for python, page in _WEB_WORDS:
+        message = message.replace(python, page)
+    return message
+
+def compute_extended(spec_json):
+    """The exposure plan for a galaxy or nebula."""
+    spec = json.loads(spec_json)
+    props = dict(spec["props"], name=_system_name(spec["system"], spec["filter"]))
+    props_sky = {"pwv": spec["pwv"], "airmass": spec["airmass"], "seeing": spec["seeing"]}
+    try:
+        result = mphot.get_exposure_extended(
+            spec["target"], props, props_sky,
+            snr=spec["snr"],
+            area="pixel" if spec["snr_area"] == "pixel" else 1.0,
+            mu_offset=spec["mu_offset"],
+            h=spec["altitude"],
+        )
+    except ValueError as e:
+        raise ValueError(_web_text(str(e))) from None
+    result["warnings"] = [_web_text(w) for w in result["warnings"]]
+    # The charts draw a star. There is none here, so they get an empty one, and
+    # the sky values in the units the star mode reports.
+    per_pixel = result["A [m2]"] * result['plate_scale ["/pix]'] ** 2
+    result["table"] = {
+        "Teff [K]": 5800.0,
+        "distance [pc]": 10.0,
+        "star_flux [e/m2/s]": 0.0,
+        "N_sky [e/pix/s]": result["N_sky [e/pix/s]"],
+        "sky_radiance [e/m2/arcsec2/s]": result["N_sky [e/pix/s]"] / per_pixel,
+    }
+    return _dumps(result)
+
 _FRAMES = {}
 
 def _curve_frame(system, filt):
@@ -2759,6 +2897,7 @@ def spectra(spec_json):
       await ensureSelectedCurves();
 
       await pyodide.runPythonAsync(PY);
+      fillTargetNames();
       ready = true;
       checkMirrors();
       // update() reports Ready itself. Saying it any earlier would hide the
@@ -2771,6 +2910,16 @@ def spectra(spec_json):
     function callPython(fn, ...args) {
       const f = pyodide.globals.get(fn);
       try { return JSON.parse(f(...args)); } finally { f.destroy(); }
+    }
+
+    // The name box suggests every Messier object and every named NGC or IC
+    // object that the ETC can model. Any other NGC or IC number still works
+    // when typed.
+    function fillTargetNames() {
+      $("target-names").innerHTML = callPython("target_names")
+        .map(([name, about]) =>
+          `<option value="${escapeHtml(name)}">${escapeHtml(about)}</option>`)
+        .join("");
     }
 
     // ----------------------------------------------------------------- rendering
@@ -2924,6 +3073,115 @@ def spectra(spec_json):
           render(lastResult);
         });
       }
+    }
+
+    // Why the sub-exposure has this length, as a sentence a first-time user
+    // can read.
+    function subReason(data) {
+      const t = `${sig(data["t_sub [s]"])} s`;
+      const fill = `${sig(100 * +$("well_fill").value, 2)}%`;
+      switch (data["t_sub set by"]) {
+        case "background": {
+          const source = data["N_dc [e/pix/s]"] > data["N_sky [e/pix/s]"] ? "dark current" : "sky";
+          return `At this length, the read noise adds only 5% to the noise of the ${source}. `
+            + "A longer sub-exposure gives almost no more SNR.";
+        }
+        case "readout":
+          return `The camera needs ${sig(data["read_time [s]"])} s to read each image. `
+            + `With ${t} sub-exposures, the readout uses only 10% of the total time.`;
+        case "saturation":
+          return `A longer sub-exposure fills the brightest part of the target to more `
+            + `than ${fill} of the well.`;
+        case "max_exp":
+          return "This is your longest exposure.";
+        case "min_exp":
+          return "This is your shortest exposure.";
+        case "SNR":
+          return "One exposure gives the SNR.";
+      }
+      return "";
+    }
+
+    // A galaxy or nebula: the sub-exposure time, the number of sub-exposures,
+    // and the values that set them.
+    function renderExtended(data) {
+      lastResult = data;
+      const perWhat = data["pixels in area"] === 1 ? "pixel" : "arcsec²";
+      const [subValue, subUnit] = duration(data["t_sub [s]"]);
+      const [totalValue, totalUnit] = duration(data["exposure [s]"]);
+      const [wallValue, wallUnit] = duration(data["wall time [s]"]);
+      const level = (mu, rate) => `${mu.toFixed(2)} mag/arcsec², ${sig(rate)} e⁻/s/pixel`;
+
+      $("target-report").hidden = false;
+      $("target-report").textContent = `${data.target}: ${data.kind}, `
+        + `${sig(data["major_axis [arcmin]"])}′ × ${sig(data["minor_axis [arcmin]"])}′.`;
+
+      $("summary").hidden = false;
+      $("summary-body").innerHTML = `
+    <div class="stats">
+      <div class="stat lead">
+        <div class="k">Sub-exposure</div>
+        <div class="v">${subValue}</div>
+        <div class="u">${subUnit} each</div>
+      </div>
+      <div class="stat lead">
+        <div class="k">Total exposure</div>
+        <div class="v">${totalValue}</div>
+        <div class="u">${totalUnit} for SNR ${sig(data["SNR target"])} per ${perWhat}</div>
+      </div>
+      <div class="stat">
+        <div class="k">Sub-exposures</div>
+        <div class="v">${data.subs}</div>
+        <div class="u">${wallValue} ${wallUnit} with readout</div>
+      </div>
+    </div>
+    <p class="meta">
+      ${subReason(data)}<br>
+      ${escapeHtml(data.target)} at airmass ${data.airmass.toFixed(2)}.
+      ${data["saturation magnitude [mag]"] === null ? ""
+        : `In one sub-exposure, stars brighter than ${data["saturation magnitude [mag]"].toFixed(1)} mag `
+          + `fill more than ${sig(100 * +$("well_fill").value, 2)}% of the well.`}
+    </p>`;
+
+      document.documentElement.style.scrollPaddingTop =
+        `${$("summary").offsetHeight + 8}px`;
+
+      const row = (name, value) =>
+        `<tr><th scope="row">${name}</th><td>${value}</td></tr>`;
+      const lines = Object.entries(data["line counts [e/pix/s]"]);
+      const lineTotal = lines.reduce((sum, [, v]) => sum + v, 0);
+
+      resultsEl.innerHTML = `
+    <h2>Plan</h2>
+    <p class="hint" style="margin:0 0 10px">
+      ${escapeHtml(data.spectrum)}, scaled to ${escapeHtml(data["scaled to"])}.
+      Magnitudes are Vega magnitudes in this filter band.
+    </p>
+    <table><tbody>
+      ${row("Sub-exposure", `${sig(data["t_sub [s]"])} s`)}
+      ${row(`Brightest part of the target fills ${sig(100 * +$("well_fill").value, 2)}% of the well after`,
+          `${sig(data["t_saturation [s]"])} s`)}
+      ${data["saturation magnitude [mag]"] === null ? ""
+        : row(`Stars that fill more than ${sig(100 * +$("well_fill").value, 2)}% of the well in one sub-exposure`,
+          `brighter than ${data["saturation magnitude [mag]"].toFixed(1)} mag`)}
+      ${row(`SNR per ${perWhat} in one sub-exposure`, sig(data["SNR per sub"]))}
+      ${row(`Surface brightness for the SNR (${sliderFmt["mu-offset"]($("mu-offset").value)})`,
+        level(data["mu_target [mag/arcsec2]"], data["N_target [e/pix/s]"]))}
+      ${row("Brightest part", level(data["mu_peak [mag/arcsec2]"], data["N_peak [e/pix/s]"]))}
+      ${row("Sky", level(data["mu_sky [mag/arcsec2]"], data["N_sky [e/pix/s]"]))}
+    </tbody></table>
+    ${lines.length ? `
+    <h3 style="margin-top:20px">Emission lines in the filter band</h3>
+    <table>
+      <thead><tr><th>Line</th><th>e⁻/s/pixel</th><th>Part</th></tr></thead>
+      <tbody>${lines.map(([name, v]) => `<tr><th scope="row">${escapeHtml(name)}</th>
+        <td>${sig(v)}</td><td>${sig(100 * v / lineTotal, 2)}%</td></tr>`).join("")}</tbody>
+    </table>` : ""}
+    ${data.warnings.length ? `
+    <h3 style="margin-top:20px">Notes</h3>
+    <ul class="hint" style="margin:0;padding-left:18px">
+      ${data.warnings.map(w => `<li style="margin-bottom:4px">${escapeHtml(w)}</li>`).join("")}
+    </ul>` : ""}`;
     }
 
     // The archive answered, and these are the numbers it gave. Saying so matters
@@ -3236,6 +3494,8 @@ def spectra(spec_json):
           + `of sky, which is ${sig(table["N_sky [e/pix/s]"])} e⁻/s in each pixel.`,
       });
 
+      // A galaxy or nebula has no star curve, and its chart is hidden.
+      if (spec.mode === "extended") return;
       renderChart($("chart-star"), {
         lam: view.lam, data: view, series: STAR_SERIES, scale: "log", floorKeys: ["star"],
         subtitle: `A ${sig(table["Teff [K]"], 4)} K star at ${sig(table["distance [pc]"])} pc`
@@ -3320,7 +3580,9 @@ def spectra(spec_json):
         `# mphot ${systemLabel(spec.system)}, ${spec.filter} filter`,
         `# Paranal sky: ${spec.pwv} mm water vapour, airmass ${spec.airmass}.`
         + siteNote(spec),
-        `# Star: ${table["Teff [K]"]} K at ${table["distance [pc]"]} pc`,
+        spec.mode === "extended"
+          ? "# Target: a galaxy or nebula, so the star columns are empty."
+          : `# Star: ${table["Teff [K]"]} K at ${table["distance [pc]"]} pc`,
         "# Sky in photons/s/m2/um/arcsec2, star in photons/s/m2/um; detected curves in electrons.",
         "wavelength_um,detector_optics,filter,atmosphere,system_response_x_atmosphere,"
         + "sky,sky_detected,star,star_detected",
@@ -3337,8 +3599,10 @@ def spectra(spec_json):
       const last = String(err).split("\n").filter(Boolean).pop() || "Computation failed";
       setStatus(last.replace(/^[\w.]*Error:\s*|^[\w.]+:\s*/, ""), "error");
       // Nothing was read from the archive, so last time's report is not about
-      // this star and must not stay on screen looking like it is.
+      // this star and must not stay on screen looking like it is. The same goes
+      // for the last galaxy or nebula.
       showGaiaReport(null);
+      $("target-report").hidden = true;
     }
 
     function scheduleUpdate(delay = 80) {
@@ -3357,6 +3621,14 @@ def spectra(spec_json):
         setStatus("A Gaia source_id is a whole number, such as 2635476908753563008.", "error");
         return;
       }
+      if (spec.mode === "extended" && !spec.target) {
+        setStatus("Enter the name of a galaxy or nebula, such as M51.", "error");
+        return;
+      }
+      if (spec.mode === "extended" && !(spec.snr > 0)) {
+        setStatus("Enter a target SNR above 0.", "error");
+        return;
+      }
 
       updateResetButton();
       updating = true;
@@ -3373,9 +3645,15 @@ def spectra(spec_json):
           // dimming above would ever be drawn.
           await new Promise(requestAnimationFrame);
         }
-        const result = callPython("compute", JSON.stringify(spec));
-        render(result);
-        updateSpectra(spec, result);
+        if (spec.mode === "extended") {
+          const result = callPython("compute_extended", JSON.stringify(spec));
+          renderExtended(result);
+          updateSpectra(spec, result);
+        } else {
+          const result = callPython("compute", JSON.stringify(spec));
+          render(result);
+          updateSpectra(spec, result);
+        }
         setStatus("Ready", "ready");
       } catch (err) {
         reportError(err);

@@ -33,6 +33,22 @@ mphot.gaia module
    :undoc-members:
    :show-inheritance:
 
+mphot.targets module
+--------------------
+
+.. automodule:: mphot.targets
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+mphot.extended module
+---------------------
+
+.. automodule:: mphot.extended
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 mphot.display module
 --------------------
 

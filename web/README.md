@@ -299,8 +299,8 @@ Three changes remove that wait, and none of them touches the model:
   them beside the page. They are 15.5 MB of a 16.2 MB wheel, and holding them
   inside it meant nothing could download until micropip had finished. The wheel
   is now 0.3 MB, and the page writes the files back into the installed package
-  at a path it reads from `mphot.paths`. It also drops the Vega spectrum, which
-  only `vega_mag` reads and the page never calls.
+  at a path it reads from `mphot.paths`. The Vega spectrum, which the galaxy
+  and nebula mode reads, is staged beside the page in the same way.
 * Every download starts while the module is still being evaluated, so all of it
   runs beside Pyodide instead of after it.
 * Only the two curves in use are fetched before the first result. The other
