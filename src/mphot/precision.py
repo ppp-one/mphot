@@ -44,6 +44,44 @@ def _peak_pixel_rate(
     ) + (N_sky + N_dc)
 
 
+def image_pixel(props: dict) -> tuple[int, float, float, float]:
+    """
+    Plate scale, dark current and read noise of one image pixel.
+
+    The instrument properties are for one detector pixel. With
+    "pixel_binning" k, one image pixel is k x k detector pixels, and their
+    light and dark current add. In "digital" binning (CMOS), each detector
+    pixel is read, so the read noise adds too. In "on-chip" binning (CCD), the
+    charge is added before the readout, so there is one read noise. A camera
+    that averages the binned values gives the same SNR as one that adds them,
+    because the signal and the noise change by the same factor. mphot checks
+    saturation per detector pixel. With on-chip binning, the added charge can
+    also fill the output register of a CCD; mphot does not check this.
+
+    Args:
+        props (dict): Instrument properties with "plate_scale", "N_dc" and
+            "N_rn" per detector pixel, and optionally "pixel_binning"
+            (default 1) and "pixel_binning_type" ("digital", the default, or
+            "on-chip").
+
+    Returns:
+        tuple: k, plate scale ["/pix], dark current [e/s] and read noise [e]
+            of one image pixel.
+    """
+
+    k = props.get("pixel_binning", 1)
+    kind = props.get("pixel_binning_type", "digital")
+    if k != int(k) or k < 1:
+        raise ValueError(f"pixel_binning must be a whole number from 1, got {k}.")
+    if kind not in ("digital", "on-chip"):
+        raise ValueError(
+            f"pixel_binning_type must be 'digital' or 'on-chip', got {kind!r}."
+        )
+    k = int(k)
+    read_noise = props["N_rn"] * k if kind == "digital" else props["N_rn"]
+    return k, props["plate_scale"] * k, props["N_dc"] * k**2, read_noise
+
+
 def integration_time(
     fwhm: float,
     N_star: float,
@@ -155,15 +193,19 @@ def get_precision(
             Dictionary containing properties of the instrument and observation.
             Expected keys:
             - "name": str, name of the instrument
-            - "plate_scale": float, plate scale of the instrument
-            - "N_dc": float, dark current noise
-            - "N_rn": float, read noise
-            - "well_depth": float, well depth of the detector
+            - "plate_scale": float, plate scale of one detector pixel
+            - "N_dc": float, dark current of one detector pixel
+            - "N_rn": float, read noise of one detector pixel
+            - "well_depth": float, well depth of one detector pixel
             - "well_fill": float, well fill level
             - "read_time": float, readout time of the detector
             - "r0": float, inner radius for aperture
             - "r1": float, outer radius for aperture
             - "ap_rad": float, optional, aperture radius
+            - "pixel_binning": int, optional, binning factor k for k x k
+              detector pixels. Default is 1. See `image_pixel`.
+            - "pixel_binning_type": str, optional, "digital" (default) or
+              "on-chip"
 
         props_sky (dict):
             Dictionary containing properties of the sky.
@@ -171,6 +213,9 @@ def get_precision(
             - "pwv": float, precipitable water vapor
             - "airmass": float, airmass of the observation
             - "seeing": float, full width at half maximum (FWHM) of the seeing
+            - "sky_factor": float, optional, the sky brightness relative to
+              the Paranal sky model, for example 5 at a light-polluted site.
+              Default is 1.
 
         Teff (float):
             Effective temperature of the star in Kelvin.
@@ -185,7 +230,7 @@ def get_precision(
             If True, override existing grid files. Default is False.
 
         N_sky (float, optional):
-            Number of sky counts, calculated if None. Default is None.
+            Sky counts per detector pixel [e/s], calculated if None. Default is None.
 
         N_star (float, optional):
             Number of star counts, calculated if None. Default is None.
@@ -209,7 +254,9 @@ def get_precision(
             binned_precision : dict
                 Precision of the binned image
             components : dict
-                Various components used in the calculation
+                Various components used in the calculation. Values per pixel
+                are for one image pixel, except the well depth and the well
+                fill, which are for one detector pixel.
     """
 
     props = props.copy()
@@ -218,7 +265,6 @@ def get_precision(
     name = props["name"]
     plate_scale = props["plate_scale"]
     N_dc = props["N_dc"]
-    N_rn = props["N_rn"]
     well_depth = props["well_depth"]
     well_fill = props["well_fill"]
     read_time = props["read_time"]
@@ -235,12 +281,15 @@ def get_precision(
 
     airmass_paranal = convert_airmass(airmass, h)
 
+    # Saturation is per detector pixel, the noise per image pixel.
+    k, image_scale, N_dc_image, N_rn_image = image_pixel(props)
+
     ap = (
-        3 * (fwhm / plate_scale)
+        3 * (fwhm / image_scale)
     )  ## approx pixel radius around target star ## changed on to 3* 2022/04/26 from 10/2.355*
 
     if "ap_rad" in props:
-        ap = props["ap_rad"] * (fwhm / plate_scale)
+        ap = props["ap_rad"] * (fwhm / image_scale)
 
     if override_grid or not grid_path(name, "flux", "coords").is_file():
         generate_grids(name)
@@ -250,6 +299,7 @@ def get_precision(
     # get values from grids
     flux = interpolate_grid(coords, data_flux, pwv, airmass_paranal, Teff)
     radiance = interpolate_grid(coords, data_radiance, pwv, airmass_paranal, Teff)
+    radiance *= props_sky.get("sky_factor", 1.0)
 
     # collecting area of telescope
     A = np.pi * (r0**2 - r1**2)
@@ -287,6 +337,7 @@ def get_precision(
         well_fill = well_fill_value / well_depth
 
     npix = np.pi * ap**2
+    N_sky_image = N_sky * k**2
 
     if scn is None:
         scn = scintillation_noise(
@@ -294,14 +345,14 @@ def get_precision(
         )  # use unconverted airmass here
 
     precision = np.sqrt(
-        N_star * t + scn**2 + npix * (N_sky * t + N_dc * t + N_rn**2)
+        N_star * t + scn**2 + npix * (N_sky_image * t + N_dc_image * t + N_rn_image**2)
     ) / (N_star * t)
 
     precision_star = 1 / np.sqrt(N_star * t)
     precision_scn = np.sqrt(scn**2) / (N_star * t)
-    precision_sky = np.sqrt(npix * (N_sky * t)) / (N_star * t)
-    precision_dc = np.sqrt(npix * (N_dc * t)) / (N_star * t)
-    precision_rn = np.sqrt(npix * (N_rn**2)) / (N_star * t)
+    precision_sky = np.sqrt(npix * (N_sky_image * t)) / (N_star * t)
+    precision_dc = np.sqrt(npix * (N_dc_image * t)) / (N_star * t)
+    precision_rn = np.sqrt(npix * (N_rn_image**2)) / (N_star * t)
 
     image_precision = {
         "All": precision,
@@ -332,14 +383,15 @@ def get_precision(
         "scn [e_rms]": scn,  # not sure of units
         "pixels in aperture [pix]": npix,
         "ap_radius [pix]": ap,
-        "N_sky [e/pix/s]": N_sky,
+        "N_sky [e/pix/s]": N_sky_image,
         "sky_radiance [e/m2/arcsec2/s]": radiance,
         "seeing [arcsec]": fwhm,
         "pwv [mm]": pwv,
         "airmass": airmass,  # unconverted airmass
-        'plate_scale ["/pix]': plate_scale,
-        "N_dc [e/pix/s]": N_dc,
-        "N_rn [e_rms/pix]": N_rn,  # not sure of units
+        'plate_scale ["/pix]': image_scale,
+        "pixel_binning": k,
+        "N_dc [e/pix/s]": N_dc_image,
+        "N_rn [e_rms/pix]": N_rn_image,  # not sure of units
         "A [m2]": A,
         "r0 [m]": r0,
         "r1 [m]": r1,

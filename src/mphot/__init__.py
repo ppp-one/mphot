@@ -1,5 +1,6 @@
 from mphot.constants import PC, WAVELENGTHS
 from mphot.display import display_number, display_results
+from mphot.extended import get_exposure_extended
 from mphot.gaia import (
     DEFAULT_GAIA_TAP_SOURCES,
     DEFAULT_GAIA_TIMEOUT,
@@ -23,6 +24,12 @@ from mphot.precision import (
     vega_mag,
 )
 from mphot.response import generate_system_response
+from mphot.targets import (
+    Target,
+    TargetNotFound,
+    UnsupportedTarget,
+    resolve_target,
+)
 from mphot.utils import gaussian, interpolate_dfs, update_progress
 
 __all__ = [
@@ -32,6 +39,9 @@ __all__ = [
     "PC",
     "WAVELENGTHS",
     "GaiaSourceNotFound",
+    "Target",
+    "TargetNotFound",
+    "UnsupportedTarget",
     "best_gaia_filters",
     "convert_airmass",
     "display_number",
@@ -41,12 +51,14 @@ __all__ = [
     "generate_grids",
     "generate_radiance_grid",
     "generate_system_response",
+    "get_exposure_extended",
     "get_precision",
     "get_precision_gaia",
     "integration_time",
     "interpolate_dfs",
     "interpolate_grid",
     "query_gaia_source",
+    "resolve_target",
     "scintillation_noise",
     "update_progress",
     "vega_mag",

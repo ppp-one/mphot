@@ -896,6 +896,21 @@
       margin-bottom: 14px;
     }
 
+    /* A galaxy or nebula has no star to draw, so its chart and tab go. Both
+     have a display of their own, which the hidden attribute alone would not
+     override. */
+    #plots.extended .plot[data-plot="star"],
+    #plots.extended .plot-tabs label:has(input[value="star"]),
+    .bin-row[hidden] {
+      display: none;
+    }
+
+    @media (min-width: 1024px) {
+      #plots.extended .plots {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
     @media (max-width: 1023px) {
       .plots {
         grid-template-columns: minmax(0, 1fr);
@@ -1223,7 +1238,8 @@
           </div>
           <div class="field">
             <select id="preset"></select>
-            <p class="hint">If you change a value below, the preset becomes Custom.</p>
+            <p class="hint">A preset also sets the site: altitude, water vapour and seeing.
+              If you change the telescope, camera or filter, the preset becomes Custom.</p>
           </div>
           <div class="field">
             <label for="system">Telescope, optics and detector</label>
@@ -1259,7 +1275,9 @@
         </div>
 
         <div class="card">
-          <h2>Sky</h2>
+          <h2>Site and sky</h2>
+          <div id="site-fields"></div>
+          <p class="hint" id="site-hint" style="margin-bottom:12px"></p>
           <div class="field">
             <label for="pwv">Water vapour <span class="val" id="pwv-v"></span></label>
             <!-- Logarithmic. The model tabulates water vapour at 13 values from
@@ -1281,21 +1299,32 @@
         </div>
 
         <div class="card">
-          <h2>Star</h2>
+          <h2>Target</h2>
           <div class="field">
             <div class="seg">
               <label><input type="radio" name="mode" value="model" checked> Model star</label>
               <label><input type="radio" name="mode" value="gaia"> Gaia star</label>
+              <label><input type="radio" name="mode" value="extended"> Galaxy or nebula</label>
             </div>
           </div>
           <div id="model-fields">
             <div class="field">
-              <label for="teff">Temperature <span class="val" id="teff-v"></span></label>
+              <label for="teff-num">Temperature <span class="unit">K</span></label>
+              <div class="stepper">
+                <button type="button" class="nudge" data-key="teff-num" data-dir="-1" tabindex="-1"
+                  aria-label="Cooler">&minus;</button>
+                <input type="number" id="teff-num" min="450" max="36500" step="any" value="2560"
+                  inputmode="decimal" data-proportional="1">
+                <button type="button" class="nudge" data-key="teff-num" data-dir="1" tabindex="-1"
+                  aria-label="Hotter">+</button>
+              </div>
               <!-- Logarithmic, for the same reason as the water vapour slider.
                The model's temperature axis is 50 K apart at the bottom and
                1500 K apart at the top, so a linear slider gives the dwarf stars
                most people come here for about 3% of its travel. -->
-              <input type="range" id="teff" min="2.65224" max="4.56324" step="0.001" value="3.40824">
+              <input type="range" id="teff" min="2.65224" max="4.56324" step="0.001" value="3.40824"
+                aria-label="Temperature, logarithmic" style="margin-top:6px">
+              <p class="hint">The slider covers 450 K to 36 500 K. You can also type a value.</p>
             </div>
             <div class="field">
               <label for="dist-num">Distance <span class="val" id="dist-v"></span></label>
@@ -1327,6 +1356,39 @@
                 <label for="gaia-teff">Temperature <span class="val" id="gaia-teff-v"></span></label>
                 <input type="range" id="gaia-teff" min="2.65224" max="4.56324" step="0.001" value="3.76224">
                 <p class="hint">Gaia's own temperature is ignored while this is ticked.</p>
+              </div>
+            </div>
+          </div>
+          <div id="extended-fields" hidden>
+            <div class="field">
+              <label for="target-name">Messier, NGC or IC name</label>
+              <input type="text" id="target-name" value="M104" list="target-names" autocomplete="off"
+                spellcheck="false">
+              <datalist id="target-names"></datalist>
+              <p class="hint">For example M51, NGC 7000 or Ring Nebula. Push Enter.</p>
+            </div>
+            <p class="hint" id="target-report" hidden></p>
+            <div class="field">
+              <label for="mu-offset">Surface brightness <span class="val" id="mu-offset-v"></span></label>
+              <input type="range" id="mu-offset" min="-3" max="6" step="0.1" value="0">
+              <p class="hint">The level to measure, relative to the mean of the target.
+                Move to the right for fainter parts.</p>
+            </div>
+            <div class="field">
+              <label for="snr">Target SNR</label>
+              <div class="stepper">
+                <button type="button" class="nudge" data-key="snr" data-dir="-1" tabindex="-1"
+                  aria-label="Less SNR">&minus;</button>
+                <input type="number" id="snr" min="1" max="10000" step="any" value="10"
+                  inputmode="decimal" data-proportional="1">
+                <button type="button" class="nudge" data-key="snr" data-dir="1" tabindex="-1"
+                  aria-label="More SNR">+</button>
+              </div>
+            </div>
+            <div class="field">
+              <div class="seg" role="group" aria-label="What the SNR is measured over">
+                <label><input type="radio" name="snr-area" value="pixel" checked> SNR per pixel</label>
+                <label><input type="radio" name="snr-area" value="arcsec2"> SNR per arcsec²</label>
               </div>
             </div>
           </div>
@@ -1371,6 +1433,16 @@
               <div class="grid2" id="telescope-fields"></div>
               <p class="hint err" id="mirror-hint" hidden></p>
               <div class="grid2" id="camera-fields" style="margin-top:12px"></div>
+              <div class="field">
+                <label for="pixel_binning_type">Binning type</label>
+                <select id="pixel_binning_type">
+                  <option value="digital">Digital (CMOS): each pixel is read</option>
+                  <option value="on-chip">On-chip (CCD): one readout per binned pixel</option>
+                </select>
+              </div>
+              <p class="hint">Plate scale, dark current, read noise and well depth are for one
+                unbinned pixel. A camera that averages the binned pixels gives the same SNR
+                as one that adds them.</p>
             </div>
           </details>
         </div>
@@ -1397,6 +1469,10 @@
         read noise. The noise sources add in quadrature. The chart shows which
         one limits your observation, so you know what to improve.
       </p>
+      <p>
+        For a galaxy or nebula, type its Messier, NGC or IC name. The ETC gives
+        the sub-exposure time and the number of sub-exposures for your SNR.
+      </p>
 
       <h2>How the model works</h2>
       <p>
@@ -1407,7 +1483,9 @@
         models of sky transmission and sky radiance for Paranal at 2400 m.
       </p>
       <p>
-        Water vapour and airmass set the state of the atmosphere. The effective
+        Water vapour and airmass set the state of the atmosphere. For a site
+        below Paranal, the model counts the extra air above the telescope as
+        extra airmass. The altitude also sets the scintillation. The effective
         temperature and the distance set the star. You can instead give a Gaia
         DR3 <code>source_id</code>. The page then reads that star's parallax
         and its BP, G and RP fluxes from VizieR, and scales the model to match
@@ -1442,6 +1520,20 @@
     const statusEl = $("status"), statusText = $("status-text");
     const resultsEl = $("results");
 
+    // When the page is reloaded, a browser can put back the values from the
+    // last visit. The page always starts from the defaults in its HTML
+    // instead, so that the first result and Reset use the same values.
+    for (const el of document.querySelectorAll("input, select")) {
+      if (el.type === "file") continue;
+      if (el.type === "checkbox" || el.type === "radio") {
+        el.checked = el.defaultChecked;
+      } else if (el.tagName === "SELECT") {
+        el.selectedIndex = Math.max(0, [...el.options].findIndex(o => o.defaultSelected));
+      } else {
+        el.value = el.defaultValue;
+      }
+    }
+
     // These are declared here because the first preset is applied before boot(),
     // and it reaches code that reads them.
     let pyodide;
@@ -1474,7 +1566,8 @@
     // `step` is what one arrow key or spinner click changes. Without it the
     // browser uses 1, which moves the plate scale from 0.35 to 1.35 and the well
     // depth from 64000 to 64001. Each value below is chosen so that the preset
-    // values land on it.
+    // values land on it. The CDK20 radii are the exception: they are the
+    // maker's values, and the first press snaps them onto the step.
     //
     // `proportional` marks the fields that cover several decades, where no
     // single step works at both ends. Those step by a fraction of their own
@@ -1504,6 +1597,9 @@
         key: "well_fill", label: "Well fill", unit: "", min: 0.01, max: 1, step: 0.01
       },
       {
+        key: "pixel_binning", label: "Binning", unit: "k × k", min: 1, max: 16, step: 1
+      },
+      {
         key: "read_time", label: "Read time", unit: "s", min: 0, max: 120, step: 0.1
       },
       {
@@ -1512,29 +1608,54 @@
     ];
     const INSTRUMENT = [...TELESCOPE, ...CAMERA];
 
+    // The sky model is tabulated for Paranal at airmass 1 to 3. mphot moves it
+    // to a lower site by multiplying the airmass by exp((2440 - h) / 8000): the
+    // extra air above the site, in an isothermal atmosphere with an 8 km scale
+    // height. A lower site therefore runs off the table at a lower airmass, and
+    // griddata returns NaN there. A higher site would need an airmass below 1.
+    const PARANAL_ALTITUDE = 2440;
+    const MAX_GRID_AIRMASS = 3;
+    const SITE = [
+      {
+        key: "altitude", label: "Altitude", unit: "m", min: 0, max: PARANAL_ALTITUDE, step: 10
+      },
+      {
+        key: "sky_factor", label: "Sky brightness", unit: "× Paranal", min: 0.1, max: 100, step: 0.1
+      },
+    ];
+
+    const PARANAL = { altitude: PARANAL_ALTITUDE, sky_factor: 1, pwv: 2.5, seeing: 1.35 };
     const PRESETS = [
       {
         id: "spec-iz", label: "SPECULOOS 1 m · I+z",
-        system: SYSTEMS[0].id, filter: "I+z",
+        system: SYSTEMS[0].id, filter: "I+z", site: PARANAL,
         props: {
           r0: 0.5, r1: 0.14, plate_scale: 0.35, N_dc: 0.2, N_rn: 6.328,
-          well_depth: 64000, well_fill: 0.7, read_time: 10.5, ap_rad: 3
+          well_depth: 64000, well_fill: 0.7, read_time: 10.5, ap_rad: 3,
+          pixel_binning: 1, pixel_binning_type: "on-chip"
         }
       },
       {
         id: "spec-nir", label: "SPECULOOS NIR · zYJ",
-        system: SYSTEMS[1].id, filter: "zYJ",
+        system: SYSTEMS[1].id, filter: "zYJ", site: PARANAL,
         props: {
           r0: 0.5, r1: 0.14, plate_scale: 0.31, N_dc: 110, N_rn: 90,
-          well_depth: 56000, well_fill: 0.7, read_time: 0.1, ap_rad: 3
+          well_depth: 56000, well_fill: 0.7, read_time: 0.1, ap_rad: 3,
+          pixel_binning: 1, pixel_binning_type: "digital"
         }
       },
       {
-        id: "small-cmos", label: "50 cm · IMX461 CMOS · luminance",
+        // A PlaneWave CDK20: 508 mm aperture, central obstruction 39% of the
+        // primary diameter. The IMX461 values are per unbinned pixel; the
+        // camera is used with 4 x 4 digital binning. The sky at ETH is about
+        // 5 times the Paranal sky.
+        id: "eth-cdk20", label: "ETH 0.5 m · CDK20 · IMX461 CMOS · luminance",
         system: SYSTEMS[2].id, filter: "luminance",
+        site: { altitude: 569, sky_factor: 5, pwv: 30, seeing: 3 },
         props: {
-          r0: 0.25, r1: 0.1, plate_scale: 0.9, N_dc: 0.1, N_rn: 8.47,
-          well_depth: 1048560, well_fill: 0.7, read_time: 5, ap_rad: 3
+          r0: 0.254, r1: 0.099, plate_scale: 0.225, N_dc: 0.003, N_rn: 2.11,
+          well_depth: 50000, well_fill: 0.7, read_time: 5, ap_rad: 3,
+          pixel_binning: 4, pixel_binning_type: "digital"
         }
       },
     ];
@@ -1567,6 +1688,7 @@
     }
     buildNumberFields($("telescope-fields"), TELESCOPE);
     buildNumberFields($("camera-fields"), CAMERA);
+    buildNumberFields($("site-fields"), SITE);
 
     // One press moves the value by `step`, or, for a field marked proportional,
     // by a tenth of its own leading digit. Dark current runs from 0.1 to 5000
@@ -1603,8 +1725,8 @@
         nudge(el, event.key === "ArrowUp" ? 1 : -1);
       });
     }
-    for (const p of INSTRUMENT) wireStepper($(p.key));
-    for (const id of ["min_exp", "max_exp", "dist-num"]) wireStepper($(id));
+    for (const p of [...INSTRUMENT, ...SITE]) wireStepper($(p.key));
+    for (const id of ["min_exp", "max_exp", "teff-num", "dist-num", "snr"]) wireStepper($(id));
     for (const button of document.querySelectorAll("button.nudge")) {
       button.addEventListener("click", () => nudge($(button.dataset.key), +button.dataset.dir));
     }
@@ -1620,12 +1742,23 @@
       $("system").value = p.system;
       $("filter").value = p.filter;
       for (const param of INSTRUMENT) $(param.key).value = p.props[param.key];
+      $("pixel_binning_type").value = p.props.pixel_binning_type;
+      $("altitude").value = p.site.altitude;
+      $("sky_factor").value = p.site.sky_factor;
+      $("pwv").value = Math.log10(p.site.pwv);
+      $("seeing").value = p.site.seeing;
+      // The read-outs beside the sliders follow, and the airmass slider takes
+      // the range of the new altitude. None of these make the preset Custom.
+      for (const id of ["altitude", "sky_factor", "pwv", "seeing"]) {
+        $(id).dispatchEvent(new Event("input"));
+      }
       checkMirrors();
       scheduleUpdate(0);
     }
 
     // Any manual edit means the configuration is no longer one of the presets.
-    for (const el of [$("system"), $("filter"), ...INSTRUMENT.map(p => $(p.key))]) {
+    for (const el of [$("system"), $("filter"), $("pixel_binning_type"),
+      ...INSTRUMENT.map(p => $(p.key))]) {
       el.addEventListener("input", () => {
         if (restoring) return;
         $("preset").value = "custom";
@@ -1642,9 +1775,15 @@
     // tell when something has changed, and can put it all back.
     const CONTROL_IDS = [
       "preset", "system", "filter", ...INSTRUMENT.map(p => p.key),
-      "pwv", "airmass", "seeing", "teff", "dist-num", "dist",
+      "pixel_binning_type", "altitude", "sky_factor", "pwv", "airmass", "seeing", "teff-num", "teff",
+      "dist-num", "dist",
       "gaia-teff-on", "gaia-teff", "source-id", "binning", "min_exp", "max_exp",
+      "target-name", "mu-offset", "snr",
     ];
+
+    // The radio groups, which have no single element to read.
+    const RADIO_GROUPS = ["mode", "snr-area"];
+    const radioValue = name => document.querySelector(`input[name="${name}"]:checked`).value;
 
     // A checkbox always reports value "on", so its state has to be read another way.
     const controlValue = el => el.type === "checkbox" ? String(el.checked) : el.value;
@@ -1654,7 +1793,7 @@
 
     function readControls() {
       const values = Object.fromEntries(CONTROL_IDS.map(id => [id, controlValue($(id))]));
-      values.mode = document.querySelector('input[name="mode"]:checked').value;
+      for (const name of RADIO_GROUPS) values[name] = radioValue(name);
       return values;
     }
 
@@ -1682,9 +1821,11 @@
         // Let the read-outs beside the sliders follow the new value.
         el.dispatchEvent(new Event("input"));
       }
-      for (const radio of document.querySelectorAll('input[name="mode"]')) {
-        radio.checked = radio.value === startState.mode;
-        if (radio.checked) radio.dispatchEvent(new Event("change"));
+      for (const name of RADIO_GROUPS) {
+        for (const radio of document.querySelectorAll(`input[name="${name}"]`)) {
+          radio.checked = radio.value === startState[name];
+          if (radio.checked) radio.dispatchEvent(new Event("change"));
+        }
       }
       restoring = false;
 
@@ -1697,15 +1838,20 @@
     $("reset").addEventListener("click", resetAll);
 
     // Sky, star and exposure controls all recompute as they move.
-    for (const id of ["pwv", "airmass", "seeing", "teff", "gaia-teff", "binning",
-      "dist", "dist-num", "min_exp", "max_exp"]) {
+    for (const id of ["altitude", "sky_factor", "pwv", "airmass", "seeing", "teff-num", "teff", "gaia-teff",
+      "binning", "dist", "dist-num", "min_exp", "max_exp", "mu-offset", "snr"]) {
       $(id).addEventListener("input", () => scheduleUpdate());
     }
-    for (const radio of document.querySelectorAll('input[name="mode"]')) {
-      radio.addEventListener("change", () => scheduleUpdate(0));
+    for (const name of RADIO_GROUPS) {
+      for (const radio of document.querySelectorAll(`input[name="${name}"]`)) {
+        radio.addEventListener("change", () => scheduleUpdate(0));
+      }
     }
-    // A source_id is only useful once it is complete, so wait for Enter or blur.
+    // A source_id or a target name is only useful once it is complete, so wait
+    // for Enter or blur.
     $("source-id").addEventListener("change", () => scheduleUpdate(0));
+    $("target-name").addEventListener("change", () => scheduleUpdate(0));
+
 
     // Unticked, the model reads the temperature Gaia holds for the star, and
     // the slider would only mislead, so it is not shown.
@@ -1749,9 +1895,10 @@
       pwv: v => `${readPwv(v)} mm`,
       airmass: v => (+v).toFixed(2),
       seeing: v => `${(+v).toFixed(2)}″`,
-      teff: v => `${readTeff(v)} K`,
       "gaia-teff": v => `${readTeff(v)} K`,
       binning: v => `${Math.round(v)} min`,
+      "mu-offset": v => +v === 0 ? "the mean"
+        : `mean ${+v > 0 ? "+" : "−"} ${Math.abs(+v).toFixed(1)} mag/arcsec²`,
     };
     for (const [id, f] of Object.entries(sliderFmt)) {
       const input = $(id), out = $(`${id}-v`);
@@ -1782,15 +1929,87 @@
     distSlider.addEventListener("input", distanceFromSlider);
     distanceFromNumber();
 
+    // The temperature has the same pair: a logarithmic slider, and a number
+    // field for an exact value. The model covers 450 K to 36 500 K.
+    const teffNum = $("teff-num"), teffSlider = $("teff");
+    const readTeffNumber = () => +teffNum.value > 0
+      ? clamp(+teffNum.value, 450, 36500) : readTeff(teffSlider.value);
+
+    function temperatureFromNumber() {
+      teffSlider.value = Math.log10(readTeffNumber());
+    }
+    function temperatureFromSlider() {
+      teffNum.value = readTeff(teffSlider.value);
+    }
+    teffNum.addEventListener("input", temperatureFromNumber);
+    // Once the value is complete, show the temperature the model uses.
+    teffNum.addEventListener("change", () => { teffNum.value = readTeffNumber(); });
+    teffSlider.addEventListener("input", temperatureFromSlider);
+    temperatureFromNumber();
+
+    // An empty altitude means Paranal. A value outside the range is clamped,
+    // and the hint says which altitude the model used.
+    function readAltitude() {
+      const raw = $("altitude").value.trim();
+      return raw === "" ? PARANAL_ALTITUDE : clamp(+raw, 0, PARANAL_ALTITUDE);
+    }
+
+    // The same factor as mphot.precision.convert_airmass.
+    const paranalAirmassFactor = h => Math.exp((PARANAL_ALTITUDE - h) / 8000);
+
+    function updateSite() {
+      const raw = $("altitude").value.trim();
+      const h = readAltitude();
+
+      // Rounded down, so the top of the slider stays on the table.
+      const airmass = $("airmass");
+      const before = airmass.value;
+      const top = Math.floor(MAX_GRID_AIRMASS / paranalAirmassFactor(h) * 100) / 100;
+      airmass.max = top;
+      // A range input clamps its own value to the new maximum.
+      if (airmass.value !== before) airmass.dispatchEvent(new Event("input"));
+
+      const hint = $("site-hint");
+      const outside = raw !== "" && +raw !== h;
+      hint.classList.toggle("err", outside);
+      hint.textContent = outside
+        ? `Enter an altitude from 0 to ${PARANAL_ALTITUDE} m. The ETC uses ${h} m.`
+        : h < PARANAL_ALTITUDE
+          ? `The sky model is for Paranal. At ${h} m there is more air above the `
+          + "telescope, and the ETC counts it as extra airmass. So the airmass slider "
+          + `stops at ${top.toFixed(2)}. The sky glow is Paranal's. For light pollution, `
+          + "increase the sky brightness."
+          : "The sky model is for Paranal. For light pollution, increase the sky brightness.";
+    }
+    $("altitude").addEventListener("input", updateSite);
+    updateSite();
+
     // Taken here, after the first preset and every read-out are set.
     startState = readControls();
 
+    // A galaxy or nebula has no bin length and no star to chart.
+    function applyMode() {
+      const mode = radioValue("mode");
+      const extended = mode === "extended";
+      $("model-fields").hidden = mode !== "model";
+      $("gaia-fields").hidden = mode !== "gaia";
+      $("extended-fields").hidden = !extended;
+      $("summary").querySelector(".bin-row").hidden = extended;
+      // The photometric aperture belongs to a star.
+      $("ap_rad").closest(".field").hidden = extended;
+
+      $("plots").classList.toggle("extended", extended);
+      $("plots").querySelector("h2").textContent =
+        extended ? "Transmission and sky" : "Transmission, sky and star";
+      const starTab = document.querySelector('input[name="plot-tab"][value="star"]');
+      if (extended && starTab.checked) {
+        const transTab = document.querySelector('input[name="plot-tab"][value="trans"]');
+        transTab.checked = true;
+        transTab.dispatchEvent(new Event("change"));
+      }
+    }
     for (const radio of document.querySelectorAll('input[name="mode"]')) {
-      radio.addEventListener("change", () => {
-        const gaia = radio.value === "gaia" && radio.checked;
-        $("model-fields").hidden = gaia;
-        $("gaia-fields").hidden = !gaia;
-      });
+      radio.addEventListener("change", applyMode);
     }
 
     function readSpec() {
@@ -1798,20 +2017,29 @@
       const props = {};
       for (const p of INSTRUMENT) props[p.key] = +$(p.key).value;
       props.well_fill = Math.min(Math.max(props.well_fill, 0.01), 1);
+      props.pixel_binning = Math.max(1, Math.round(props.pixel_binning) || 1);
+      props.pixel_binning_type = $("pixel_binning_type").value;
       const minExp = $("min_exp").value.trim(), maxExp = $("max_exp").value.trim();
       if (minExp !== "") props.min_exp = +minExp;
       if (maxExp !== "") props.max_exp = +maxExp;
       return {
         system: $("system").value, filter: $("filter").value, props, mode,
+        altitude: readAltitude(),
         pwv: readPwv($("pwv").value),
         airmass: +$("airmass").value, seeing: +$("seeing").value,
+        sky_factor: +$("sky_factor").value > 0 ? +$("sky_factor").value : 1,
         binning: +$("binning").value,
-        teff: readTeff($("teff").value),
+        teff: readTeffNumber(),
         // null lets mphot read the temperature Gaia holds for the star.
         teff_override: mode === "gaia" && $("gaia-teff-on").checked
           ? readTeff($("gaia-teff").value) : null,
         distance: +distNum.value,
         source_id: $("source-id").value.trim(),
+        // A galaxy or nebula.
+        target: $("target-name").value.trim(),
+        mu_offset: +$("mu-offset").value,
+        snr: +$("snr").value,
+        snr_area: radioValue("snr-area"),
       };
     }
 
@@ -2192,17 +2420,21 @@ def _system_name(system, filt):
 
 def _run(spec, props=None):
     props = dict(props or spec["props"], name=_system_name(spec["system"], spec["filter"]))
-    props_sky = {"pwv": spec["pwv"], "airmass": spec["airmass"], "seeing": spec["seeing"]}
+    props_sky = {
+        "pwv": spec["pwv"], "airmass": spec["airmass"], "seeing": spec["seeing"],
+        "sky_factor": spec["sky_factor"],
+    }
     if spec["mode"] == "gaia":
         # Teff=None is what makes get_precision_gaia read the temperature Gaia
         # holds for the star. Passing a number always wins over the archive, so
         # the page sends one only when the reader has asked to set it.
         return mphot.get_precision_gaia(
             props, props_sky, source_id=int(spec["source_id"]),
-            Teff=spec["teff_override"], binning=spec["binning"],
+            Teff=spec["teff_override"], binning=spec["binning"], h=spec["altitude"],
         )
     return mphot.get_precision(
         props, props_sky, spec["teff"], spec["distance"], binning=spec["binning"],
+        h=spec["altitude"],
     )
 
 # get_precision_gaia substitutes 3000 K and 10 pc when the archive has neither,
@@ -2279,6 +2511,58 @@ def compute(spec_json):
         ],
         "table": {k: v for k, v in components.items() if k != "name"},
     })
+
+def target_names():
+    """Suggestions for the target box: Messier objects, then common names."""
+    from mphot.targets import target_suggestions
+    return _dumps(target_suggestions())
+
+# mphot's messages name its Python functions and arguments. The page has no
+# control for these.
+_WEB_WORDS = (
+    ("use get_precision for them", "use Model star or Gaia star for them"),
+    ("Use get_precision.", "Use Model star or Gaia star."),
+    (" Use peak_offset to change this.", ""),
+    (" Use av to correct them.", ""),
+    ("Use max_exp to limit the exposure time.", "Set a longest exposure to limit it."),
+    ("the well to well_fill", "the well to the well fill that you set"),
+)
+
+def _web_text(message):
+    for python, page in _WEB_WORDS:
+        message = message.replace(python, page)
+    return message
+
+def compute_extended(spec_json):
+    """The exposure plan for a galaxy or nebula."""
+    spec = json.loads(spec_json)
+    props = dict(spec["props"], name=_system_name(spec["system"], spec["filter"]))
+    props_sky = {
+        "pwv": spec["pwv"], "airmass": spec["airmass"], "seeing": spec["seeing"],
+        "sky_factor": spec["sky_factor"],
+    }
+    try:
+        result = mphot.get_exposure_extended(
+            spec["target"], props, props_sky,
+            snr=spec["snr"],
+            area="pixel" if spec["snr_area"] == "pixel" else 1.0,
+            mu_offset=spec["mu_offset"],
+            h=spec["altitude"],
+        )
+    except ValueError as e:
+        raise ValueError(_web_text(str(e))) from None
+    result["warnings"] = [_web_text(w) for w in result["warnings"]]
+    # The charts draw a star. There is none here, so they get an empty one, and
+    # the sky values in the units the star mode reports.
+    per_pixel = result["A [m2]"] * result['plate_scale ["/pix]'] ** 2
+    result["table"] = {
+        "Teff [K]": 5800.0,
+        "distance [pc]": 10.0,
+        "star_flux [e/m2/s]": 0.0,
+        "N_sky [e/pix/s]": result["N_sky [e/pix/s]"],
+        "sky_radiance [e/m2/arcsec2/s]": result["N_sky [e/pix/s]"] / per_pixel,
+    }
+    return _dumps(result)
 
 _FRAMES = {}
 
@@ -2396,11 +2680,11 @@ def spectra(spec_json):
         raise ValueError("the curves and the grid ingredients have different wavelengths")
     sr = np.nan_to_num(frame["sr"].to_numpy())
 
-    # get_precision converts to the airmass at Paranal. The page keeps the
-    # default altitude, where this changes nothing, but it stays in step.
-    airmass = convert_airmass(spec["airmass"], 2440)
+    # The same conversion get_precision makes: the extra air above a lower
+    # site counts as extra airmass at Paranal.
+    airmass = convert_airmass(spec["airmass"], spec["altitude"])
     trans = _atmosphere(data["trans"], spec["pwv"], airmass)
-    sky = _atmosphere(data["sky"], spec["pwv"], airmass)
+    sky = _atmosphere(data["sky"], spec["pwv"], airmass) * spec["sky_factor"]
     sr_atm = sr * trans
 
     # Linear in temperature between the two nearest grid stars, with the same
@@ -2690,6 +2974,7 @@ def spectra(spec_json):
       await ensureSelectedCurves();
 
       await pyodide.runPythonAsync(PY);
+      fillTargetNames();
       ready = true;
       checkMirrors();
       // update() reports Ready itself. Saying it any earlier would hide the
@@ -2702,6 +2987,16 @@ def spectra(spec_json):
     function callPython(fn, ...args) {
       const f = pyodide.globals.get(fn);
       try { return JSON.parse(f(...args)); } finally { f.destroy(); }
+    }
+
+    // The name box suggests every Messier object and every named NGC or IC
+    // object that the ETC can model. Any other NGC or IC number still works
+    // when typed.
+    function fillTargetNames() {
+      $("target-names").innerHTML = callPython("target_names")
+        .map(([name, about]) =>
+          `<option value="${escapeHtml(name)}">${escapeHtml(about)}</option>`)
+        .join("");
     }
 
     // ----------------------------------------------------------------- rendering
@@ -2734,12 +3029,12 @@ def spectra(spec_json):
     const NOISE_COLORS = ["var(--series-1)", "var(--series-2)", "var(--series-3)",
       "var(--series-4)", "var(--series-5)"];
 
-    // Model values that repeat a control, so the table leaves them out. The
-    // altitude is not a control, but it is a fixed setting, not a result.
+    // Model values that repeat a control, so the table leaves them out.
     const INPUT_KEYS = new Set([
       "seeing [arcsec]", "pwv [mm]", "airmass", 'plate_scale ["/pix]',
       "N_dc [e/pix/s]", "N_rn [e_rms/pix]", "r0 [m]", "r1 [m]",
       "well_depth [e/pix]", "binning [mins]", "read_time [s]", "altitude [m]",
+      "pixel_binning",
     ]);
 
     /** The model values the reader did not type in, in the model's order. */
@@ -2856,6 +3151,117 @@ def spectra(spec_json):
           render(lastResult);
         });
       }
+    }
+
+    // Why the sub-exposure has this length, as a sentence a first-time user
+    // can read.
+    function subReason(data) {
+      const t = `${sig(data["t_sub [s]"])} s`;
+      const fill = `${sig(100 * +$("well_fill").value, 2)}%`;
+      switch (data["t_sub set by"]) {
+        case "background": {
+          const source = data["N_dc [e/pix/s]"] > data["N_sky [e/pix/s]"] ? "dark current" : "sky";
+          return `At this length, the read noise adds only 5% to the noise of the ${source}. `
+            + "A longer sub-exposure gives almost no more SNR.";
+        }
+        case "readout":
+          return `The camera needs ${sig(data["read_time [s]"])} s to read each image. `
+            + `With ${t} sub-exposures, the readout uses only 10% of the total time.`;
+        case "saturation":
+          return `A longer sub-exposure fills the brightest part of the target to more `
+            + `than ${fill} of the well.`;
+        case "max_exp":
+          return "This is your longest exposure.";
+        case "min_exp":
+          return "This is your shortest exposure.";
+        case "SNR":
+          return "One exposure gives the SNR.";
+      }
+      return "";
+    }
+
+    // A galaxy or nebula: the sub-exposure time, the number of sub-exposures,
+    // and the values that set them.
+    function renderExtended(data) {
+      lastResult = data;
+      const k = data["pixel_binning"];
+      const perWhat = data["pixels in area"] !== 1 ? "arcsec²"
+        : k > 1 ? `${k}×${k} binned pixel` : "pixel";
+      const [subValue, subUnit] = duration(data["t_sub [s]"]);
+      const [totalValue, totalUnit] = duration(data["exposure [s]"]);
+      const [wallValue, wallUnit] = duration(data["wall time [s]"]);
+      const level = (mu, rate) => `${mu.toFixed(2)} mag/arcsec², ${sig(rate)} e⁻/s/pixel`;
+
+      $("target-report").hidden = false;
+      $("target-report").textContent = `${data.target}: ${data.kind}, `
+        + `${sig(data["major_axis [arcmin]"])}′ × ${sig(data["minor_axis [arcmin]"])}′.`;
+
+      $("summary").hidden = false;
+      $("summary-body").innerHTML = `
+    <div class="stats">
+      <div class="stat lead">
+        <div class="k">Sub-exposure</div>
+        <div class="v">${subValue}</div>
+        <div class="u">${subUnit} each</div>
+      </div>
+      <div class="stat lead">
+        <div class="k">Total exposure</div>
+        <div class="v">${totalValue}</div>
+        <div class="u">${totalUnit} for SNR ${sig(data["SNR target"])} per ${perWhat}</div>
+      </div>
+      <div class="stat">
+        <div class="k">Sub-exposures</div>
+        <div class="v">${data.subs}</div>
+        <div class="u">${wallValue} ${wallUnit} with readout</div>
+      </div>
+    </div>
+    <p class="meta">
+      ${subReason(data)}<br>
+      ${escapeHtml(data.target)} at airmass ${data.airmass.toFixed(2)}.
+      ${data["saturation magnitude [mag]"] === null ? ""
+        : `In one sub-exposure, stars brighter than ${data["saturation magnitude [mag]"].toFixed(1)} mag `
+          + `fill more than ${sig(100 * +$("well_fill").value, 2)}% of the well.`}
+    </p>`;
+
+      document.documentElement.style.scrollPaddingTop =
+        `${$("summary").offsetHeight + 8}px`;
+
+      const row = (name, value) =>
+        `<tr><th scope="row">${name}</th><td>${value}</td></tr>`;
+      const lines = Object.entries(data["line counts [e/pix/s]"]);
+      const lineTotal = lines.reduce((sum, [, v]) => sum + v, 0);
+
+      resultsEl.innerHTML = `
+    <h2>Plan</h2>
+    <p class="hint" style="margin:0 0 10px">
+      ${escapeHtml(data.spectrum)}, scaled to ${escapeHtml(data["scaled to"])}.
+      Magnitudes are Vega magnitudes in this filter band.
+    </p>
+    <table><tbody>
+      ${row("Sub-exposure", `${sig(data["t_sub [s]"])} s`)}
+      ${row(`Brightest part of the target fills ${sig(100 * +$("well_fill").value, 2)}% of the well after`,
+          `${sig(data["t_saturation [s]"])} s`)}
+      ${data["saturation magnitude [mag]"] === null ? ""
+        : row(`Stars that fill more than ${sig(100 * +$("well_fill").value, 2)}% of the well in one sub-exposure`,
+          `brighter than ${data["saturation magnitude [mag]"].toFixed(1)} mag`)}
+      ${row(`SNR per ${perWhat} in one sub-exposure`, sig(data["SNR per sub"]))}
+      ${row(`Surface brightness for the SNR (${sliderFmt["mu-offset"]($("mu-offset").value)})`,
+        level(data["mu_target [mag/arcsec2]"], data["N_target [e/pix/s]"]))}
+      ${row("Brightest part", level(data["mu_peak [mag/arcsec2]"], data["N_peak [e/pix/s]"]))}
+      ${row("Sky", level(data["mu_sky [mag/arcsec2]"], data["N_sky [e/pix/s]"]))}
+    </tbody></table>
+    ${lines.length ? `
+    <h3 style="margin-top:20px">Emission lines in the filter band</h3>
+    <table>
+      <thead><tr><th>Line</th><th>e⁻/s/pixel</th><th>Part</th></tr></thead>
+      <tbody>${lines.map(([name, v]) => `<tr><th scope="row">${escapeHtml(name)}</th>
+        <td>${sig(v)}</td><td>${sig(100 * v / lineTotal, 2)}%</td></tr>`).join("")}</tbody>
+    </table>` : ""}
+    ${data.warnings.length ? `
+    <h3 style="margin-top:20px">Notes</h3>
+    <ul class="hint" style="margin:0;padding-left:18px">
+      ${data.warnings.map(w => `<li style="margin-bottom:4px">${escapeHtml(w)}</li>`).join("")}
+    </ul>` : ""}`;
     }
 
     // The archive answered, and these are the numbers it gave. Saying so matters
@@ -3117,6 +3523,14 @@ def spectra(spec_json):
     // The configuration the charts were drawn for, and what Python returned.
     let lastSpectra = null;
 
+    /** For a site below Paranal, the airmass the model looks up instead. */
+    function siteNote(spec) {
+      if (spec.altitude >= PARANAL_ALTITUDE) return "";
+      const paranal = spec.airmass * paranalAirmassFactor(spec.altitude);
+      return ` The site is at ${spec.altitude} m, so the model uses airmass `
+        + `${paranal.toFixed(2)} at Paranal.`;
+    }
+
     function spectraView(data) {
       let a = 0, b = data.lam.length - 1;
       if (spectraRange === "band") {
@@ -3135,8 +3549,8 @@ def spectra(spec_json):
 
       $("spectra-sub").textContent = `${systemLabel(spec.system)}, with the ${spec.filter} `
         + `filter, under the Paranal sky at ${sig(spec.pwv)} mm of water vapour and `
-        + `airmass ${spec.airmass.toFixed(2)}. Between the tabulated values the curves `
-        + "are interpolated.";
+        + `airmass ${spec.airmass.toFixed(2)}.${siteNote(spec)} Between the tabulated `
+        + "values the curves are interpolated.";
 
       renderChart($("chart-trans"), {
         lam: view.lam, data: view, series: TRANSMISSION_SERIES,
@@ -3160,6 +3574,8 @@ def spectra(spec_json):
           + `of sky, which is ${sig(table["N_sky [e/pix/s]"])} e⁻/s in each pixel.`,
       });
 
+      // A galaxy or nebula has no star curve, and its chart is hidden.
+      if (spec.mode === "extended") return;
       renderChart($("chart-star"), {
         lam: view.lam, data: view, series: STAR_SERIES, scale: "log", floorKeys: ["star"],
         subtitle: `A ${sig(table["Teff [K]"], 4)} K star at ${sig(table["distance [pc]"])} pc`
@@ -3178,8 +3594,8 @@ def spectra(spec_json):
       // read-outs but does not ask Python again.
       const request = JSON.stringify({
         system: spec.system, filter: spec.filter, pwv: spec.pwv, airmass: spec.airmass,
-        teff: table["Teff [K]"], star_flux: table["star_flux [e/m2/s]"],
-        distance: table["distance [pc]"],
+        altitude: spec.altitude, sky_factor: spec.sky_factor, teff: table["Teff [K]"],
+        star_flux: table["star_flux [e/m2/s]"], distance: table["distance [pc]"],
       });
       try {
         const data = lastSpectra && lastSpectra.request === request
@@ -3242,8 +3658,11 @@ def spectra(spec_json):
       if (link.href.startsWith("blob:")) URL.revokeObjectURL(link.href);
       const lines = [
         `# mphot ${systemLabel(spec.system)}, ${spec.filter} filter`,
-        `# Paranal sky: ${spec.pwv} mm water vapour, airmass ${spec.airmass}`,
-        `# Star: ${table["Teff [K]"]} K at ${table["distance [pc]"]} pc`,
+        `# Paranal sky: ${spec.pwv} mm water vapour, airmass ${spec.airmass}.`
+        + siteNote(spec),
+        spec.mode === "extended"
+          ? "# Target: a galaxy or nebula, so the star columns are empty."
+          : `# Star: ${table["Teff [K]"]} K at ${table["distance [pc]"]} pc`,
         "# Sky in photons/s/m2/um/arcsec2, star in photons/s/m2/um; detected curves in electrons.",
         "wavelength_um,detector_optics,filter,atmosphere,system_response_x_atmosphere,"
         + "sky,sky_detected,star,star_detected",
@@ -3260,8 +3679,10 @@ def spectra(spec_json):
       const last = String(err).split("\n").filter(Boolean).pop() || "Computation failed";
       setStatus(last.replace(/^[\w.]*Error:\s*|^[\w.]+:\s*/, ""), "error");
       // Nothing was read from the archive, so last time's report is not about
-      // this star and must not stay on screen looking like it is.
+      // this star and must not stay on screen looking like it is. The same goes
+      // for the last galaxy or nebula.
       showGaiaReport(null);
+      $("target-report").hidden = true;
     }
 
     function scheduleUpdate(delay = 80) {
@@ -3280,6 +3701,14 @@ def spectra(spec_json):
         setStatus("A Gaia source_id is a whole number, such as 2635476908753563008.", "error");
         return;
       }
+      if (spec.mode === "extended" && !spec.target) {
+        setStatus("Enter the name of a galaxy or nebula, such as M51.", "error");
+        return;
+      }
+      if (spec.mode === "extended" && !(spec.snr > 0)) {
+        setStatus("Enter a target SNR above 0.", "error");
+        return;
+      }
 
       updateResetButton();
       updating = true;
@@ -3296,9 +3725,15 @@ def spectra(spec_json):
           // dimming above would ever be drawn.
           await new Promise(requestAnimationFrame);
         }
-        const result = callPython("compute", JSON.stringify(spec));
-        render(result);
-        updateSpectra(spec, result);
+        if (spec.mode === "extended") {
+          const result = callPython("compute_extended", JSON.stringify(spec));
+          renderExtended(result);
+          updateSpectra(spec, result);
+        } else {
+          const result = callPython("compute", JSON.stringify(spec));
+          render(result);
+          updateSpectra(spec, result);
+        }
         setStatus("Ready", "ready");
       } catch (err) {
         reportError(err);

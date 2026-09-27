@@ -25,12 +25,10 @@ Two kinds of file are pulled out of the wheel rather than shipped inside it:
   largest part of the package, and the demo rebuilds the ones it needs in a
   fraction of a second.
 * The grid ingredients in ``src/mphot/datafiles/*.pkl``, which are 15 MB of the
-  16 MB wheel. They go next to the page instead, so the browser can download
-  them at the same time as Pyodide rather than waiting for micropip to finish.
-  The page writes them back into the installed package.
-
-The Vega spectrum is dropped altogether. Only ``vega_mag`` reads it, and the
-page never calls that.
+  16 MB wheel, and the 1 MB Vega spectrum, which the galaxy and nebula mode
+  reads. They go next to the page instead, so the browser can download them at
+  the same time as Pyodide rather than waiting for micropip to finish. The page
+  writes them back into the installed package.
 
 Usage:
     python web/build.py
@@ -59,10 +57,7 @@ MANIFEST = WEB / "build.json"
 CURVE_DIRS = ("systems", "filters")
 
 # Moved out of the wheel and fetched beside the page instead.
-HOISTED_DATAFILES = "*.pkl"
-
-# Read only by `vega_mag`, which the page never calls.
-UNUSED_DATAFILES = ("vega_03_to_3_microns.csv",)
+HOISTED_DATAFILES = ("*.pkl", "vega_03_to_3_microns.csv")
 
 
 def wheel_command() -> list[str]:
@@ -109,13 +104,9 @@ def build_wheel() -> Path:
 
         hoisted = RESOURCES / "datafiles"
         hoisted.mkdir(parents=True)
-        for pickle in sorted((staged / "datafiles").glob(HOISTED_DATAFILES)):
-            shutil.move(str(pickle), hoisted / pickle.name)
-
-        for name in UNUSED_DATAFILES:
-            unused = staged / "datafiles" / name
-            if unused.is_file():
-                unused.unlink()
+        for pattern in HOISTED_DATAFILES:
+            for data in sorted((staged / "datafiles").glob(pattern)):
+                shutil.move(str(data), hoisted / data.name)
 
         # `generate_system_response` writes into this directory, so a local run
         # leaves files there. Only the Gaia curves belong to the package;

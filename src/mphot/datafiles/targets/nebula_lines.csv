@@ -1,0 +1,187 @@
+name,halpha_flux,halpha_source,c_hbeta,hbeta,oiii_5007,hei_5876,nii_6584,sii_6717,sii_6731,ratio_source
+IC0289,1.3455e-11,Acker et al. 1992 Hbeta,1.15,0.15175,0.69803,,0.0075873,,,Acker et al. 1992
+IC0351,2.1519e-11,Acker et al. 1992 Hbeta,0.29,0.17668,2.1731,0.026502,,,,Acker et al. 1992
+IC0418,9.4732e-10,Acker et al. 1992 Hbeta,0.31,0.27765,,,,,,Acker et al. 1992
+IC0972,3.42e-12,Acker et al. 1992 Hbeta,0,0.26667,3.0293,0.090667,0.55733,0.14133,,Acker et al. 1992
+IC1266,7.8579e-11,Acker et al. 1992 Hbeta,,0.2849,0.2963,0.037037,0.38462,0.008547,0.011396,Acker et al. 1992
+IC1295,6.3649e-12,Acker et al. 1992 Hbeta,,0.31348,4.5078,,0.087774,,,Acker et al. 1992
+IC1297,3.6353e-11,Acker et al. 1992 Hbeta,0.24,0.30864,4.2901,0.040123,0.16049,0.012346,0.018519,Acker et al. 1992
+IC1454,1.6361e-12,Acker et al. 1992 Hbeta,0.11,0.41322,2.905,,,,,Acker et al. 1992
+IC1747,3.0741e-11,Acker et al. 1992 Hbeta,0.78,0.10526,1.4232,0.034737,,0.0042105,0.013684,Acker et al. 1992
+IC2003,2.3566e-11,Acker et al. 1992 Hbeta,0.29,0.27397,2.6932,0.021918,,0.0082192,,Acker et al. 1992
+IC2149,2.8184e-11,Acker et al. 1992 Hbeta,0.25,1,,,0,,,Acker et al. 1992
+IC2165,5.9547e-11,Acker et al. 1992 Hbeta,0.45,0.21142,2.6638,0.027484,0.10994,0.0040169,0.0084567,Acker et al. 1992
+IC2448,4.9156e-11,Acker et al. 1992 Hbeta,0.12,0.28736,3.6006,0.022989,0.0071839,,,Acker et al. 1992
+IC2501,8.1029e-11,Acker et al. 1992 Hbeta,0.53,0.26385,2.285,0.044855,0.30079,0.0079156,0.013193,Acker et al. 1992
+IC2553,6.0694e-11,Acker et al. 1992 Hbeta,0.36,0.24938,3.2843,0.037406,0.13217,0.0074813,0.012469,Acker et al. 1992
+IC2621,2.5233e-11,Acker et al. 1992 Hbeta,0.87,0.20325,3.2602,0.036585,0.55285,0.010163,0.014228,Acker et al. 1992
+IC3568,4.9948e-11,Acker et al. 1992 Hbeta,0.19,0.30303,3.3182,0.066667,,,,Acker et al. 1992
+IC4191,3.8e-11,Acker et al. 1992 Hbeta,0.7,0.26316,4.4465,0.05,0.36579,0.013158,0.028947,Acker et al. 1992
+IC4406,7.0968e-11,Acker et al. 1992 Hbeta,0.28,0.25641,3.2487,0.046154,1.5256,0.038462,0.041026,Acker et al. 1992
+IC4593,7.5752e-11,Acker et al. 1992 Hbeta,0.05,0.34722,1.7222,0.048611,0.076389,,0.0013889,Acker et al. 1992
+IC4599,1.5474e-11,Acker et al. 1992 Hbeta,,0.16611,2.0183,0.041528,0.24419,0.024917,0.033223,Acker et al. 1992
+IC4634,4.9211e-11,Acker et al. 1992 Hbeta,0.55,0.26178,2.6152,0.052356,0.039267,0.0044503,0.0078534,Acker et al. 1992
+IC4637,3.7274e-11,Acker et al. 1992 Hbeta,1.12,0.15798,1.5608,0.041074,0.045814,,,Acker et al. 1992
+IC4642,2.0822e-11,Acker et al. 1992 Hbeta,0,0.24631,1.2266,0.0073892,,,,Acker et al. 1992
+IC4663,1.6702e-11,Acker et al. 1992 Hbeta,0.6,0.21739,2.2457,0.028261,0.071739,0.043478,0.019565,Acker et al. 1992
+IC4670,1.3244e-11,Acker et al. 1992 Hbeta,,0.067295,1.1649,0.039704,0.56595,0.092867,,Acker et al. 1992
+IC4673,1.1795e-11,Acker et al. 1992 Hbeta,1.2,0.12255,1.4914,0.033088,0.1201,0.02451,0.028186,Acker et al. 1992
+IC4699,6.4519e-12,Acker et al. 1992 Hbeta,0.18,0.31646,3.9241,0.041139,,,,Acker et al. 1992
+IC4732,1.4939e-11,Acker et al. 1992 Hbeta,0.28,0.19305,2.8822,0.044402,0.052124,0.0042471,0.0057915,Acker et al. 1992
+IC4776,1.1465e-10,Acker et al. 1992 Hbeta,1,0.1662,,,,,,Acker et al. 1992
+IC4846,1.7964e-11,Acker et al. 1992 Hbeta,0.5,0.25445,2.798,0.053435,0.066158,0.0043257,0.010178,Acker et al. 1992
+IC4997,2.3787e-10,Acker et al. 1992 Hbeta,1.07,0.12407,0.54218,0.052109,0.086849,0.0037221,0.0074442,Acker et al. 1992
+IC5117,1.83e-11,Acker et al. 1992 Hbeta,1.31,0.2331,3.8275,0.051282,0.21911,,,Acker et al. 1992
+IC5148,6.728e-12,Acker et al. 1992 Hbeta,0.4,0.59172,2.426,,0.46746,,,Acker et al. 1992
+IC5217,2.515e-11,Acker et al. 1992 Hbeta,0.34,0.26882,3.2769,0.045699,,0.0080645,0.0080645,Acker et al. 1992
+NGC0040,6.2789e-11,Acker et al. 1992 Hbeta,0.76,0.34843,,0.4216,0.85714,,0.88153,Acker et al. 1992
+NGC0246,6.7288e-11,Acker et al. 1992 Hbeta,0.12,0.4386,2.4079,,,,,Acker et al. 1992
+NGC0650,1.356e-10,Acker et al. 1992 Hbeta,0.2,0.15408,1.8274,0.023112,0.75501,0.1772,0.015408,Acker et al. 1992
+NGC1360,1.3502e-10,Acker et al. 1992 Hbeta,0,0.46729,2.5981,,,,,Acker et al. 1992
+NGC1501,4.3244e-11,Acker et al. 1992 Hbeta,1.2,0.12136,1.1311,0.093447,,,,Acker et al. 1992
+NGC1514,5.2566e-11,Acker et al. 1992 Hbeta,0.96,0.1992,2.3685,0.039841,,,0.0079681,Acker et al. 1992
+NGC1535,1.0835e-10,Acker et al. 1992 Hbeta,0.1,0.35088,4.3965,0.031579,,,,Acker et al. 1992
+NGC2022,2.9504e-11,Acker et al. 1992 Hbeta,0.49,0.25126,1.897,,,,,Acker et al. 1992
+NGC2242,2.1209e-12,Acker et al. 1992 Hbeta,,0.37453,0.71536,,,,,Acker et al. 1992
+NGC2346,1.1039e-11,Acker et al. 1992 Hbeta,0.89,0.42373,4.6102,0.067797,1.6441,0.067797,,Acker et al. 1992
+NGC2371,3.2237e-11,Acker et al. 1992 Hbeta,0.13,0.31743,,,,,,
+NGC2392,1.6092e-10,Acker et al. 1992 Hbeta,0.22,0.25316,3.5595,0.027848,0.40506,0.022785,0.035443,Acker et al. 1992
+NGC2438,2.809e-11,Acker et al. 1992 Hbeta,0.2,0.32468,2.461,0.042208,1.8734,0.20779,0.16558,Acker et al. 1992
+NGC2440,1.4673e-10,Acker et al. 1992 Hbeta,0.42,0.21552,3.8578,0.025862,2.6638,0.017241,0.030172,Acker et al. 1992
+NGC2452,1.1326e-11,Acker et al. 1992 Hbeta,0.55,0.28571,4.5,0.031429,0.64571,0.054286,0.088571,Acker et al. 1992
+NGC2610,1.1339e-11,Acker et al. 1992 Hbeta,0.05,0.36765,1.1985,,,,,Acker et al. 1992
+NGC2792,2.9436e-11,Acker et al. 1992 Hbeta,0.79,0.16639,1.772,0.011647,0.011647,,,Acker et al. 1992
+NGC2818,2.0629e-11,Acker et al. 1992 Hbeta,0.3,0.23202,3.4826,0.034803,2.1555,0.18329,0.17865,Acker et al. 1992
+NGC2867,1.01e-10,Acker et al. 1992 Hbeta,0.43,0.26042,3.8021,0.033854,0.21875,0.015625,0.026042,Acker et al. 1992
+NGC2899,1.5187e-11,Acker et al. 1992 Hbeta,1.29,0.29412,2.2324,,3.9824,0.29412,0.26176,Acker et al. 1992
+NGC3132,1.1319e-10,Acker et al. 1992 Hbeta,0.16,0.31348,3.2006,0.043887,1.232,0.10031,0.10031,Acker et al. 1992
+NGC3195,3.2835e-11,Acker et al. 1992 Hbeta,0.66,0.26525,2.0027,0.055703,0.9496,0.11141,0.10345,Acker et al. 1992
+NGC3211,3.1616e-11,Acker et al. 1992 Hbeta,0.28,0.27548,4.6116,0.011019,0.066116,0.0082645,0.011019,Acker et al. 1992
+NGC3242,5.7088e-10,Acker et al. 1992 Hbeta,0.07,0.28409,5.9092,0.036932,,0.00085227,0.0011364,Acker et al. 1992
+NGC3587,1.0955e-10,Acker et al. 1992 Hbeta,0.01,0.34706,,,,,,
+NGC3699,2.787e-11,Acker et al. 1992 Hbeta,0.64,0.22124,3.9602,0.026549,1.9226,0.042035,0.039823,Acker et al. 1992
+NGC3918,3.1884e-10,Cahn et al. 1992 Hbeta,0.27,0.28604,,,,,,
+NGC4071,6.432e-12,Acker et al. 1992 Hbeta,0.95,0.34014,2.6735,,0.88095,0.10204,0.081633,Acker et al. 1992
+NGC4361,9.5324e-11,Acker et al. 1992 Hbeta,0.04,0.3096,0.85139,,,,,Acker et al. 1992
+NGC5189,1.057e-10,Acker et al. 1992 Hbeta,0.85,0.28571,4.08,0.025714,1.0457,0.11143,0.12,Acker et al. 1992
+NGC5307,2.8872e-11,Acker et al. 1992 Hbeta,0.44,0.22883,3.1533,0.022883,,,,Acker et al. 1992
+NGC5315,1.4029e-10,Acker et al. 1992 Hbeta,0.6,0.271,2.2764,0.065041,0.72087,0.01626,0.02981,Acker et al. 1992
+NGC5873,2.5116e-11,Acker et al. 1992 Hbeta,0.15,0.32362,3.7476,0.02589,0.061489,,0.002589,Acker et al. 1992
+NGC5882,1.5954e-10,Acker et al. 1992 Hbeta,0.38,0.26738,2.8021,0.050802,0.080214,0.0024064,0.0053476,Acker et al. 1992
+NGC5979,2.2174e-11,Acker et al. 1992 Hbeta,0,0.27174,2.2147,0.0065217,0.043478,,,Acker et al. 1992
+NGC6026,9.2011e-12,Acker et al. 1992 Hbeta,0.93,0.24331,1.472,,0.060827,,,Acker et al. 1992
+NGC6058,5.8759e-12,Acker et al. 1992 Hbeta,0.04,0.28902,3.2514,,,,,Acker et al. 1992
+NGC6072,3.7298e-11,Acker et al. 1992 Hbeta,0.79,0.16155,2.1971,0.042003,1.567,,,Acker et al. 1992
+NGC6153,1.2402e-10,Acker et al. 1992 Hbeta,0.18,0.11655,1.2506,0.048951,0.089744,,,Acker et al. 1992
+NGC6210,2.0646e-10,Acker et al. 1992 Hbeta,0.04,0.3937,4.2823,0.055118,0.090551,0.0066929,0.011811,Acker et al. 1992
+NGC6302,1.9841e-10,Acker et al. 1992 Hbeta,1.26,0.14205,1.9233,0.052557,2.4972,0.090909,0.14062,Acker et al. 1992
+NGC6309,3.1477e-11,Acker et al. 1992 Hbeta,0.83,0.18282,2.159,0.027422,0.045704,,,Acker et al. 1992
+NGC6326,3.4768e-11,Acker et al. 1992 Hbeta,0.25,0.23923,3.0287,0.0311,0.10048,0.016746,0.021531,Acker et al. 1992
+NGC6337,2.6265e-11,Acker et al. 1992 Hbeta,,0.17007,1.7143,0.037415,0.32313,0.056122,0.04932,Acker et al. 1992
+NGC6369,5.5425e-11,Acker et al. 1992 Hbeta,1.82,0.086356,1.2815,0.031088,0.15803,0.0086356,0.01468,Acker et al. 1992
+NGC6439,9.9033e-12,Acker et al. 1992 Hbeta,1.57,0.21097,2.4156,0.048523,0.46624,0.023207,0.044304,Acker et al. 1992
+NGC6445,3.772e-11,Acker et al. 1992 Hbeta,1.02,0.15974,3.2188,0.025559,1.2045,0.067093,0.07508,Acker et al. 1992
+NGC6537,5.9517e-11,Acker et al. 1992 Hbeta,2.04,0.06689,0.78395,0.026756,1.0595,0.069565,,Acker et al. 1992
+NGC6543,7.1923e-10,Acker et al. 1992 Hbeta,0.12,0.3413,,0.078498,,0.0044369,0.010239,Acker et al. 1992
+NGC6563,3.7597e-11,Acker et al. 1992 Hbeta,0.07,0.3125,3.4937,0.04375,0.80312,0.046875,0.0375,Acker et al. 1992
+NGC6565,2.4223e-11,Acker et al. 1992 Hbeta,0.42,0.24876,3.3333,0.037313,1.1866,0.099502,0.13184,Acker et al. 1992
+NGC6567,6.227e-11,Acker et al. 1992 Hbeta,0.75,0.18868,1.9585,0.043396,0.033962,0.0016981,0.0035849,Acker et al. 1992
+NGC6572,4.4953e-10,Acker et al. 1992 Hbeta,0.34,0.3367,4.0034,0.060606,0.20875,0.0037037,0.0074074,Acker et al. 1992
+NGC6578,2.4745e-11,Acker et al. 1992 Hbeta,1.51,0.1139,1.0171,0.044419,0.041002,0.0023918,0.0034169,Acker et al. 1992
+NGC6620,8.1187e-12,Acker et al. 1992 Hbeta,0.72,0.22936,2.8532,0.041284,0.93119,0.068807,0.1055,Acker et al. 1992
+NGC6629,7.1848e-11,Acker et al. 1992 Hbeta,0.9,0.17123,1.3219,0.037671,0.054795,,,Acker et al. 1992
+NGC6644,3.5611e-11,Acker et al. 1992 Hbeta,0.32,0.28736,3.9819,0.051724,0.1523,0.004023,0.0086207,Acker et al. 1992
+NGC6720,2.9515e-10,Acker et al. 1992 Hbeta,0.29,0.28181,,,,,,
+NGC6741,2.8718e-11,Acker et al. 1992 Hbeta,0.96,0.16667,2.7583,0.033333,1.09,0.038333,0.071667,Acker et al. 1992
+NGC6742,3.1473e-12,Acker et al. 1992 Hbeta,,0.4,3.924,0.052,0.236,0.04,0.036,Acker et al. 1992
+NGC6751,3.5092e-11,Acker et al. 1992 Hbeta,1.08,0.1566,,,,,,
+NGC6765,3.7768e-12,Acker et al. 1992 Hbeta,0.6,0.33333,4.1467,,1.1733,0.27667,0.1,Acker et al. 1992
+NGC6772,1.1096e-11,Acker et al. 1992 Hbeta,0.93,0.19268,2.3449,,0.52023,,,Acker et al. 1992
+NGC6778,3.0025e-11,Acker et al. 1992 Hbeta,0.89,0.23041,1.3341,0.071429,0.71198,0.0553,0.062212,Acker et al. 1992
+NGC6781,3.7655e-11,Acker et al. 1992 Hbeta,1.02,0.16375,,,,,,
+NGC6790,6.8611e-11,Acker et al. 1992 Hbeta,0.83,0.18349,2.3376,0.058716,0.13028,0.0023853,0.0042202,Acker et al. 1992
+NGC6803,2.7155e-11,Acker et al. 1992 Hbeta,0.79,0.24331,2.5012,0.06326,0.31144,0.017032,0.026764,Acker et al. 1992
+NGC6804,2.8203e-11,Acker et al. 1992 Hbeta,0.91,0.17771,,,,,,
+NGC6807,1.2782e-11,Acker et al. 1992 Hbeta,0,0.25907,2.9845,0.056995,0.069948,0.0051813,0.007772,Acker et al. 1992
+NGC6818,9.8677e-11,Acker et al. 1992 Hbeta,0.31,0.33557,5.0168,0.02349,0.16443,0.013423,0.020134,Acker et al. 1992
+NGC6826,3.6021e-10,Acker et al. 1992 Hbeta,0.03,0.2907,2.0964,0.055233,,,,Acker et al. 1992
+NGC6833,1.8524e-11,Acker et al. 1992 Hbeta,0.19,0.30357,,,,,,Acker et al. 1992
+NGC6842,7.6346e-12,Acker et al. 1992 Hbeta,1.1,0.2439,1.3707,,0.13902,,,Acker et al. 1992
+NGC6852,4.8285e-12,Acker et al. 1992 Hbeta,,0.41322,3.9298,,0.10331,,,Acker et al. 1992
+NGC6853,9.0845e-10,Acker et al. 1992 Hbeta,0.18,0.38168,4.2214,,0.97328,0.080153,0.091603,Acker et al. 1992
+NGC6879,7.5226e-12,Acker et al. 1992 Hbeta,0.42,0.34965,3,0.052448,0.031469,,,Acker et al. 1992
+NGC6881,5.6681e-12,Acker et al. 1992 Hbeta,1.77,0.10152,1.8792,0.033503,0.61218,0.014213,0.031472,Acker et al. 1992
+NGC6884,3.0429e-11,Acker et al. 1992 Hbeta,0.76,0.2551,3.687,0.05102,0.12755,0.0053571,0.0076531,Acker et al. 1992
+NGC6886,2.0767e-11,Acker et al. 1992 Hbeta,0.76,0.23585,3.8796,0.042453,0.81604,0.03066,0.037736,Acker et al. 1992
+NGC6891,7.9027e-11,Acker et al. 1992 Hbeta,0.28,0.28329,2.4589,0.050992,0.033994,,,Acker et al. 1992
+NGC6894,2.1409e-11,Acker et al. 1992 Hbeta,0.88,0.18172,,,,,,
+NGC6905,3.8352e-11,Acker et al. 1992 Hbeta,0.93,0.31348,3.0031,,0.0094044,,,Acker et al. 1992
+NGC7008,7.3737e-11,Acker et al. 1992 Hbeta,0.84,0.1872,,,,,,
+NGC7009,5.1511e-10,Acker et al. 1992 Hbeta,0.11,0.32218,,,,,,
+NGC7026,6.1058e-11,Acker et al. 1992 Hbeta,0.66,0.20619,2.0309,0.051546,0.35876,0.028866,0.043299,Acker et al. 1992
+NGC7027,5.4561e-10,Acker et al. 1992 Hbeta,1.24,0.13903,,,,,,Acker et al. 1992
+NGC7048,1.42e-11,Acker et al. 1992 Hbeta,0.75,0.27397,2.6438,,1.4137,,,Acker et al. 1992
+NGC7076,2.3e-12,Acker et al. 1992 Hbeta,,0.43478,1.7739,,0.095652,0.15217,0.047826,Acker et al. 1992
+NGC7094,5.1287e-12,Acker et al. 1992 Hbeta,0.34,0.33113,1.6225,,,,,Acker et al. 1992
+NGC7139,6.8467e-12,Acker et al. 1992 Hbeta,0.76,0.23148,1.7801,0.087963,0.71296,,,Acker et al. 1992
+NGC7293,8.0624e-10,Acker et al. 1992 Hbeta,0.04,0.5291,3.1323,0.18519,1.8677,0.074074,,Acker et al. 1992
+NGC7354,2.2883e-11,Acker et al. 1992 Hbeta,1.77,0.11494,1.6724,0.031034,0.2,,,Acker et al. 1992
+NGC7662,2.8857e-10,Acker et al. 1992 Hbeta,0.15,0.35461,4.4911,0.046099,0.028369,,,Acker et al. 1992
+IC0353,5.142e-11,"Finkbeiner 2003 map, mean inside the nebula",,,,,,,,
+IC0354,9.2415e-11,"Finkbeiner 2003 map, mean inside the nebula",,,,,,,,
+IC0410,1.0987e-09,"Finkbeiner 2003 map, mean inside the nebula",,,,,,,,
+IC0426,8.1333e-11,"Finkbeiner 2003 map, flux in a grown aperture",,,,,,,,
+IC0430,1.8778e-10,"Finkbeiner 2003 map, flux in a grown aperture",,,,,,,,
+IC0434,7.3094e-09,"Finkbeiner 2003 map, mean inside the nebula",,,,,,,,
+IC0443,1.3413e-09,"Finkbeiner 2003 map, mean inside the nebula",,,,,,,,
+IC1284,1.2984e-09,"Finkbeiner 2003 map, flux in a grown aperture",,,,,,,,
+IC1340,4.6851e-11,"Finkbeiner 2003 map, mean inside the nebula",,,,,,,,
+IC1805,4.1969e-09,"Finkbeiner 2003 map, mean inside the nebula",,,,,,,,
+IC1831,8.7641e-09,"Finkbeiner 2003 map, mean inside the nebula",,,,,,,,
+IC1848,9.4432e-10,"Finkbeiner 2003 map, mean inside the nebula",,,,,,,,
+IC2599,5.5066e-09,"Finkbeiner 2003 map, mean inside the nebula",,,,,,,,
+IC2944,3.2023e-09,"Finkbeiner 2003 map, flux in a grown aperture",,,,,,,,
+IC2948,1.0426e-08,"Finkbeiner 2003 map, flux in a grown aperture",,,,,,,,
+IC4591,2.4158e-11,"Finkbeiner 2003 map, flux in a grown aperture",,,,,,,,
+IC4603,5.5032e-12,"Finkbeiner 2003 map, mean inside the nebula",,,,,,,,
+IC4604,2.3058e-10,"Finkbeiner 2003 map, mean inside the nebula",,,,,,,,
+IC4628,3.2941e-08,"Finkbeiner 2003 map, mean inside the nebula",,,,,,,,
+IC4685,6.4644e-09,"Finkbeiner 2003 map, flux in a grown aperture",,,,,,,,
+IC4701,4.0847e-09,"Finkbeiner 2003 map, mean inside the nebula",,,,,,,,
+IC4812,2.0197e-11,"Finkbeiner 2003 map, flux in a grown aperture",,,,,,,,
+IC5068,3.7501e-10,"Finkbeiner 2003 map, mean inside the nebula",,,,,,,,
+IC5070,1.7476e-09,"Finkbeiner 2003 map, mean inside the nebula",,,,,,,,
+NGC0281,1.403e-09,"Finkbeiner 2003 map, mean inside the nebula",,,,,,,,
+NGC1435,1.774e-11,"Finkbeiner 2003 map, mean inside the nebula",,,,,,,,
+NGC1499,1.8234e-08,"Finkbeiner 2003 map, mean inside the nebula",,,,,,,,
+NGC1945,2.9135e-10,"Finkbeiner 2003 map, flux in a grown aperture",,,,,,,,
+NGC1948,4.3264e-10,"Finkbeiner 2003 map, flux in a grown aperture",,,,,,,,
+NGC1975,1.1606e-09,"Finkbeiner 2003 map, flux in a grown aperture",,,,,,,,
+NGC1976,9.6711e-08,"Finkbeiner 2003 map, mean inside the nebula",,,,,,,,
+NGC1982,8.6376e-09,"Finkbeiner 2003 map, mean inside the nebula",,,,,,,,
+NGC2024,2.3993e-09,"Finkbeiner 2003 map, mean inside the nebula",,,,,,,,
+NGC2070,1.3478e-08,"Finkbeiner 2003 map, flux in a grown aperture",,,,,,,,
+NGC2122,5.4559e-10,"Finkbeiner 2003 map, flux in a grown aperture",,,,,,,,
+NGC2174,1.2569e-09,"Finkbeiner 2003 map, mean inside the nebula",,,,,,,,
+NGC2237,2.1828e-08,"Finkbeiner 2003 map, mean inside the nebula",,,,,,,,
+NGC2238,2.298e-08,"Finkbeiner 2003 map, mean inside the nebula",,,,,,,,
+NGC2264,8.549e-10,"Finkbeiner 2003 map, flux in a grown aperture",,,,,,,,
+NGC2359,8.609e-10,"Finkbeiner 2003 map, flux in a grown aperture",,,,,,,,
+NGC2736,6.624e-11,"Finkbeiner 2003 map, mean inside the nebula",,,,,,,,
+NGC3199,1.1537e-09,"Finkbeiner 2003 map, mean inside the nebula",,,,,,,,
+NGC3372,3.3507e-07,"Finkbeiner 2003 map, mean inside the nebula",,,,,,,,
+NGC3579,3.4804e-09,"Finkbeiner 2003 map, mean inside the nebula",,,,,,,,
+NGC6188,1.2278e-09,"Finkbeiner 2003 map, mean inside the nebula",,,,,,,,
+NGC6334,4.4387e-09,"Finkbeiner 2003 map, flux in a grown aperture",,,,,,,,
+NGC6514,7.7644e-09,"Finkbeiner 2003 map, mean inside the nebula",,,,,,,,
+NGC6523,7.6426e-08,"Finkbeiner 2003 map, mean inside the nebula",,,,,,,,
+NGC6526,7.7935e-08,"Finkbeiner 2003 map, mean inside the nebula",,,,,,,,
+NGC6530,3.5512e-08,"Finkbeiner 2003 map, flux in a grown aperture",,,,,,,,
+NGC6559,5.4877e-09,"Finkbeiner 2003 map, flux in a grown aperture",,,,,,,,
+NGC6611,1.6642e-08,"Finkbeiner 2003 map, mean inside the nebula",,,,,,,,
+NGC6618,1.1418e-08,"Finkbeiner 2003 map, flux in a grown aperture",,,,,,,,
+NGC6729,1.8161e-11,"Finkbeiner 2003 map, mean inside the nebula",,,,,,,,
+NGC6960,3.5876e-09,"Finkbeiner 2003 map, mean inside the nebula",,,,,,,,
+NGC7000,8.7285e-09,"Finkbeiner 2003 map, mean inside the nebula",,,,,,,,
+NGC7380,5.4246e-10,"Finkbeiner 2003 map, mean inside the nebula",,,,,,,,
+C009,5.8761e-10,"Finkbeiner 2003 map, mean inside the nebula",,,,,,,,
