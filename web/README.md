@@ -43,6 +43,37 @@ fields in the Netlify user interface empty.
 version in the build image is older. The deploy is about 19 MB: 16.5 MB of grid
 ingredients, 2.7 MB of curves, a 0.3 MB wheel, and the page.
 
+## How the page is laid out
+
+The controls are five numbered steps in one column. Each setting is a row with a
+title and one line that says what it does:
+
+1. **Instrument**: the preset, the efficiency curve, the filter, your own
+   curves, and the telescope and camera values.
+2. **Site and sky**: altitude, sky brightness, water vapour, airmass and seeing.
+3. **Target**: a model star, a Gaia star, or a galaxy or nebula.
+4. **Exposure**: the bin length and the exposure limits.
+5. **Result**: the noise budget, the curves, and the values the model
+   calculated.
+
+The steps open one at a time, as in the planner. At first only step 1 is open,
+with the title of step 2 under it. Every value has a default, so a step is never
+incomplete: the reader checks the values and presses **Continue** to open the
+next step. Step 4 ends with **Show the result**. So the result appears only when
+the reader has seen every setting.
+
+The model runs all the time in the background, so the result is ready when step
+5 opens. Python also loads while the reader goes through the steps. On a first
+visit that takes about 20 s on a 20 Mbit/s link (see **First load** below).
+
+**Skip to the result**, next to the heading, opens all the steps at once. It is
+for readers who know the page and want the numbers.
+
+Two parts of step 1 are closed at first: **Use your own curves** and
+**Telescope and camera values**. The preset fills in the ten telescope and
+camera values, and most people do not change them. Open, they are the longest
+part of the page.
+
 ## What you can do
 
 **Build an instrument.** Choose one of three efficiency curves and one of
@@ -65,35 +96,39 @@ h) / 8000)`: 2.37 at 569 m. Past that point, the model returns NaN. A site above
 The charts use the same converted airmass. Scintillation uses the altitude
 directly.
 
-**Bound the exposure.** The bin length is in the strip at the top. The shortest
-and longest exposure are in the Exposure limits card; leave them empty to let
-the ETC pick any exposure time.
+**Bound the exposure.** Step 4 holds the bin length, and the shortest and
+longest exposure. Leave the limits empty to let the ETC pick any exposure time.
 
-**Read the result.** The exposure time and the binned precision stay at the top
-of the page as you scroll, at every width. Beside them is the precision of one
-frame. Below them are the number of frames in each bin, and how full the
-brightest pixel gets. The noise chart shows one bin or one frame. Below it, a
+**Read the result.** A card opens step 5. It shows the exposure time, the
+binned precision and the precision of one frame. Under them are the number of
+frames in each bin, how full the brightest pixel gets, and a stacked bar of the
+noise budget. The card also shows the loading line while Python starts, and any
+error.
+
+When you scroll back up to change a value, the card stays at the bottom of the
+screen. So you see what a change in step 2 or 3 does without scrolling down
+again. A link in the card goes back to step 5. The card changes between the two
+places when its place in step 5 is fully on the screen. There the two positions
+are the same, so the card does not jump. This is what `position: sticky` with
+`bottom: 0` does. The page cannot use it, because a sticky element stays inside
+its parent, and the parent of the card is step 5.
+
+Each source keeps the same colour in the card and in the chart. The squares of
+the sources are the parts of the total, because they add in quadrature, so the
+stacked bar is exact rather than indicative.
+
+Below 560px the card leaves out the line with the frames and the well, because
+every line it grows by covers a line of controls. Both values are in the table
+of step 5 as well. A warning, such as a bin shorter than one exposure, still
+shows in the card.
+
+Step 5 holds the rest. The noise chart shows one bin or one frame. Below it, a
 table that is always open lists every value the model calculated, such as the
 star and sky rates, the aperture and the collecting area. It leaves out the
 values that only repeat a control. In Gaia mode it also shows the temperature
 and distance from the archive, and the weights of the Gaia bands.
 
-Below 720px the strip shrinks to one line and grows a stacked bar of the noise
-budget, so you can watch the budget shift while you drag a slider further down
-the page without scrolling back. Each source keeps the same colour in the strip
-and in the chart. The squares of the sources are the parts of the total, because
-they add in quadrature, so the stacked bar is exact rather than indicative.
-
-The bin length lives in the strip as well, because the headline binned precision
-is a precision over it. It is markup of its own rather than part of what the
-strip redraws, so a drag is never cut short by the update it causes.
-
-The two-column layout now survives down to 721px on a narrower control column.
-The instrument card is the longest and the one you touch least once a preset is
-chosen, so it sits last.
-
-**See the optics, the sky and the star.** A row of three charts sits under the
-strip at the top, so they are the first thing below the numbers:
+**See the optics, the sky and the star.** Step 5 has three charts:
 
 * **Transmission and system response**: the detector with the optics, the
   filter, the atmosphere, and all three multiplied together;
@@ -108,11 +143,10 @@ file. The first chart warns you when a filter passes light where the detector
 cannot see it. A J filter on a silicon CCD is one example. Without the warning
 you would notice this only later, as an exposure time of several hours.
 
-The three plots line up across the row even when one legend takes two lines,
-because each chart is a subgrid of the same four rows. Each chart is drawn at
-the width of its column, one unit to one pixel, so the labels keep their size
-at any width. Below 1024px there is room for one chart at a time, and tabs above
-it pick which.
+Tabs pick one chart at a time. Each chart is drawn at the width of its column,
+one unit to one pixel, so the labels keep their size at any width. The colours
+are the Okabe-Ito set that the planner uses for its plots. They stay apart for
+colour-blind readers, and they are the same in the charts and the noise budget.
 
 These are the curves the model integrates. They come from the two grid
 ingredient files, which the page downloads for the model anyway, so the charts
@@ -147,8 +181,8 @@ Your curves are kept in the browser, so they are still there next visit, and
 each has a button to remove it. Nothing is uploaded anywhere; the page has no
 server.
 
-**Start again.** A **Reset all** button appears next to the Preset heading as
-soon as any value differs from the one the page opened with. It puts every
+**Start again.** A **Reset all** button appears next to the heading above step
+1 as soon as any value differs from the one the page opened with. It puts every
 control back, including the sky, the star and the exposure limits. It hides
 itself again when nothing differs, so it stays out of the way until you need
 it.
@@ -174,10 +208,8 @@ no single step works at both ends. They step by a tenth of their own leading
 digit instead, which is about 1% to 10% of the value and always lands on a round
 number: 64000 to 65000, and 0.2 to 0.21.
 
-Between 721px and 1023px the control column is at its narrowest, and two
-steppers side by side would leave the value about 36px, which clips a well
-depth. The paired fields stack there instead. Vertical space is cheap in that
-band, because the results are beside the controls rather than below them.
+Below 420px two steppers side by side would leave the value about 36px, which
+clips a well depth. The paired fields stack there instead.
 
 The water vapour and temperature sliders are logarithmic, because the model's
 own axes are. Water vapour is tabulated at 13 values from 0.05 mm to 30 mm, most
@@ -195,8 +227,9 @@ instrument changes, the spectra add about 12 ms. Any other change only redraws
 them, which takes 1 to 7 ms.
 
 Gaia mode reads a star once and keeps the answer. Without this cache the page
-would query VizieR on every slider move. Press Enter in the source_id field to
-load a different star.
+would query VizieR on every slider move. Press Enter in the source_id field, or
+Load beside it, to load a different star. The name of a galaxy or nebula works
+the same way.
 
 When the archive answers, the page prints what it gave: the temperature, the
 parallax and the distance that follows from it. This matters, because
@@ -204,7 +237,8 @@ parallax and the distance that follows from it. This matters, because
 for a star, and 10 pc when it holds no usable parallax. Both substitutions used
 to reach only a log that the page never showed.
 
-The temperature comes from Gaia unless you tick **Set the temperature myself**.
+The temperature comes from Gaia unless you switch on **Set the temperature
+myself**.
 A temperature passed to `get_precision_gaia` always wins over the archive, so
 the page sends one only when you have asked it to, and says so when it does.
 

@@ -26,8 +26,8 @@
   <meta property="og:image:alt" content="The mphot exposure time calculator, showing exposure time and precision.">
   <meta name="twitter:card" content="summary_large_image">
 
-  <meta name="theme-color" content="#f4f4f1" media="(prefers-color-scheme: light)">
-  <meta name="theme-color" content="#121211" media="(prefers-color-scheme: dark)">
+  <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#171717" media="(prefers-color-scheme: dark)">
   <link rel="icon" href="/icon.svg" type="image/svg+xml">
 
   <!-- Pyodide and its packages come from this CDN, so open the connection early. -->
@@ -65,148 +65,123 @@
   }
   </script>
   <style>
+    /* The look of astra-planner (github.com/ppp-one/astra-planner): its colour
+     tokens, its setting rows and its numbered steps, written as plain CSS so
+     the page needs no build step. */
     :root {
       color-scheme: light;
-      --surface-0: #f4f4f1;
-      --surface-1: #fcfcfb;
-      --surface-2: #eeeeea;
-      --text-primary: #0b0b0b;
-      --text-secondary: #52514e;
-      --text-muted: #898781;
-      --series-1: #2a78d6;
-      --series-2: #eb6834;
-      --series-3: #1baf7a;
-      --series-4: #8257d9;
-      --series-5: #a1730a;
-      --gridline: #e1e0d9;
-      --baseline: #c3c2b7;
-      --border: rgba(11, 11, 11, 0.10);
-      --good: #006300;
-      --bad: #b4241f;
+      --background: oklch(1 0 0);
+      --foreground: oklch(0.13 0.028 261.692);
+      --card: oklch(1 0 0);
+      --primary: oklch(0.21 0.034 264.665);
+      --primary-foreground: oklch(0.985 0.002 247.839);
+      --secondary: oklch(0.967 0.003 264.542);
+      --muted-foreground: oklch(0.551 0.027 264.364);
+      --accent: oklch(0.967 0.003 264.542);
+      --destructive: oklch(0.577 0.245 27.325);
+      --good: oklch(0.527 0.154 150.069);
+      --border: oklch(0.928 0.006 264.531);
+      --input: oklch(0.928 0.006 264.531);
+      --ring: oklch(0.707 0.022 261.325);
+      --field: var(--background);
+      --switch-off: var(--input);
+      --thumb-off: var(--background);
+      --thumb-on: var(--background);
+      --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+      --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+      /* Charts: the Okabe-Ito colours the planner uses for its plots. They
+       stay apart for colour-blind readers. */
+      --series-1: #0072b2;
+      --series-2: #d55e00;
+      --series-3: #009e73;
+      --series-4: #cc79a7;
+      --series-5: #e69f00;
+      --gridline: #e2e8f0;
+      --baseline: #94a3b8;
+      --chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
       --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
     }
 
     @media (prefers-color-scheme: dark) {
       :root:not([data-theme="light"]) {
         color-scheme: dark;
-        --surface-0: #121211;
-        --surface-1: #1a1a19;
-        --surface-2: #232321;
-        --text-primary: #ffffff;
-        --text-secondary: #c3c2b7;
-        --text-muted: #898781;
-        --series-1: #3987e5;
-        --series-2: #d95926;
-        --series-3: #199e70;
-        --series-4: #9b75e8;
-        --series-5: #b8891f;
-        --gridline: #2c2c2a;
-        --baseline: #383835;
-        --border: rgba(255, 255, 255, 0.10);
-        --good: #0ca30c;
-        --bad: #e66767;
+        --background: oklch(0.2046 0 0);
+        --foreground: oklch(0.8669 0 0);
+        --card: oklch(0.205 0 0);
+        --primary: oklch(0.922 0 0);
+        --primary-foreground: oklch(0.205 0 0);
+        --secondary: oklch(0.269 0 0);
+        --muted-foreground: oklch(0.708 0 0);
+        --accent: oklch(0.269 0 0);
+        --destructive: oklch(0.704 0.191 22.216);
+        --good: oklch(0.792 0.209 151.711);
+        --border: oklch(1 0 0 / 10%);
+        --input: oklch(1 0 0 / 15%);
+        --ring: oklch(0.556 0 0);
+        --field: oklch(1 0 0 / 4.5%);
+        --switch-off: oklch(1 0 0 / 12%);
+        --thumb-off: var(--foreground);
+        --thumb-on: var(--primary-foreground);
+        --series-1: #56b4e9;
+        --series-2: #f07e3f;
+        --series-3: #1fb386;
+        --series-4: #de93bf;
+        --series-5: #f0b429;
+        --gridline: oklch(1 0 0 / 10%);
+        --baseline: oklch(0.556 0 0);
+        --chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23a1a1a1' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
       }
     }
 
     :root[data-theme="dark"] {
       color-scheme: dark;
-      --surface-0: #121211;
-      --surface-1: #1a1a19;
-      --surface-2: #232321;
-      --text-primary: #ffffff;
-      --text-secondary: #c3c2b7;
-      --text-muted: #898781;
-      --series-1: #3987e5;
-      --series-2: #d95926;
-      --series-3: #199e70;
-      --series-4: #9b75e8;
-      --series-5: #b8891f;
-      --gridline: #2c2c2a;
-      --baseline: #383835;
-      --border: rgba(255, 255, 255, 0.10);
-      --good: #0ca30c;
-      --bad: #e66767;
+      --background: oklch(0.2046 0 0);
+      --foreground: oklch(0.8669 0 0);
+      --card: oklch(0.205 0 0);
+      --primary: oklch(0.922 0 0);
+      --primary-foreground: oklch(0.205 0 0);
+      --secondary: oklch(0.269 0 0);
+      --muted-foreground: oklch(0.708 0 0);
+      --accent: oklch(0.269 0 0);
+      --destructive: oklch(0.704 0.191 22.216);
+      --good: oklch(0.792 0.209 151.711);
+      --border: oklch(1 0 0 / 10%);
+      --input: oklch(1 0 0 / 15%);
+      --ring: oklch(0.556 0 0);
+      --field: oklch(1 0 0 / 4.5%);
+      --switch-off: oklch(1 0 0 / 12%);
+      --thumb-off: var(--foreground);
+      --thumb-on: var(--primary-foreground);
+      --series-1: #56b4e9;
+      --series-2: #f07e3f;
+      --series-3: #1fb386;
+      --series-4: #de93bf;
+      --series-5: #f0b429;
+      --gridline: oklch(1 0 0 / 10%);
+      --baseline: oklch(0.556 0 0);
+      --chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23a1a1a1' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
     }
 
     * {
       box-sizing: border-box;
     }
 
+    /* Most blocks here set a display of their own, which the hidden attribute
+     alone would not override. */
+    [hidden] {
+      display: none !important;
+    }
+
     body {
       margin: 0;
-      background: var(--surface-0);
-      color: var(--text-primary);
-      font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      background: var(--background);
+      color: var(--foreground);
+      font: 16px/1.5 -apple-system, system-ui, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif;
       -webkit-font-smoothing: antialiased;
     }
 
-    .wrap {
-      max-width: 1180px;
-      margin: 0 auto;
-      padding: 32px 16px 64px;
-    }
-
-    header {
-      display: flex;
-      align-items: flex-start;
-      justify-content: space-between;
-      gap: 16px;
-      margin-bottom: 20px;
-    }
-
-    .source-link {
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-      flex: none;
-      padding: 5px 10px;
-      font-size: 13px;
-      white-space: nowrap;
-      color: var(--text-secondary);
-      text-decoration: none;
-      border: 1px solid var(--border);
-      border-radius: 7px;
-    }
-
-    .source-link:hover {
-      color: var(--text-primary);
-      border-color: var(--baseline);
-    }
-
-    .source-link:focus-visible {
-      outline: 2px solid var(--series-1);
-      outline-offset: 2px;
-    }
-
-    .icon-glyph {
-      flex: none;
-      opacity: 0.7;
-    }
-
-    /* On a narrow screen the link takes its own row, above the title. */
-    @media (max-width: 560px) {
-      header {
-        flex-direction: column-reverse;
-        align-items: flex-end;
-        gap: 12px;
-      }
-
-      header .title {
-        align-self: stretch;
-      }
-    }
-
-    h1 {
-      font-size: 24px;
-      font-weight: 640;
-      margin: 0 0 4px;
-      letter-spacing: -0.01em;
-    }
-
-    header p {
-      margin: 0;
-      color: var(--text-secondary);
-      max-width: 66ch;
+    a {
+      color: inherit;
     }
 
     code {
@@ -214,21 +189,133 @@
       font-size: 0.92em;
     }
 
+    :focus-visible {
+      outline: none;
+      box-shadow: 0 0 0 3px color-mix(in oklab, var(--ring) 50%, transparent);
+    }
+
+    /* ------------------------------------------------------------ page frame */
+    .page {
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+      max-width: 1152px;
+      margin: 0 auto;
+      padding: 16px;
+    }
+
+    @media (min-width: 640px) {
+      .page {
+        padding: 32px;
+      }
+    }
+
+    header.top {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 30px;
+      line-height: 36px;
+      font-weight: 500;
+    }
+
+    header nav {
+      font-size: 14px;
+      color: var(--muted-foreground);
+    }
+
+    header nav a {
+      text-decoration: underline;
+    }
+
+    header nav a.ext {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+    }
+
+    main {
+      flex: 1;
+      min-width: 0;
+      margin-top: 40px;
+    }
+
+    .column {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+      width: 100%;
+      min-width: 0;
+      max-width: 768px;
+      margin: 0 auto;
+    }
+
+    /* As tall as the Reset all button, so the heading does not move when the
+     button appears. */
+    .lead-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      min-height: 32px;
+    }
+
+    .lead-row h2 {
+      margin: 0 0 0 28px;
+      font-size: 20px;
+      line-height: 28px;
+      font-weight: 600;
+    }
+
+    .intro {
+      margin: -12px 0 0 28px;
+      font-size: 14px;
+      line-height: 20px;
+      color: var(--muted-foreground);
+    }
+
+    footer {
+      margin-top: 64px;
+      text-align: center;
+      font-size: 12px;
+      color: var(--muted-foreground);
+    }
+
+    footer a {
+      text-decoration: underline;
+    }
+
+    /* ------------------------------------------------------------------ status */
+    /* The first line of the result card: Python loading, or what went wrong. */
     #status {
       display: flex;
       align-items: center;
       gap: 10px;
-      background: var(--surface-1);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 11px 14px;
-      margin: 18px 0;
-      color: var(--text-secondary);
       font-size: 14px;
+      line-height: 20px;
+      color: var(--muted-foreground);
     }
 
     #status[data-state="error"] {
-      color: var(--bad);
+      color: var(--destructive);
+    }
+
+    #status:not([data-state="ready"])+#summary-body:not(:empty) {
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid var(--border);
+    }
+
+    /* The numbers are from the last input that worked, not from this one. */
+    #status[data-state="error"]+#summary-body {
+      opacity: 0.55;
     }
 
     /* Nothing to read once it is ready, and the row costs space. */
@@ -237,16 +324,15 @@
     }
 
     .spinner {
+      flex: none;
       width: 14px;
       height: 14px;
-      flex: none;
       border-radius: 50%;
-      border: 2px solid var(--baseline);
-      border-top-color: var(--series-1);
+      border: 2px solid var(--border);
+      border-top-color: var(--foreground);
       animation: spin 0.8s linear infinite;
     }
 
-    #status[data-state="ready"] .spinner,
     #status[data-state="error"] .spinner {
       display: none;
     }
@@ -263,109 +349,98 @@
       }
     }
 
-    .cols {
-      display: grid;
-      grid-template-columns: 340px minmax(0, 1fr);
-      gap: 20px;
-      align-items: start;
+    /* ------------------------------------------------------------ result card */
+    /* The card opens step 5. While step 5 is below the screen, it rides at the
+     bottom of the screen instead, so you see what a change in step 2 or 3
+     does. placeResult() sets the floating class, and the position that keeps
+     it over its place in step 5. */
+    .summary-card {
+      padding: 12px 16px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      box-shadow: var(--shadow-sm);
+      transition: box-shadow 0.15s;
     }
 
-    /* A narrower control column keeps the result beside the controls on a small
-     laptop window, instead of pushing it a screen below them. */
-    @media (max-width: 1023px) {
-      .cols {
-        grid-template-columns: 264px minmax(0, 1fr);
-        gap: 14px;
-      }
+    .summary-card.floating {
+      position: fixed;
+      bottom: 12px;
+      z-index: 10;
+      box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
     }
 
-    @media (max-width: 720px) {
-      .cols {
-        grid-template-columns: 1fr;
-      }
+    /* In step 5 the details are right below, so the link has nowhere to go.
+     It keeps its space, so the card has one height in both places. */
+    .summary-card:not(.floating) .jump {
+      visibility: hidden;
     }
 
-    /* A wide screen fits the controls in two columns, so they end near the
-     bottom of the results instead of running far past them. */
-    @media (min-width: 1280px) {
-      .cols {
-        grid-template-columns: 664px minmax(0, 1fr);
-      }
-
-      .controls {
-        column-count: 2;
-        column-gap: 16px;
-      }
-
-      .controls .card {
-        break-inside: avoid;
-        margin: 0 0 16px;
-      }
-    }
-
-    /* The control column is long. Pin the numbers so they stay in view while
-     you reach a control near the bottom of it. */
-    #summary {
-      position: sticky;
-      top: 0;
-      z-index: 2;
-      margin: 0 0 14px;
-      border-radius: 0 0 12px 12px;
-      border-top: 0;
-      background: var(--surface-1);
-    }
-
-    #summary-body.busy {
+    .busy {
       opacity: 0.55;
       transition: opacity 120ms linear 80ms;
     }
 
-    #summary .stats {
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 12px;
     }
 
-    #summary .stat .v {
-      font-size: 34px;
+    .stat .k {
+      font-size: 12px;
+      line-height: 16px;
+      color: var(--muted-foreground);
     }
 
-    #summary .meta {
+    .stat .v {
+      font-size: 24px;
+      line-height: 32px;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .stat .u {
+      margin-left: 4px;
+      font-size: 12px;
+      font-weight: 400;
+      letter-spacing: 0;
+      color: var(--muted-foreground);
+    }
+
+    .stat.minor .v {
+      color: var(--muted-foreground);
+    }
+
+    .summary-meta {
+      margin: 6px 0 0;
+      font-size: 12px;
+      line-height: 16px;
+      color: var(--muted-foreground);
+    }
+
+    .summary-meta .warn {
+      display: block;
+      color: var(--destructive);
+    }
+
+    .summary-foot {
+      display: flex;
+      align-items: center;
+      gap: 12px;
       margin-top: 8px;
     }
 
-    .bin-row {
-      display: grid;
-      grid-template-columns: 148px minmax(0, 1fr);
-      align-items: center;
-      gap: 4px 16px;
-      margin-top: 12px;
-      padding-top: 12px;
-      border-top: 1px solid var(--gridline);
-    }
-
-    .bin-row label {
-      display: flex;
-      justify-content: space-between;
-      align-items: baseline;
-      gap: 8px;
-      font-size: 13px;
-      color: var(--text-secondary);
-      margin: 0;
-    }
-
-    /* The stacked bar repeats the noise budget in one line. Above 720px the
-     full chart is already beside the controls, so it only earns its space on a
-     narrow screen. */
-    #summary .mini {
-      display: none;
-    }
-
+    /* The noise budget in one line. The sources add in quadrature, so their
+     squares are the parts of the total, and a stacked bar shows them exactly. */
     .mini {
       display: flex;
+      flex: 1;
       height: 6px;
-      margin-top: 8px;
-      border-radius: 3px;
       overflow: hidden;
-      background: var(--surface-2);
+      background: var(--secondary);
+      border-radius: 3px;
     }
 
     .mini i {
@@ -373,78 +448,46 @@
       height: 100%;
     }
 
-    #summary .jump {
-      display: none;
-      order: 99;
+    .summary-foot .jump {
+      margin-left: auto;
     }
 
-    /* Below 720px the controls sit above the results, so this strip is the only
-     thing on screen while you move a slider. It carries the numbers and the
-     shape of the noise budget, and it scrolls you to the rest. */
-    @media (max-width: 720px) {
-      #summary {
-        padding: 9px 14px 11px;
+    @media (max-width: 560px) {
+      .summary-card {
+        padding: 9px 12px 10px;
       }
 
-      #summary .stats {
-        grid-template-columns: repeat(3, auto);
-        justify-content: space-between;
-        gap: 10px;
+      .stats {
+        gap: 8px;
       }
 
-      #summary .stat .k {
-        font-size: 11px;
-        margin-bottom: 0;
-      }
-
-      #summary .stat .v {
-        font-size: 21px;
-      }
-
-      #summary .stat .u {
+      .stat .k {
         font-size: 11px;
       }
 
-      #summary .meta {
+      .stat .v {
+        font-size: 20px;
+        line-height: 26px;
+      }
+
+      /* Every line the floating card grows by covers a line of controls.
+       Both values are in the table of step 5 as well. */
+      .summary-meta .info {
         display: none;
       }
 
-      #summary .mini {
-        display: flex;
-      }
-
-      /* Side by side rather than stacked. The strip is sticky, so every row it
-       grows by is a row of controls pushed off the screen. */
-      .bin-row {
-        grid-template-columns: 116px minmax(0, 1fr);
-        gap: 10px;
-        margin-top: 8px;
-        padding-top: 8px;
-      }
-
-      .bin-row label {
-        font-size: 12px;
-      }
-
-      #summary .jump {
+      /* Below the number rather than beside it, where it would wrap anyway. */
+      .stat .u {
         display: block;
-        width: 100%;
-        padding: 4px 0 0;
         margin: 0;
-        font: inherit;
         font-size: 11px;
-        color: var(--text-muted);
-        background: none;
-        border: 0;
-        cursor: pointer;
+        line-height: 14px;
       }
     }
 
-    /* The sticky strip would otherwise cover the heading of whatever the jump
-     button scrolls to. render() measures the strip and sets the exact value;
-     this is the fallback until the first result arrives. */
+    /* A step that opens scrolls to the top of the screen, with a little air. */
     html {
-      scroll-padding-top: 130px;
+      scroll-padding-top: 16px;
     }
 
     @media (prefers-reduced-motion: no-preference) {
@@ -453,123 +496,248 @@
       }
     }
 
-    .card {
-      background: var(--surface-1);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 16px 18px;
+    /* ------------------------------------------------------------------- steps */
+    /* A numbered line down the left, as in the planner. The steps open one at
+     a time. Every value has a default, so a step is never incomplete: the
+     reader presses Continue to open the next one. */
+    ol.steps {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      gap: 40px;
+      min-width: 0;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      border-left: 2px solid var(--secondary);
     }
 
-    .card+.card {
-      margin-top: 14px;
+    .step {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      min-width: 0;
+      padding-left: 28px;
     }
 
-    h2 {
-      font-size: 12px;
+    .step-num {
+      position: absolute;
+      left: -16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      font-size: 14px;
+      color: var(--muted-foreground);
+      background: var(--secondary);
+      border-radius: 50%;
+    }
+
+    .step h3 {
+      margin: 0;
+      font-size: 16px;
+      line-height: 24px;
       font-weight: 600;
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-      color: var(--text-muted);
-      margin: 0 0 12px;
     }
 
-    .field {
-      margin-bottom: 12px;
+    .step-desc {
+      margin: -8px 0 0;
+      font-size: 14px;
+      line-height: 20px;
+      color: var(--muted-foreground);
     }
 
-    .field:last-child {
-      margin-bottom: 0;
+    .step-desc .err {
+      color: var(--destructive);
     }
 
+    /* The next step, closed: its title and what opens it, as in the planner. */
+    .step.locked {
+      gap: 4px;
+      opacity: 0.6;
+    }
+
+    .step.locked> :not(.step-num, h3, .locked-note),
+    .step:not(.locked)>.locked-note {
+      display: none;
+    }
+
+    .locked-note {
+      margin: 0;
+      font-size: 14px;
+      line-height: 20px;
+      color: var(--muted-foreground);
+    }
+
+    .step h3:focus-visible {
+      border-radius: 4px;
+    }
+
+    @media (prefers-reduced-motion: no-preference) {
+      .step.appear> :not(.step-num, h3) {
+        animation: appear 0.3s ease-out;
+      }
+    }
+
+    @keyframes appear {
+      from {
+        opacity: 0;
+        transform: translateY(8px);
+      }
+    }
+
+    .fields {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    #site-rows {
+      display: contents;
+    }
+
+    /* One setting: what it is on the left, the control on the right. On a
+     phone the two stack. */
+    .row {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      width: 100%;
+      min-width: 0;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+    }
+
+    .row-text {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      min-width: 0;
+    }
+
+    .row-title {
+      display: block;
+      font-size: 14px;
+      line-height: 20px;
+      font-weight: 600;
+    }
+
+    .row-desc {
+      display: block;
+      margin: 0;
+      font-size: 14px;
+      line-height: 20px;
+      color: var(--muted-foreground);
+    }
+
+    .row-control,
+    .stack {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      min-width: 0;
+    }
+
+    @media (min-width: 640px) {
+      .row {
+        flex-direction: row;
+        align-items: flex-start;
+        justify-content: space-between;
+      }
+
+      .row-text {
+        max-width: 45%;
+      }
+
+      .row-control {
+        width: 55%;
+      }
+    }
+
+    .unit {
+      font-weight: 400;
+      color: var(--muted-foreground);
+    }
+
+    /* A setting that most people leave alone: closed, with the same title and
+     description as a row, and a chevron to open it. */
+    details.box {
+      min-width: 0;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+    }
+
+    details.box>summary {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      list-style: none;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+
+    details.box>summary::-webkit-details-marker {
+      display: none;
+    }
+
+    details.box>summary::after {
+      content: "";
+      flex: none;
+      width: 16px;
+      height: 16px;
+      margin-top: 2px;
+      background: var(--chevron) no-repeat center / 16px;
+      transition: transform 0.2s;
+    }
+
+    details.box[open]>summary::after {
+      transform: rotate(180deg);
+    }
+
+    .box-body {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    /* A label above a control, for the fields that sit in a grid. */
     .field>label {
       display: flex;
       justify-content: space-between;
       align-items: baseline;
       gap: 8px;
-      font-size: 13px;
-      color: var(--text-secondary);
-      margin-bottom: 4px;
-    }
-
-    .field .val {
-      font-family: var(--mono);
-      font-size: 12px;
-      color: var(--text-primary);
-      white-space: nowrap;
-    }
-
-    select,
-    input[type="text"],
-    input[type="number"] {
-      width: 100%;
-      padding: 6px 9px;
-      font: inherit;
+      margin-bottom: 6px;
       font-size: 14px;
-      color: var(--text-primary);
-      background: var(--surface-0);
-      border: 1px solid var(--border);
-      border-radius: 7px;
-    }
-
-    input[type="range"] {
-      width: 100%;
-      accent-color: var(--series-1);
-      margin: 0;
+      font-weight: 500;
+      color: var(--muted-foreground);
     }
 
     .grid2 {
       display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
     }
 
-    /* The control column is at its narrowest in this band, and two steppers
-     side by side leave the value itself about 36px, which clips a well depth.
-     Vertical space is cheap here, because the results are beside the controls
-     rather than below them. */
-    @media (min-width: 721px) and (max-width: 1023px) {
+    @media (max-width: 420px) {
       .grid2 {
-        grid-template-columns: 1fr;
+        grid-template-columns: minmax(0, 1fr);
       }
     }
 
-    .unit {
-      color: var(--text-muted);
-      font-weight: 400;
-    }
-
-    button {
-      width: 100%;
-      padding: 9px;
-      font: inherit;
-      font-weight: 560;
-      cursor: pointer;
-      color: #fff;
-      background: var(--series-1);
-      border: 0;
-      border-radius: 8px;
-    }
-
-    button.secondary {
-      color: var(--text-primary);
-      background: var(--surface-2);
-      border: 1px solid var(--border);
-      font-weight: 500;
-    }
-
-    button:disabled {
-      opacity: 0.5;
-      cursor: default;
-    }
-
     .hint {
+      margin: 0;
       font-size: 12px;
-      color: var(--text-muted);
-      margin: 6px 0 0;
+      line-height: 16px;
+      color: var(--muted-foreground);
     }
 
     .hint.err {
-      color: var(--bad);
+      color: var(--destructive);
     }
 
     /* The archive answered and these are the values it gave. */
@@ -577,137 +745,457 @@
       color: var(--good);
     }
 
-    #gaia-report {
-      margin: 10px 0 12px;
+    .placeholder {
+      margin: 0;
+      font-size: 14px;
+      color: var(--muted-foreground);
     }
 
-    label.check {
+    /* ---------------------------------------------------------------- controls */
+    select,
+    input[type="text"],
+    input[type="number"] {
+      width: 100%;
+      min-width: 0;
+      height: 36px;
+      padding: 4px 12px;
+      font: inherit;
+      font-size: 14px;
+      color: var(--foreground);
+      background-color: var(--field);
+      border: 1px solid var(--input);
+      border-radius: 8px;
+      box-shadow: var(--shadow-xs);
+      transition: color 0.15s, box-shadow 0.15s;
+    }
+
+    select:focus-visible,
+    input[type="text"]:focus-visible,
+    input[type="number"]:focus-visible {
+      border-color: var(--ring);
+    }
+
+    ::placeholder {
+      color: var(--muted-foreground);
+    }
+
+    select {
+      padding-right: 34px;
+      appearance: none;
+      background-image: var(--chevron);
+      background-repeat: no-repeat;
+      background-position: right 10px center;
+      background-size: 16px;
+      cursor: pointer;
+    }
+
+    /* A native slider keeps the notches of its datalist, which a restyled
+     one loses. The water vapour slider needs them. */
+    input[type="range"] {
+      width: 100%;
+      min-width: 0;
+      margin: 0;
+      accent-color: var(--primary);
+    }
+
+    .slider {
       display: flex;
       align-items: center;
-      justify-content: flex-start;
-      gap: 8px;
-      font-size: 13px;
-      color: var(--text-secondary);
-      cursor: pointer;
-      margin: 0;
+      gap: 12px;
     }
 
-    label.check input {
+    .val {
       flex: none;
-      width: auto;
-      margin: 0;
-      accent-color: var(--series-1);
-    }
-
-    .seg {
-      display: flex;
-      gap: 6px;
-    }
-
-    .seg label {
-      flex: 1;
-      text-align: center;
-      padding: 6px 4px;
-      font-size: 13px;
-      cursor: pointer;
-      border: 1px solid var(--border);
-      border-radius: 7px;
-      color: var(--text-secondary);
-    }
-
-    .seg input {
-      position: absolute;
-      opacity: 0;
-      width: 0;
-      height: 0;
-    }
-
-    .seg label:has(input:checked) {
-      border-color: var(--series-1);
-      color: var(--series-1);
-      font-weight: 560;
-    }
-
-    .seg label:has(input:focus-visible) {
-      outline: 2px solid var(--series-1);
-      outline-offset: 2px;
-    }
-
-    .stats {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 16px;
-    }
-
-    @media (max-width: 560px) {
-      .stats {
-        grid-template-columns: 1fr 1fr;
-      }
-    }
-
-    .stat .k {
-      font-size: 12px;
-      color: var(--text-muted);
-      margin-bottom: 2px;
-    }
-
-    .stat .v {
-      font-size: 40px;
-      line-height: 1.05;
-      font-weight: 640;
-      letter-spacing: -0.02em;
+      min-width: 4.5em;
+      font-size: 14px;
+      text-align: right;
+      white-space: nowrap;
       font-variant-numeric: tabular-nums;
     }
 
-    .stat.lead .v {
-      color: var(--series-1);
+    .input-row {
+      display: flex;
+      gap: 8px;
     }
 
-    .stat .u {
-      font-size: 13px;
-      color: var(--text-secondary);
+    .btn {
+      display: inline-flex;
+      flex: none;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      height: 32px;
+      padding: 0 12px;
+      font: inherit;
+      font-size: 14px;
+      font-weight: 500;
+      white-space: nowrap;
+      color: var(--foreground);
+      background: var(--field);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      box-shadow: var(--shadow-xs);
+      cursor: pointer;
     }
 
-    .meta {
-      font-size: 13px;
-      color: var(--text-secondary);
-      margin: 14px 0 0;
+    .btn:hover {
+      background: var(--accent);
     }
 
-    .meta .warn {
-      color: var(--bad);
+    /* The one action a step asks for. */
+    .btn.primary {
+      height: 36px;
+      padding: 0 16px;
+      color: var(--primary-foreground);
+      background: var(--primary);
+      border-color: transparent;
     }
 
-    figure {
+    .btn.primary:hover {
+      background: color-mix(in oklab, var(--primary) 90%, transparent);
+    }
+
+    /* In line with the heading when a narrow screen puts them under it. */
+    .lead-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-left: 28px;
+    }
+
+    .btn svg {
+      flex: none;
+      width: 16px;
+      height: 16px;
+    }
+
+    .input-row .btn {
+      height: 36px;
+    }
+
+    .link-button {
+      /* Padding for the tap target, pulled back so the layout does not shift. */
+      padding: 4px 6px;
+      margin: -4px -6px;
+      font: inherit;
+      font-size: 12px;
+      font-weight: 500;
+      white-space: nowrap;
+      color: var(--muted-foreground);
+      background: none;
+      border: 0;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .link-button:hover {
+      color: var(--foreground);
+      text-decoration: underline;
+    }
+
+    /* Joined buttons with one choice: the planner's toggle group. */
+    .seg {
+      display: flex;
+      width: 100%;
+      border-radius: 8px;
+      box-shadow: var(--shadow-xs);
+    }
+
+    .seg label {
+      display: inline-flex;
+      flex: 1 1 0;
+      align-items: center;
+      justify-content: center;
+      min-width: 0;
+      min-height: 32px;
+      padding: 4px 10px;
+      font-size: 14px;
+      line-height: 1.25;
+      font-weight: 500;
+      text-align: center;
+      cursor: pointer;
+      border: 1px solid var(--input);
+      border-left-width: 0;
+    }
+
+    .seg label:first-child {
+      border-left-width: 1px;
+      border-radius: 8px 0 0 8px;
+    }
+
+    .seg label:last-child {
+      border-radius: 0 8px 8px 0;
+    }
+
+    .seg label:hover {
+      background: var(--accent);
+    }
+
+    .seg label:has(input:checked) {
+      background: var(--accent);
+    }
+
+    .seg input,
+    .tabs input {
+      position: absolute;
+      width: 0;
+      height: 0;
+      opacity: 0;
+    }
+
+    .seg label:has(input:focus-visible),
+    .tabs label:has(input:focus-visible) {
+      position: relative;
+      z-index: 1;
+      box-shadow: 0 0 0 3px color-mix(in oklab, var(--ring) 50%, transparent);
+    }
+
+    /* A switch, as the planner uses for an on/off setting. */
+    label.check {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 0;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    label.check input {
+      position: relative;
+      flex: none;
+      width: 32px;
+      height: 18px;
+      margin: 0;
+      appearance: none;
+      cursor: pointer;
+      background: var(--switch-off);
+      border: 1px solid transparent;
+      border-radius: 999px;
+      box-shadow: var(--shadow-xs);
+      transition: background 0.15s;
+    }
+
+    label.check input::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 16px;
+      height: 16px;
+      background: var(--thumb-off);
+      border-radius: 50%;
+      transition: transform 0.15s;
+    }
+
+    label.check input:checked {
+      background: var(--primary);
+    }
+
+    label.check input:checked::before {
+      background: var(--thumb-on);
+      transform: translateX(14px);
+    }
+
+    /* Dark current, read noise and well depth each cover several decades, so
+     one fixed step is wrong at one end of the range. These fields step by a
+     fraction of their own value instead. The native spinner cannot do that, so
+     it is replaced, and a phone gets a stepper where it had none. */
+    .stepper {
+      display: flex;
+      min-width: 0;
+      border-radius: 8px;
+      box-shadow: var(--shadow-xs);
+    }
+
+    .stepper input[type="number"] {
+      flex: 1;
+      text-align: center;
+      border-radius: 0;
+      box-shadow: none;
+      appearance: textfield;
+      -moz-appearance: textfield;
+    }
+
+    .stepper input[type="number"]:focus-visible {
+      position: relative;
+      z-index: 1;
+      box-shadow: 0 0 0 3px color-mix(in oklab, var(--ring) 50%, transparent);
+    }
+
+    .stepper input[type="number"]::-webkit-outer-spin-button,
+    .stepper input[type="number"]::-webkit-inner-spin-button {
+      appearance: none;
       margin: 0;
     }
 
-    figcaption {
-      font-size: 13px;
-      color: var(--text-secondary);
-      margin-bottom: 12px;
-    }
-
-    .fig-head {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      gap: 16px;
-      margin-bottom: 12px;
-    }
-
-    .fig-head .seg {
+    .stepper button {
       flex: none;
-      width: 190px;
+      width: 32px;
+      height: 36px;
+      padding: 0;
+      font: inherit;
+      font-size: 16px;
+      line-height: 1;
+      color: var(--muted-foreground);
+      background: var(--field);
+      border: 1px solid var(--input);
+      cursor: pointer;
+    }
+
+    .stepper button:first-child {
+      border-right: 0;
+      border-radius: 8px 0 0 8px;
+    }
+
+    .stepper button:last-child {
+      border-left: 0;
+      border-radius: 0 8px 8px 0;
+    }
+
+    .stepper button:hover {
+      color: var(--foreground);
+      background: var(--accent);
+    }
+
+    input[type="file"] {
+      width: 100%;
+      font: inherit;
+      font-size: 12px;
+      color: var(--muted-foreground);
+    }
+
+    input[type="file"]::file-selector-button {
+      height: 32px;
+      margin-right: 10px;
+      padding: 0 12px;
+      font: inherit;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--foreground);
+      background: var(--field);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      box-shadow: var(--shadow-xs);
+      cursor: pointer;
+    }
+
+    input[type="file"]::file-selector-button:hover {
+      background: var(--accent);
+    }
+
+    .uploads {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .uploads li {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      margin-top: 8px;
+      padding: 8px 0 0;
+      font-size: 12px;
+      color: var(--muted-foreground);
+      border-top: 1px solid var(--border);
+    }
+
+    .uploads .who {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .uploads .who b {
+      display: block;
+      font-weight: 500;
+      color: var(--foreground);
+      overflow-wrap: anywhere;
+    }
+
+    .uploads .drop {
+      flex: none;
+      width: 28px;
+      height: 28px;
+      padding: 0;
+      font: inherit;
+      font-size: 16px;
+      color: var(--muted-foreground);
+      background: none;
+      border: 0;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    .uploads .drop:hover {
+      color: var(--destructive);
+      background: var(--accent);
+    }
+
+    /* ----------------------------------------------------------------- results */
+    .results {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      min-width: 0;
+    }
+
+    .results:empty {
+      display: none;
+    }
+
+    /* A box of the result step, as the planner's Section: a title and a short
+     description, a control on the right (below on a phone), the content under. */
+    .section {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      min-width: 0;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+    }
+
+    .section-head {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 8px 16px;
+    }
+
+    .section-head>div:first-child,
+    .section-text {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      min-width: 0;
+    }
+
+    .section-head>div:first-child {
+      flex: 1 1 320px;
+    }
+
+    .section h4 {
+      margin: 0;
+      font-size: 14px;
+      line-height: 20px;
+      font-weight: 600;
+    }
+
+    .section-desc {
+      margin: 0;
+      font-size: 14px;
+      line-height: 20px;
+      color: var(--muted-foreground);
+    }
+
+    .section-head .seg {
+      flex: none;
+      width: 200px;
     }
 
     @media (max-width: 560px) {
-      .fig-head {
-        flex-direction: column;
-        gap: 10px;
-      }
-
-      .fig-head .seg {
+      .section-head .seg {
         width: 100%;
       }
     }
@@ -715,89 +1203,154 @@
     .bars {
       display: grid;
       grid-template-columns: auto minmax(0, 1fr) auto;
-      gap: 3px 10px;
       align-items: center;
+      gap: 4px 12px;
     }
 
     .bars .name {
-      font-size: 13px;
-      color: var(--text-secondary);
+      font-size: 14px;
       white-space: nowrap;
+      color: var(--muted-foreground);
     }
 
     .bars .track {
-      height: 22px;
       position: relative;
+      height: 20px;
     }
 
-    /* One colour per noise source, shared by this chart and the stacked strip
-     in the summary, so the two read as the same object. */
+    /* One colour per noise source, shared by this chart and the stacked bar
+     in the result card, so the two read as the same object. */
     .bars .fill {
       position: absolute;
       inset: 0 auto 0 0;
       min-width: 2px;
-      background: var(--series-1);
       border-radius: 0 4px 4px 0;
     }
 
     .bars .num {
-      font-family: var(--mono);
-      font-size: 12px;
-      font-variant-numeric: tabular-nums;
-      color: var(--text-primary);
+      font-size: 14px;
+      text-align: right;
       white-space: nowrap;
-    }
-
-    .bars .row-gap {
-      height: 2px;
-      grid-column: 1 / -1;
+      font-variant-numeric: tabular-nums;
     }
 
     table {
       width: 100%;
+      font-size: 14px;
       border-collapse: collapse;
-      font-size: 13px;
     }
 
     th,
     td {
+      padding: 8px;
       text-align: left;
-      padding: 5px 8px;
-      border-bottom: 1px solid var(--gridline);
+      vertical-align: middle;
+      border-bottom: 1px solid var(--border);
+    }
+
+    td {
+      text-align: right;
+      font-variant-numeric: tabular-nums;
     }
 
     thead th {
-      color: var(--text-muted);
-      font-weight: 600;
-      font-size: 11px;
-      letter-spacing: 0.05em;
-      text-transform: uppercase;
+      font-weight: 500;
+      white-space: nowrap;
     }
 
-    td:last-child {
+    thead th:not(:first-child) {
       text-align: right;
-      font-family: var(--mono);
-      font-variant-numeric: tabular-nums;
     }
 
     th[scope="row"] {
       font-weight: 400;
-      color: var(--text-secondary);
+      color: var(--muted-foreground);
     }
 
-    tr:last-child th,
-    tr:last-child td {
+    tbody tr:last-child>* {
       border-bottom: 0;
     }
 
-    details>summary {
+    details.more>summary {
+      width: fit-content;
+      font-size: 14px;
+      color: var(--muted-foreground);
       cursor: pointer;
-      font-size: 13px;
-      color: var(--text-secondary);
+      border-radius: 4px;
     }
 
-    details[open]>summary {
-      margin-bottom: 10px;
+    details.more>summary:hover {
+      color: var(--foreground);
+    }
+
+    details.more[open]>summary {
+      margin-bottom: 8px;
+    }
+
+    .notes {
+      margin: 0;
+      padding-left: 18px;
+      list-style: disc;
+      font-size: 14px;
+      color: var(--muted-foreground);
+    }
+
+    .notes li+li {
+      margin-top: 4px;
+    }
+
+    /* ------------------------------------------------------------------ charts */
+    /* Tabs pick one chart at a time. They look apart from the range toggle, so
+     the two rows of buttons do not read as one. */
+    .tabs {
+      display: flex;
+      width: fit-content;
+      max-width: 100%;
+      padding: 3px;
+      background: var(--secondary);
+      border-radius: 10px;
+    }
+
+    .tabs label {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 28px;
+      padding: 2px 12px;
+      font-size: 14px;
+      font-weight: 500;
+      white-space: nowrap;
+      color: var(--muted-foreground);
+      border: 1px solid transparent;
+      border-radius: 7px;
+      cursor: pointer;
+    }
+
+    .tabs label:has(input:checked) {
+      color: var(--foreground);
+      background: var(--background);
+      border-color: var(--border);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .plot:not(.active) {
+      display: none;
+    }
+
+    .plot {
+      min-width: 0;
+    }
+
+    .plot h5 {
+      margin: 0 0 4px;
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    /* A galaxy or nebula has no star to draw, so its chart and tab go. */
+    #plots.extended .plot[data-plot="star"],
+    #plots.extended .plot-tabs label:has(input[value="star"]) {
+      display: none;
     }
 
     .legend {
@@ -812,14 +1365,18 @@
       align-items: center;
       gap: 6px;
       font-size: 12px;
-      color: var(--text-secondary);
+      color: var(--muted-foreground);
     }
 
     .legend i {
+      display: inline-block;
       width: 10px;
       height: 10px;
-      border-radius: 2px;
-      display: inline-block;
+      border-radius: 50%;
+    }
+
+    figure {
+      margin: 0;
     }
 
     .chart svg {
@@ -830,298 +1387,39 @@
     }
 
     .readout {
-      font-family: var(--mono);
-      font-size: 12px;
-      color: var(--text-secondary);
       min-height: 1.5em;
       margin: 6px 0 0;
-    }
-
-    #plots {
-      margin-bottom: 14px;
-    }
-
-    .plots-head {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      gap: 16px;
-      margin-bottom: 14px;
-    }
-
-    .plots-head h2 {
-      margin-bottom: 4px;
-    }
-
-    .plots-head .hint {
-      margin: 0;
-    }
-
-    .plots-controls {
-      display: flex;
-      gap: 10px;
-      flex: none;
-    }
-
-    .plots-controls .seg {
-      width: 210px;
-    }
-
-    /* Each chart is a subgrid of four rows: title, subtitle, legend and plot.
-     The rows line up across the charts, so the three plots start at the same
-     height even when one legend wraps onto a second line. renderChart() writes
-     the last three straight into the chart's div, which takes no box. */
-    .plots {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      column-gap: 22px;
-    }
-
-    .plot {
-      display: grid;
-      grid-template-rows: subgrid;
-      grid-row: span 4;
-      align-content: start;
-      min-width: 0;
-    }
-
-    .plot>div {
-      display: contents;
-    }
-
-    /* Right above the chart it picks, apart from the range toggle, so the two
-     rows of buttons do not read as one. */
-    .plot-tabs {
-      display: none;
-      margin-bottom: 14px;
-    }
-
-    /* A galaxy or nebula has no star to draw, so its chart and tab go. Both
-     have a display of their own, which the hidden attribute alone would not
-     override. */
-    #plots.extended .plot[data-plot="star"],
-    #plots.extended .plot-tabs label:has(input[value="star"]),
-    .bin-row[hidden] {
-      display: none;
-    }
-
-    @media (min-width: 1024px) {
-      #plots.extended .plots {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-      }
-    }
-
-    @media (max-width: 1023px) {
-      .plots {
-        grid-template-columns: minmax(0, 1fr);
-      }
-
-      .plot:not(.active) {
-        display: none;
-      }
-
-      .plot-tabs {
-        display: flex;
-      }
-
-      .plots-head {
-        flex-direction: column;
-        gap: 10px;
-      }
-
-      .plots-controls {
-        width: 100%;
-        flex-wrap: wrap;
-      }
-
-      .plots-controls .seg {
-        flex: 1 1 210px;
-        width: auto;
-      }
-    }
-
-    .card h3 {
-      font-size: 13px;
-      font-weight: 600;
-      margin: 0 0 4px;
-    }
-
-    #spectra-csv {
-      color: var(--series-1);
-    }
-
-    #results.busy {
-      opacity: 0.55;
-      transition: opacity 120ms linear 80ms;
-    }
-
-    .card-head {
-      display: flex;
-      align-items: baseline;
-      justify-content: space-between;
-      gap: 12px;
-    }
-
-    .card-head h2 {
-      margin-bottom: 12px;
-    }
-
-    .link-button {
-      width: auto;
-      /* Padding for the tap target, pulled back so the layout does not shift. */
-      padding: 5px 7px;
-      margin: -5px -7px;
-      font: inherit;
       font-size: 12px;
-      font-weight: 500;
-      color: var(--series-1);
-      background: none;
-      border: 0;
-      border-radius: 4px;
-      cursor: pointer;
-    }
-
-    .link-button:hover {
-      text-decoration: underline;
-    }
-
-    .link-button:focus-visible {
-      outline: 2px solid var(--series-1);
-      outline-offset: 3px;
-    }
-
-    /* Dark current, read noise and well depth each cover several decades, so
-     one fixed step is wrong at one end of the range. These fields step by a
-     fraction of their own value instead. The native spinner cannot do that, so
-     it is replaced, and a phone gets a stepper where it had none. */
-    .stepper {
-      display: flex;
-      gap: 6px;
-    }
-
-    .stepper input[type="number"] {
-      flex: 1;
-      min-width: 0;
-      text-align: center;
-      appearance: textfield;
-      -moz-appearance: textfield;
-    }
-
-    .stepper input[type="number"]::-webkit-outer-spin-button,
-    .stepper input[type="number"]::-webkit-inner-spin-button {
-      appearance: none;
-      margin: 0;
-    }
-
-    .stepper button {
-      flex: none;
-      width: 28px;
-      padding: 0;
-      font-size: 16px;
-      line-height: 1;
-      color: var(--text-secondary);
-      background: var(--surface-2);
-      border: 1px solid var(--border);
-      border-radius: 7px;
+      color: var(--muted-foreground);
       font-variant-numeric: tabular-nums;
     }
 
-    .stepper button:hover {
-      color: var(--text-primary);
-      border-color: var(--baseline);
+    #spectra-csv {
+      color: var(--foreground);
     }
 
-    .stepper button:focus-visible {
-      outline: 2px solid var(--series-1);
-      outline-offset: 2px;
-    }
-
-    input[type="file"] {
-      width: 100%;
-      font: inherit;
-      font-size: 12px;
-      color: var(--text-secondary);
-    }
-
-    input[type="file"]::file-selector-button {
-      width: auto;
-      margin-right: 10px;
-      padding: 5px 10px;
-      font: inherit;
-      font-size: 12px;
-      font-weight: 500;
-      color: var(--text-primary);
-      background: var(--surface-2);
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      cursor: pointer;
-    }
-
-    .uploads {
-      margin: 10px 0 0;
-      padding: 0;
-      list-style: none;
-    }
-
-    .uploads li {
-      display: flex;
-      align-items: flex-start;
-      gap: 8px;
-      padding: 8px 0 0;
-      border-top: 1px solid var(--gridline);
-      margin-top: 8px;
-      font-size: 12px;
-      color: var(--text-secondary);
-    }
-
-    .uploads .who {
-      flex: 1;
-      min-width: 0;
-    }
-
-    .uploads .who b {
-      display: block;
-      color: var(--text-primary);
-      font-weight: 560;
-      overflow-wrap: anywhere;
-    }
-
-    .uploads .drop {
-      flex: none;
-      width: auto;
-      padding: 2px 7px;
-      font: inherit;
-      font-size: 13px;
-      color: var(--text-muted);
-      background: none;
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      cursor: pointer;
-    }
-
-    .uploads .drop:hover {
-      color: var(--bad);
-      border-color: var(--bad);
-    }
-
-    #up-report .hint {
-      margin-top: 8px;
-    }
-
+    /* ------------------------------------------------------------------- about */
     .about {
-      max-width: 72ch;
-      margin: 32px 0 0;
-      color: var(--text-secondary);
+      margin-top: 64px;
       font-size: 14px;
+      line-height: 22px;
+      color: var(--muted-foreground);
+    }
+
+    .about.column {
+      gap: 0;
     }
 
     .about h2 {
-      font-size: 16px;
-      font-weight: 600;
-      letter-spacing: 0;
-      text-transform: none;
-      color: var(--text-primary);
       margin: 24px 0 8px;
+      font-size: 16px;
+      line-height: 24px;
+      font-weight: 600;
+      color: var(--foreground);
+    }
+
+    .about h2:first-child {
+      margin-top: 0;
     }
 
     .about p {
@@ -1129,388 +1427,559 @@
     }
 
     .about a {
-      color: var(--series-1);
-    }
-
-    .placeholder {
-      color: var(--text-muted);
-      font-size: 14px;
-    }
-
-    footer {
-      margin-top: 26px;
-      font-size: 13px;
-      color: var(--text-muted);
-    }
-
-    footer a {
-      color: var(--series-1);
+      color: var(--foreground);
     }
   </style>
 </head>
 
 <body>
-  <div class="wrap">
+  <div class="page">
 
-    <header>
-      <div class="title">
-        <h1>Exposure time calculator</h1>
-        <p>
-          This page gives the exposure time and the precision for a photometric
-          observation.
-        </p>
-      </div>
-      <a class="source-link" href="https://withastra.io/" target="_blank" rel="noreferrer">withastra.io <svg
-          class="icon-glyph" viewBox="0 0 11 11" width="11" height="11" fill="none" stroke="currentColor"
-          stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M2.4 8.6 8.6 2.4"></path>
-          <path d="M3.9 2.4h4.7v4.7"></path>
-        </svg></a>
+    <header class="top">
+      <h1>Exposure time calculator</h1>
+      <nav aria-label="Links">
+        <a href="#about">how it works</a>,&nbsp;
+        <a class="ext" href="https://withastra.io/" target="_blank" rel="noreferrer">withastra.io <svg
+            viewBox="0 0 11 11" width="11" height="11" fill="none" stroke="currentColor" stroke-width="1.3"
+            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M2.4 8.6 8.6 2.4"></path>
+            <path d="M3.9 2.4h4.7v4.7"></path>
+          </svg></a>
+      </nav>
     </header>
 
-    <div id="status" data-state="loading"><span class="spinner"></span><span id="status-text">Python
-        starts&hellip;</span></div>
-
-    <div id="summary" class="card" hidden>
-      <div id="summary-body"></div>
-      <div class="bin-row">
-        <label for="binning">Bin length <span class="val" id="binning-v"></span></label>
-        <input type="range" id="binning" min="1" max="60" step="1" value="10">
-      </div>
-      <button type="button" class="jump">Noise budget &darr;</button>
-    </div>
-
-    <!-- The curves the model integrates, for the instrument, the sky and the
-     star now chosen. They come from the grid ingredient files the page
-     downloads for the model anyway, so they add nothing to the download.
-     Below 1024px there is room for one chart at a time, so tabs pick it. -->
-    <section class="card" id="plots" aria-label="Transmission, sky and star against wavelength">
-      <div class="plots-head">
-        <div>
-          <h2>Transmission, sky and star</h2>
-          <p class="hint" id="spectra-sub">The curves the model uses for this instrument, sky and star.</p>
-        </div>
-        <div class="plots-controls">
-          <div class="seg" role="group" aria-label="Wavelength range of the charts">
-            <label><input type="radio" name="spectra-range" value="band" checked> Filter band</label>
-            <label><input type="radio" name="spectra-range" value="full"> 0.3–3 µm</label>
+    <main>
+      <div class="column">
+        <div class="lead-row">
+          <h2>Work out an exposure</h2>
+          <div class="lead-actions">
+            <button type="button" id="skip" class="btn">Skip to the result</button>
+            <button type="button" id="reset" class="btn" hidden><svg viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+              <path d="M3 3v5h5"></path>
+            </svg>Reset all</button>
           </div>
         </div>
-      </div>
-      <div class="seg plot-tabs" role="group" aria-label="Which chart to show">
-        <label><input type="radio" name="plot-tab" value="trans" checked> Transmission</label>
-        <label><input type="radio" name="plot-tab" value="sky"> Sky</label>
-        <label><input type="radio" name="plot-tab" value="star"> Star</label>
-      </div>
-      <div class="plots">
-        <section class="plot active" data-plot="trans">
-          <h3>Transmission and system response</h3>
-          <div id="chart-trans">
-            <p class="placeholder">Python is still loading.</p>
-          </div>
-        </section>
-        <section class="plot" data-plot="sky">
-          <h3>Sky radiance</h3>
-          <div id="chart-sky">
-            <p class="placeholder">Python is still loading.</p>
-          </div>
-        </section>
-        <section class="plot" data-plot="star">
-          <h3>Star</h3>
-          <div id="chart-star">
-            <p class="placeholder">Python is still loading.</p>
-          </div>
-        </section>
-      </div>
-      <p class="hint">
-        The sky and the star are in photons, and the detected curves in electrons.
-        <a href="#" id="spectra-csv" download="mphot_spectra.csv">Download these curves as CSV</a>,
-        at every 1 nm point from 0.3 to 3 µm.
-      </p>
-    </section>
+        <p class="intro">
+          This page gives the exposure time and the precision for a photometric
+          observation. Go through the five steps in order. Each step has default
+          values. Check them, change what you need, then press Continue. The
+          result shows in step 5.
+        </p>
 
-    <div class="cols">
-      <div class="controls">
-        <div class="card">
-          <div class="card-head">
-            <h2>Preset</h2>
-            <button type="button" id="reset" class="link-button" hidden>Reset all</button>
-          </div>
-          <div class="field">
-            <select id="preset"></select>
-            <p class="hint">A preset also sets the site: altitude, water vapour and seeing.
-              If you change the telescope, camera or filter, the preset becomes Custom.</p>
-          </div>
-          <div class="field">
-            <label for="system">Telescope, optics and detector</label>
-            <select id="system"></select>
-          </div>
-          <div class="field">
-            <label for="filter">Filter</label>
-            <select id="filter"></select>
-          </div>
-          <p class="hint">
-            The ETC multiplies these two curves together. The result is the system
-            response. A new pair takes a moment to build the first time.
-          </p>
+        <ol class="steps">
 
-          <details id="upload" style="margin-top:12px">
-            <summary>Use your own curves</summary>
-            <div class="field" style="margin-top:10px">
-              <label for="up-filter">Filter transmission</label>
-              <input type="file" id="up-filter" accept=".csv,.txt,.dat,.tsv,text/csv,text/plain">
-            </div>
-            <div class="field">
-              <label for="up-system">Telescope, optics and detector</label>
-              <input type="file" id="up-system" accept=".csv,.txt,.dat,.tsv,text/csv,text/plain">
-            </div>
-            <p class="hint">
-              Two columns: wavelength, then the fraction of light that passes.
-              The ETC reads nanometres, ångströms or microns, and percent or a
-              fraction, and says which it used.
-              <a href="#" id="up-template" download="mphot_curve_template.csv">Download a template</a>.
+          <!-- 1 -->
+          <li class="step" data-step="1">
+            <span class="step-num" aria-hidden="true">1</span>
+            <h3 tabindex="-1">Instrument</h3>
+            <p class="step-desc">
+              Choose the telescope, the camera and the filter. A preset fills
+              in all three, and the site in step 2.
             </p>
-            <div id="up-report"></div>
-          </details>
-        </div>
 
-        <div class="card">
-          <h2>Site and sky</h2>
-          <div id="site-fields"></div>
-          <p class="hint" id="site-hint" style="margin-bottom:12px"></p>
-          <div class="field">
-            <label for="pwv">Water vapour <span class="val" id="pwv-v"></span></label>
-            <!-- Logarithmic. The model tabulates water vapour at 13 values from
-             0.05 mm to 30 mm, most of them below 5 mm, so a linear slider spends
-             most of its travel where the model has no detail. The datalist marks
-             the real values. The ends overshoot the range a little so that the
-             opening value of 2.5 mm lands exactly on a step; readPwv() clamps. -->
-            <input type="range" id="pwv" min="-1.30206" max="1.47794" step="0.005" value="0.39794" list="pwv-nodes">
-            <datalist id="pwv-nodes"></datalist>
-          </div>
-          <div class="field">
-            <label for="airmass">Airmass <span class="val" id="airmass-v"></span></label>
-            <input type="range" id="airmass" min="1" max="3" step="0.01" value="1.1">
-          </div>
-          <div class="field">
-            <label for="seeing">Seeing <span class="val" id="seeing-v"></span></label>
-            <input type="range" id="seeing" min="0.4" max="4" step="0.05" value="1.35">
-          </div>
-        </div>
+            <div class="row">
+              <div class="row-text">
+                <label class="row-title" for="preset">Preset</label>
+                <p class="row-desc">A known instrument and its site. If you change
+                  the telescope, the camera or the filter, the preset becomes Custom.</p>
+              </div>
+              <div class="row-control"><select id="preset"></select></div>
+            </div>
 
-        <div class="card">
-          <h2>Target</h2>
-          <div class="field">
-            <div class="seg">
+            <div class="row">
+              <div class="row-text">
+                <label class="row-title" for="system">Telescope, optics and detector</label>
+                <p class="row-desc">How much light the telescope, the optics and the
+                  detector pass at each wavelength.</p>
+              </div>
+              <div class="row-control"><select id="system"></select></div>
+            </div>
+
+            <div class="row">
+              <div class="row-text">
+                <label class="row-title" for="filter">Filter</label>
+                <p class="row-desc">The ETC multiplies the filter and the curve above.
+                  The result is the system response. A new pair takes a moment to
+                  build the first time.</p>
+              </div>
+              <div class="row-control"><select id="filter"></select></div>
+            </div>
+
+            <details class="box" id="upload">
+              <summary>
+                <span class="row-text">
+                  <span class="row-title">Use your own curves</span>
+                  <span class="row-desc">Load a filter curve, an efficiency curve,
+                    or both, from a file.</span>
+                </span>
+              </summary>
+              <div class="box-body">
+                <div class="grid2">
+                  <div class="field">
+                    <label for="up-filter">Filter transmission</label>
+                    <input type="file" id="up-filter" accept=".csv,.txt,.dat,.tsv,text/csv,text/plain">
+                  </div>
+                  <div class="field">
+                    <label for="up-system">Telescope, optics and detector</label>
+                    <input type="file" id="up-system" accept=".csv,.txt,.dat,.tsv,text/csv,text/plain">
+                  </div>
+                </div>
+                <p class="hint">
+                  Two columns: wavelength, then the fraction of light that passes.
+                  The ETC reads nanometres, ångströms or microns, and percent or a
+                  fraction, and says which it used.
+                  <a href="#" id="up-template" download="mphot_curve_template.csv">Download a template</a>.
+                </p>
+                <div id="up-report"></div>
+              </div>
+            </details>
+
+            <!-- Closed. It is the longest part of the page and the one people
+             touch least once they have picked a preset. -->
+            <details class="box" id="instrument">
+              <summary>
+                <span class="row-text">
+                  <span class="row-title">Telescope and camera values</span>
+                  <span class="row-desc">The preset fills these in. Open this to
+                    change the mirrors, the pixel scale or the camera noise.</span>
+                </span>
+              </summary>
+              <div class="box-body">
+                <div class="grid2" id="telescope-fields"></div>
+                <p class="hint err" id="mirror-hint" hidden></p>
+                <div class="grid2" id="camera-fields"></div>
+                <div class="field">
+                  <label for="pixel_binning_type">Binning type</label>
+                  <select id="pixel_binning_type">
+                    <option value="digital">Digital (CMOS): each pixel is read</option>
+                    <option value="on-chip">On-chip (CCD): one readout per binned pixel</option>
+                  </select>
+                </div>
+                <p class="hint">Plate scale, dark current, read noise and well depth are for one
+                  unbinned pixel. A camera that averages the binned pixels gives the same SNR
+                  as one that adds them.</p>
+              </div>
+            </details>
+            <div class="step-next" hidden>
+              <button type="button" class="btn primary" data-open="2">Continue</button>
+            </div>
+          </li>
+
+          <!-- 2 -->
+          <li class="step" data-step="2">
+            <span class="step-num" aria-hidden="true">2</span>
+            <h3 tabindex="-1">Site and sky</h3>
+            <p class="locked-note">Press Continue in step 1 to open this step.</p>
+            <p class="step-desc">
+              Where the telescope is, and the sky on the night.
+              <span id="site-hint"></span>
+            </p>
+
+            <div id="site-rows"></div>
+
+            <div class="row">
+              <div class="row-text">
+                <label class="row-title" for="pwv">Water vapour</label>
+                <p class="row-desc">The water in the air above the site. It absorbs
+                  red and infrared light. The marks are the values the model holds.</p>
+              </div>
+              <div class="row-control">
+                <div class="slider">
+                  <!-- Logarithmic. The model tabulates water vapour at 13 values from
+                   0.05 mm to 30 mm, most of them below 5 mm, so a linear slider spends
+                   most of its travel where the model has no detail. The datalist marks
+                   the real values. The ends overshoot the range a little so that the
+                   opening value of 2.5 mm lands exactly on a step; readPwv() clamps. -->
+                  <input type="range" id="pwv" min="-1.30206" max="1.47794" step="0.005" value="0.39794"
+                    list="pwv-nodes">
+                  <span class="val" id="pwv-v"></span>
+                </div>
+                <datalist id="pwv-nodes"></datalist>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="row-text">
+                <label class="row-title" for="airmass">Airmass</label>
+                <p class="row-desc">How much air the light passes through. 1 is
+                  straight up.</p>
+              </div>
+              <div class="row-control">
+                <div class="slider">
+                  <input type="range" id="airmass" min="1" max="3" step="0.01" value="1.1">
+                  <span class="val" id="airmass-v"></span>
+                </div>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="row-text">
+                <label class="row-title" for="seeing">Seeing</label>
+                <p class="row-desc">The width of a star image (FWHM). The photometric
+                  aperture is a multiple of it.</p>
+              </div>
+              <div class="row-control">
+                <div class="slider">
+                  <input type="range" id="seeing" min="0.4" max="4" step="0.05" value="1.35">
+                  <span class="val" id="seeing-v"></span>
+                </div>
+              </div>
+            </div>
+            <div class="step-next" hidden>
+              <button type="button" class="btn primary" data-open="3">Continue</button>
+            </div>
+          </li>
+
+          <!-- 3 -->
+          <li class="step" data-step="3">
+            <span class="step-num" aria-hidden="true">3</span>
+            <h3 tabindex="-1">Target</h3>
+            <p class="locked-note">Press Continue in step 2 to open this step.</p>
+            <p class="step-desc">
+              What you observe: a model star, a real star from Gaia, or a galaxy
+              or nebula.
+            </p>
+
+            <div class="seg" role="group" aria-label="Type of target">
               <label><input type="radio" name="mode" value="model" checked> Model star</label>
               <label><input type="radio" name="mode" value="gaia"> Gaia star</label>
               <label><input type="radio" name="mode" value="extended"> Galaxy or nebula</label>
             </div>
-          </div>
-          <div id="model-fields">
-            <div class="field">
-              <label for="teff-num">Temperature <span class="unit">K</span></label>
-              <div class="stepper">
-                <button type="button" class="nudge" data-key="teff-num" data-dir="-1" tabindex="-1"
-                  aria-label="Cooler">&minus;</button>
-                <input type="number" id="teff-num" min="450" max="36500" step="any" value="2560"
-                  inputmode="decimal" data-proportional="1">
-                <button type="button" class="nudge" data-key="teff-num" data-dir="1" tabindex="-1"
-                  aria-label="Hotter">+</button>
-              </div>
-              <!-- Logarithmic, for the same reason as the water vapour slider.
-               The model's temperature axis is 50 K apart at the bottom and
-               1500 K apart at the top, so a linear slider gives the dwarf stars
-               most people come here for about 3% of its travel. -->
-              <input type="range" id="teff" min="2.65224" max="4.56324" step="0.001" value="3.40824"
-                aria-label="Temperature, logarithmic" style="margin-top:6px">
-              <p class="hint">The slider covers 450 K to 36 500 K. You can also type a value.</p>
-            </div>
-            <div class="field">
-              <label for="dist-num">Distance <span class="val" id="dist-v"></span></label>
-              <div class="stepper">
-                <button type="button" class="nudge" data-key="dist-num" data-dir="-1" tabindex="-1"
-                  aria-label="Nearer">&minus;</button>
-                <input type="number" id="dist-num" min="0.01" max="1e6" step="any" value="12.5" inputmode="decimal"
-                  data-proportional="1">
-                <button type="button" class="nudge" data-key="dist-num" data-dir="1" tabindex="-1"
-                  aria-label="Further">+</button>
-              </div>
-              <input type="range" id="dist" min="-2" max="6" step="0.001" value="1.0969"
-                aria-label="Distance, logarithmic" style="margin-top:6px">
-              <p class="hint">The slider covers 0.01 pc to 1 Mpc. You can also type a value.</p>
-            </div>
-          </div>
-          <div id="gaia-fields" hidden>
-            <div class="field">
-              <label for="source-id">Gaia DR3 source_id</label>
-              <input type="text" id="source-id" value="2635476908753563008" inputmode="numeric">
-              <p class="hint">Press Enter to load the star. The ETC reads its distance and
-                brightness from Gaia, then scales the model to match.</p>
-            </div>
-            <p class="hint" id="gaia-report" hidden></p>
-            <div class="field">
-              <label class="check"><input type="checkbox" id="gaia-teff-on">
-                Set the temperature myself</label>
-              <div id="gaia-teff-manual" hidden style="margin-top:10px">
-                <label for="gaia-teff">Temperature <span class="val" id="gaia-teff-v"></span></label>
-                <input type="range" id="gaia-teff" min="2.65224" max="4.56324" step="0.001" value="3.76224">
-                <p class="hint">Gaia's own temperature is ignored while this is ticked.</p>
-              </div>
-            </div>
-          </div>
-          <div id="extended-fields" hidden>
-            <div class="field">
-              <label for="target-name">Messier, NGC or IC name</label>
-              <input type="text" id="target-name" value="M104" list="target-names" autocomplete="off"
-                spellcheck="false">
-              <datalist id="target-names"></datalist>
-              <p class="hint">For example M51, NGC 7000 or Ring Nebula. Push Enter.</p>
-            </div>
-            <p class="hint" id="target-report" hidden></p>
-            <div class="field">
-              <label for="mu-offset">Surface brightness <span class="val" id="mu-offset-v"></span></label>
-              <input type="range" id="mu-offset" min="-3" max="6" step="0.1" value="0">
-              <p class="hint">The level to measure, relative to the mean of the target.
-                Move to the right for fainter parts.</p>
-            </div>
-            <div class="field">
-              <label for="snr">Target SNR</label>
-              <div class="stepper">
-                <button type="button" class="nudge" data-key="snr" data-dir="-1" tabindex="-1"
-                  aria-label="Less SNR">&minus;</button>
-                <input type="number" id="snr" min="1" max="10000" step="any" value="10"
-                  inputmode="decimal" data-proportional="1">
-                <button type="button" class="nudge" data-key="snr" data-dir="1" tabindex="-1"
-                  aria-label="More SNR">+</button>
-              </div>
-            </div>
-            <div class="field">
-              <div class="seg" role="group" aria-label="What the SNR is measured over">
-                <label><input type="radio" name="snr-area" value="pixel" checked> SNR per pixel</label>
-                <label><input type="radio" name="snr-area" value="arcsec2"> SNR per arcsec²</label>
-              </div>
-            </div>
-          </div>
-        </div>
 
-        <div class="card">
-          <h2>Exposure limits</h2>
-          <div class="grid2">
-            <div class="field">
-              <label for="min_exp">Shortest <span class="unit">s</span></label>
-              <div class="stepper">
-                <button type="button" class="nudge" data-key="min_exp" data-dir="-1" tabindex="-1"
-                  aria-label="Less Shortest">&minus;</button>
-                <input type="number" id="min_exp" min="0" step="1" placeholder="none" inputmode="decimal">
-                <button type="button" class="nudge" data-key="min_exp" data-dir="1" tabindex="-1"
-                  aria-label="More Shortest">+</button>
+            <div id="model-fields" class="fields">
+              <div class="row">
+                <div class="row-text">
+                  <label class="row-title" for="teff-num">Temperature <span class="unit">K</span></label>
+                  <p class="row-desc">The effective temperature of the star, from
+                    450 K to 36 500 K. Type a value or move the slider.</p>
+                </div>
+                <div class="row-control">
+                  <div class="stepper">
+                    <button type="button" class="nudge" data-key="teff-num" data-dir="-1" tabindex="-1"
+                      aria-label="Cooler">&minus;</button>
+                    <input type="number" id="teff-num" min="450" max="36500" step="any" value="2560"
+                      inputmode="decimal" data-proportional="1">
+                    <button type="button" class="nudge" data-key="teff-num" data-dir="1" tabindex="-1"
+                      aria-label="Hotter">+</button>
+                  </div>
+                  <!-- Logarithmic, for the same reason as the water vapour slider.
+                   The model's temperature axis is 50 K apart at the bottom and
+                   1500 K apart at the top, so a linear slider gives the dwarf stars
+                   most people come here for about 3% of its travel. -->
+                  <input type="range" id="teff" min="2.65224" max="4.56324" step="0.001" value="3.40824"
+                    aria-label="Temperature, logarithmic">
+                </div>
+              </div>
+              <div class="row">
+                <div class="row-text">
+                  <label class="row-title" for="dist-num">Distance <span class="unit">pc</span></label>
+                  <p class="row-desc">From 0.01 pc to 1 Mpc. Type a value or move
+                    the slider.</p>
+                </div>
+                <div class="row-control">
+                  <div class="stepper">
+                    <button type="button" class="nudge" data-key="dist-num" data-dir="-1" tabindex="-1"
+                      aria-label="Nearer">&minus;</button>
+                    <input type="number" id="dist-num" min="0.01" max="1e6" step="any" value="12.5"
+                      inputmode="decimal" data-proportional="1">
+                    <button type="button" class="nudge" data-key="dist-num" data-dir="1" tabindex="-1"
+                      aria-label="Further">+</button>
+                  </div>
+                  <div class="slider">
+                    <input type="range" id="dist" min="-2" max="6" step="0.001" value="1.0969"
+                      aria-label="Distance, logarithmic">
+                    <span class="val" id="dist-v"></span>
+                  </div>
+                </div>
               </div>
             </div>
-            <div class="field">
-              <label for="max_exp">Longest <span class="unit">s</span></label>
-              <div class="stepper">
-                <button type="button" class="nudge" data-key="max_exp" data-dir="-1" tabindex="-1"
-                  aria-label="Less Longest">&minus;</button>
-                <input type="number" id="max_exp" min="0" step="1" placeholder="none" inputmode="decimal">
-                <button type="button" class="nudge" data-key="max_exp" data-dir="1" tabindex="-1"
-                  aria-label="More Longest">+</button>
-              </div>
-            </div>
-          </div>
-          <p class="hint">Leave these empty to let the ETC pick any exposure time.</p>
-        </div>
 
-        <!-- Last, and closed on a narrow screen. It is the longest card and the
-         one people touch least once they have picked a preset, so leaving it
-         open at the top pushes the sky and the star off the screen. -->
-        <div class="card">
-          <details id="instrument" open>
-            <summary>
-              <h2 style="display:inline; margin:0">Telescope and camera</h2>
-            </summary>
-            <div style="margin-top:12px">
-              <div class="grid2" id="telescope-fields"></div>
-              <p class="hint err" id="mirror-hint" hidden></p>
-              <div class="grid2" id="camera-fields" style="margin-top:12px"></div>
-              <div class="field">
-                <label for="pixel_binning_type">Binning type</label>
-                <select id="pixel_binning_type">
-                  <option value="digital">Digital (CMOS): each pixel is read</option>
-                  <option value="on-chip">On-chip (CCD): one readout per binned pixel</option>
-                </select>
+            <div id="gaia-fields" class="fields" hidden>
+              <div class="row">
+                <div class="row-text">
+                  <label class="row-title" for="source-id">Gaia DR3 source_id</label>
+                  <p class="row-desc">The ETC reads the distance and the brightness of
+                    the star from Gaia, then scales the model to match. Press Enter or
+                    Load.</p>
+                </div>
+                <div class="row-control">
+                  <div class="input-row">
+                    <input type="text" id="source-id" value="2635476908753563008" inputmode="numeric">
+                    <button type="button" class="btn" id="source-load">Load</button>
+                  </div>
+                  <p class="hint" id="gaia-report" hidden></p>
+                </div>
               </div>
-              <p class="hint">Plate scale, dark current, read noise and well depth are for one
-                unbinned pixel. A camera that averages the binned pixels gives the same SNR
-                as one that adds them.</p>
+              <div class="row">
+                <div class="row-text">
+                  <span class="row-title">Temperature</span>
+                  <p class="row-desc">The ETC uses the temperature that Gaia gives.
+                    Switch this on to set it yourself.</p>
+                </div>
+                <div class="row-control">
+                  <label class="check"><input type="checkbox" id="gaia-teff-on">
+                    Set the temperature myself</label>
+                  <div id="gaia-teff-manual" class="stack" hidden>
+                    <div class="slider">
+                      <input type="range" id="gaia-teff" min="2.65224" max="4.56324" step="0.001" value="3.76224"
+                        aria-label="Temperature">
+                      <span class="val" id="gaia-teff-v"></span>
+                    </div>
+                    <p class="hint">The ETC ignores Gaia's own temperature while this is on.</p>
+                  </div>
+                </div>
+              </div>
             </div>
-          </details>
-        </div>
+
+            <div id="extended-fields" class="fields" hidden>
+              <div class="row">
+                <div class="row-text">
+                  <label class="row-title" for="target-name">Name</label>
+                  <p class="row-desc">A Messier, NGC or IC name, for example M51,
+                    NGC 7000 or Ring Nebula. Press Enter or Load.</p>
+                </div>
+                <div class="row-control">
+                  <div class="input-row">
+                    <input type="text" id="target-name" value="M104" list="target-names" autocomplete="off"
+                      spellcheck="false">
+                    <button type="button" class="btn" id="target-load">Load</button>
+                  </div>
+                  <datalist id="target-names"></datalist>
+                  <p class="hint" id="target-report" hidden></p>
+                </div>
+              </div>
+              <div class="row">
+                <div class="row-text">
+                  <label class="row-title" for="mu-offset">Surface brightness</label>
+                  <p class="row-desc">The level to measure, relative to the mean of the
+                    target. Move to the right for fainter parts.</p>
+                </div>
+                <div class="row-control">
+                  <input type="range" id="mu-offset" min="-3" max="6" step="0.1" value="0">
+                  <p class="hint" id="mu-offset-v"></p>
+                </div>
+              </div>
+              <div class="row">
+                <div class="row-text">
+                  <label class="row-title" for="snr">Target SNR</label>
+                  <p class="row-desc">The signal-to-noise ratio you need, in one pixel
+                    or in one square arcsecond.</p>
+                </div>
+                <div class="row-control">
+                  <div class="stepper">
+                    <button type="button" class="nudge" data-key="snr" data-dir="-1" tabindex="-1"
+                      aria-label="Less SNR">&minus;</button>
+                    <input type="number" id="snr" min="1" max="10000" step="any" value="10"
+                      inputmode="decimal" data-proportional="1">
+                    <button type="button" class="nudge" data-key="snr" data-dir="1" tabindex="-1"
+                      aria-label="More SNR">+</button>
+                  </div>
+                  <div class="seg" role="group" aria-label="What the SNR is measured over">
+                    <label><input type="radio" name="snr-area" value="pixel" checked> Per pixel</label>
+                    <label><input type="radio" name="snr-area" value="arcsec2"> Per arcsec²</label>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="step-next" hidden>
+              <button type="button" class="btn primary" data-open="4">Continue</button>
+            </div>
+          </li>
+
+          <!-- 4 -->
+          <li class="step" data-step="4">
+            <span class="step-num" aria-hidden="true">4</span>
+            <h3 tabindex="-1">Exposure</h3>
+            <p class="locked-note">Press Continue in step 3 to open this step.</p>
+            <p class="step-desc">
+              How long one frame may be, and how long you average the frames over.
+            </p>
+
+            <div class="row" id="bin-row">
+              <div class="row-text">
+                <label class="row-title" for="binning">Bin length</label>
+                <p class="row-desc">The time over which you average the frames. The
+                  binned precision at the top is for this time.</p>
+              </div>
+              <div class="row-control">
+                <div class="slider">
+                  <input type="range" id="binning" min="1" max="60" step="1" value="10">
+                  <span class="val" id="binning-v"></span>
+                </div>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="row-text">
+                <span class="row-title">Exposure limits</span>
+                <p class="row-desc">Leave these empty to let the ETC pick any
+                  exposure time.</p>
+              </div>
+              <div class="row-control">
+                <div class="grid2">
+                  <div class="field">
+                    <label for="min_exp">Shortest <span class="unit">s</span></label>
+                    <div class="stepper">
+                      <button type="button" class="nudge" data-key="min_exp" data-dir="-1" tabindex="-1"
+                        aria-label="Less Shortest">&minus;</button>
+                      <input type="number" id="min_exp" min="0" step="1" placeholder="none" inputmode="decimal">
+                      <button type="button" class="nudge" data-key="min_exp" data-dir="1" tabindex="-1"
+                        aria-label="More Shortest">+</button>
+                    </div>
+                  </div>
+                  <div class="field">
+                    <label for="max_exp">Longest <span class="unit">s</span></label>
+                    <div class="stepper">
+                      <button type="button" class="nudge" data-key="max_exp" data-dir="-1" tabindex="-1"
+                        aria-label="Less Longest">&minus;</button>
+                      <input type="number" id="max_exp" min="0" step="1" placeholder="none" inputmode="decimal">
+                      <button type="button" class="nudge" data-key="max_exp" data-dir="1" tabindex="-1"
+                        aria-label="More Longest">+</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="step-next" hidden>
+              <button type="button" class="btn primary" data-open="5">Show the result</button>
+            </div>
+          </li>
+
+          <!-- 5 -->
+          <li class="step" id="step-result" data-step="5">
+            <span class="step-num" aria-hidden="true">5</span>
+            <h3 tabindex="-1">Result</h3>
+            <p class="locked-note">Press Show the result in step 4 to see it.</p>
+            <p class="step-desc">
+              When you go back and change a value, these numbers change too.
+              They stay at the bottom of the screen while you work on the other
+              steps.
+            </p>
+
+            <!-- The card keeps its height here while it rides at the bottom of
+             the screen; see placeResult(). -->
+            <div id="result-slot">
+              <div id="summary" class="summary-card">
+                <div id="status" data-state="loading"><span class="spinner"></span><span id="status-text">Python
+                    starts&hellip;</span></div>
+                <div id="summary-body"></div>
+              </div>
+            </div>
+
+            <div class="results" id="results"></div>
+
+            <!-- The curves the model integrates, for the instrument, the sky and
+             the star now chosen. They come from the grid ingredient files the
+             page downloads for the model anyway, so they add nothing to the
+             download. Tabs pick one chart at a time. -->
+            <section class="section" id="plots" aria-labelledby="plots-title">
+              <div class="section-head">
+                <div>
+                  <h4 id="plots-title">Transmission, sky and star</h4>
+                  <p class="section-desc" id="spectra-sub">The curves the model uses for this
+                    instrument, sky and star.</p>
+                </div>
+                <div class="seg" role="group" aria-label="Wavelength range of the charts">
+                  <label><input type="radio" name="spectra-range" value="band" checked> Filter band</label>
+                  <label><input type="radio" name="spectra-range" value="full"> 0.3–3 µm</label>
+                </div>
+              </div>
+              <div class="tabs plot-tabs" role="group" aria-label="Which chart to show">
+                <label><input type="radio" name="plot-tab" value="trans" checked> Transmission</label>
+                <label><input type="radio" name="plot-tab" value="sky"> Sky</label>
+                <label><input type="radio" name="plot-tab" value="star"> Star</label>
+              </div>
+              <div class="plots">
+                <section class="plot active" data-plot="trans">
+                  <h5>Transmission and system response</h5>
+                  <div id="chart-trans">
+                    <p class="placeholder">Python is still loading.</p>
+                  </div>
+                </section>
+                <section class="plot" data-plot="sky">
+                  <h5>Sky radiance</h5>
+                  <div id="chart-sky">
+                    <p class="placeholder">Python is still loading.</p>
+                  </div>
+                </section>
+                <section class="plot" data-plot="star">
+                  <h5>Star</h5>
+                  <div id="chart-star">
+                    <p class="placeholder">Python is still loading.</p>
+                  </div>
+                </section>
+              </div>
+              <p class="hint">
+                The sky and the star are in photons, and the detected curves in electrons.
+                <a href="#" id="spectra-csv" download="mphot_spectra.csv">Download these curves as CSV</a>,
+                at every 1 nm point from 0.3 to 3 µm.
+              </p>
+            </section>
+
+            <div class="results" id="results-more"></div>
+          </li>
+        </ol>
       </div>
 
-      <div class="output">
-        <div class="card" id="results">
-          <p class="placeholder">Python is still loading.</p>
-        </div>
-      </div>
-    </div>
+      <section class="about column" id="about">
+        <h2>What this calculator does</h2>
+        <p>
+          This is an exposure time calculator for ground-based astronomical
+          photometry. You give it a telescope, a camera and a filter. It returns
+          the exposure time that fills the detector well, the precision of one
+          frame, and the precision after you bin the frames over a chosen time.
+        </p>
+        <p>
+          It also breaks the result into its noise sources: the star itself,
+          scintillation in the atmosphere, the sky background, dark current and
+          read noise. The noise sources add in quadrature. The chart shows which
+          one limits your observation, so you know what to improve.
+        </p>
+        <p>
+          For a galaxy or nebula, type its Messier, NGC or IC name. The ETC gives
+          the sub-exposure time and the number of sub-exposures for your SNR.
+        </p>
 
-    <section class="about">
-      <h2>What this calculator does</h2>
-      <p>
-        This is an exposure time calculator for ground-based astronomical
-        photometry. You give it a telescope, a camera and a filter. It returns
-        the exposure time that fills the detector well, the precision of one
-        frame, and the precision after you bin the frames over a chosen time.
-      </p>
-      <p>
-        It also breaks the result into its noise sources: the star itself,
-        scintillation in the atmosphere, the sky background, dark current and
-        read noise. The noise sources add in quadrature. The chart shows which
-        one limits your observation, so you know what to improve.
-      </p>
-      <p>
-        For a galaxy or nebula, type its Messier, NGC or IC name. The ETC gives
-        the sub-exposure time and the number of sub-exposures for your SNR.
-      </p>
+        <h2>How the model works</h2>
+        <p>
+          The model multiplies three curves together: the efficiency of the
+          telescope and its optics, the quantum efficiency of the detector, and
+          the transmission of the filter. The result is the system response. It
+          then integrates that response against a stellar spectrum and against
+          models of sky transmission and sky radiance for Paranal at 2400 m.
+        </p>
+        <p>
+          Water vapour and airmass set the state of the atmosphere. For a site
+          below Paranal, the model counts the extra air above the telescope as
+          extra airmass. The altitude also sets the scintillation. The effective
+          temperature and the distance set the star. You can instead give a Gaia
+          DR3 <code>source_id</code>. The page then reads that star's parallax
+          and its BP, G and RP fluxes from VizieR, and scales the model to match
+          the real star.
+        </p>
 
-      <h2>How the model works</h2>
-      <p>
-        The model multiplies three curves together: the efficiency of the
-        telescope and its optics, the quantum efficiency of the detector, and
-        the transmission of the filter. The result is the system response. It
-        then integrates that response against a stellar spectrum and against
-        models of sky transmission and sky radiance for Paranal at 2400 m.
-      </p>
-      <p>
-        Water vapour and airmass set the state of the atmosphere. For a site
-        below Paranal, the model counts the extra air above the telescope as
-        extra airmass. The altitude also sets the scintillation. The effective
-        temperature and the distance set the star. You can instead give a Gaia
-        DR3 <code>source_id</code>. The page then reads that star's parallax
-        and its BP, G and RP fluxes from VizieR, and scales the model to match
-        the real star.
-      </p>
-
-      <h2>Who it is for</h2>
-      <p>
-        It suits anyone who plans photometry of stars, transiting exoplanets or
-        other variable sources, and anyone who designs an instrument and wants
-        to know which parameter limits the precision. The stellar parameters
-        come from a modern dwarf star sequence.
-      </p>
-      <p>
-        The calculator runs the open-source <a href="https://github.com/ppp-one/mphot">mphot</a> Python package. It
-        runs as WebAssembly in your browser, so no server does the work and
-        nothing you type is sent anywhere. For the method, see <a href="https://doi.org/10.1117/12.3018320">Pedersen et
-          al. 2024</a>.
-        The package documentation is at <a href="https://mphot.readthedocs.io">mphot.readthedocs.io</a>.
-      </p>
-    </section>
+        <h2>Who it is for</h2>
+        <p>
+          It suits anyone who plans photometry of stars, transiting exoplanets or
+          other variable sources, and anyone who designs an instrument and wants
+          to know which parameter limits the precision. The stellar parameters
+          come from a modern dwarf star sequence.
+        </p>
+        <p>
+          The calculator runs the open-source <a href="https://github.com/ppp-one/mphot">mphot</a> Python package. It
+          runs as WebAssembly in your browser, so no server does the work and
+          nothing you type is sent anywhere. For the method, see <a href="https://doi.org/10.1117/12.3018320">Pedersen et
+            al. 2024</a>.
+          The package documentation is at <a href="https://mphot.readthedocs.io">mphot.readthedocs.io</a>.
+        </p>
+      </section>
+    </main>
 
     <footer>
-      <code>python web/build.py</code> builds this page from the source tree.
-      Code: <a href="https://github.com/ppp-one/mphot">github.com/ppp-one/mphot</a>.
+      mphot<span id="version"></span> ·
+      <a href="https://github.com/ppp-one/mphot">github.com/ppp-one/mphot</a>
     </footer>
 
   </div>
@@ -1617,10 +2086,12 @@
     const MAX_GRID_AIRMASS = 3;
     const SITE = [
       {
-        key: "altitude", label: "Altitude", unit: "m", min: 0, max: PARANAL_ALTITUDE, step: 10
+        key: "altitude", label: "Altitude", unit: "m", min: 0, max: PARANAL_ALTITUDE, step: 10,
+        desc: `The height of the site above the sea. The model covers 0 to ${PARANAL_ALTITUDE} m.`
       },
       {
-        key: "sky_factor", label: "Sky brightness", unit: "× Paranal", min: 0.1, max: 100, step: 0.1
+        key: "sky_factor", label: "Sky brightness", unit: "× Paranal", min: 0.1, max: 100, step: 0.1,
+        desc: "How bright the sky is, compared with Paranal. Increase it for light pollution."
       },
     ];
 
@@ -1686,9 +2157,21 @@
       ${stepper(p)}
     </div>`).join("");
     }
+    // The site values are few and everyone meets them, so each gets a row of
+    // its own that says what it does.
+    function buildSettingRows(container, params) {
+      container.innerHTML = params.map(p => `
+    <div class="row">
+      <div class="row-text">
+        <label class="row-title" for="${p.key}">${p.label} ${p.unit ? `<span class="unit">${p.unit}</span>` : ""}</label>
+        <p class="row-desc">${p.desc}</p>
+      </div>
+      <div class="row-control">${stepper(p)}</div>
+    </div>`).join("");
+    }
     buildNumberFields($("telescope-fields"), TELESCOPE);
     buildNumberFields($("camera-fields"), CAMERA);
-    buildNumberFields($("site-fields"), SITE);
+    buildSettingRows($("site-rows"), SITE);
 
     // One press moves the value by `step`, or, for a field marked proportional,
     // by a tenth of its own leading digit. Dark current runs from 0.1 to 5000
@@ -1851,6 +2334,9 @@
     // for Enter or blur.
     $("source-id").addEventListener("change", () => scheduleUpdate(0));
     $("target-name").addEventListener("change", () => scheduleUpdate(0));
+    // Not everyone knows to press Enter, so each box has a button as well.
+    $("source-load").addEventListener("click", () => scheduleUpdate(0));
+    $("target-load").addEventListener("click", () => scheduleUpdate(0));
 
 
     // Unticked, the model reads the temperature Gaia holds for the star, and
@@ -1994,12 +2480,12 @@
       $("model-fields").hidden = mode !== "model";
       $("gaia-fields").hidden = mode !== "gaia";
       $("extended-fields").hidden = !extended;
-      $("summary").querySelector(".bin-row").hidden = extended;
+      $("bin-row").hidden = extended;
       // The photometric aperture belongs to a star.
       $("ap_rad").closest(".field").hidden = extended;
 
       $("plots").classList.toggle("extended", extended);
-      $("plots").querySelector("h2").textContent =
+      $("plots-title").textContent =
         extended ? "Transmission and sky" : "Transmission, sky and star";
       const starTab = document.querySelector('input[name="plot-tab"][value="star"]');
       if (extended && starTab.checked) {
@@ -2740,6 +3226,13 @@ def spectra(spec_json):
         throw new Error("No build.json. Run `python web/build.py`, then reload this page.");
       });
 
+    // The footer names the version of mphot that the page runs, which the
+    // wheel carries in its name: mphot-2.0.1-py3-none-any.whl.
+    manifestReady.then(manifest => {
+      const version = manifest.wheel.split("-")[1];
+      if (version) $("version").textContent = ` ${version}`;
+    }, () => { });
+
     function assetURL(manifest, path) {
       const version = manifest.files[path];
       if (!version) {
@@ -3020,12 +3513,107 @@ def spectra(spec_json):
     let lastResult = null;
     let budgetView = "binned";
 
-    $("summary").querySelector(".jump").addEventListener("click",
-      () => resultsEl.scrollIntoView({ block: "start" }));
+    // -------------------------------------------------------------------- steps
+    // The steps open one at a time, as in the planner. Every value has a
+    // default, so no step is ever incomplete; Continue opens the next one. The
+    // result stays closed until the reader has seen every step. The model runs
+    // all along, so the result is ready when step 5 opens.
+    const STEPS = [...document.querySelectorAll("ol.steps > .step")];
+    let opened = 1;
 
-    // One colour for each noise source, used by the chart and by the strip in
-    // the summary, so the two read as the same object. These are the tokens the
-    // rest of the page already uses; no new palette.
+    function showSteps() {
+      for (const step of STEPS) {
+        const n = +step.dataset.step;
+        // Open, or the next one as a closed title, or not shown yet.
+        step.hidden = n > opened + 1;
+        step.classList.toggle("locked", n === opened + 1);
+        const next = step.querySelector(".step-next");
+        if (next) next.hidden = n !== opened;
+      }
+      $("skip").hidden = opened === STEPS.length;
+      placeResult();
+    }
+
+    function openStep(n) {
+      if (n <= opened) return;
+      opened = Math.min(n, STEPS.length);
+      showSteps();
+      const step = STEPS[opened - 1];
+      step.classList.add("appear");
+      step.addEventListener("animationend", () => step.classList.remove("appear"), { once: true });
+      step.scrollIntoView({ block: "start" });
+      step.querySelector("h3").focus({ preventScroll: true });
+    }
+
+    for (const button of document.querySelectorAll("[data-open]")) {
+      button.addEventListener("click", () => openStep(+button.dataset.open));
+    }
+    // For the reader who knows the page and wants the numbers.
+    $("skip").addEventListener("click", () => openStep(STEPS.length));
+
+    // ---------------------------------------------------------- the result card
+    // The card opens step 5. While its place is below the screen, it rides at
+    // the bottom of the screen instead, so the reader sees what a change in an
+    // earlier step does. It changes over when its place is fully in view, where
+    // the two positions meet, so it never jumps. That is position: sticky with
+    // bottom set, which the card cannot use: sticky keeps an element inside its
+    // parent, and the parent here is step 5.
+    const resultSlot = $("result-slot"), resultCard = $("summary");
+    const FLOAT_GAP = 12;
+    let placeQueued = false;
+
+    function placeResult() {
+      placeQueued = false;
+      const open = opened === STEPS.length;
+      const box = resultSlot.getBoundingClientRect();
+      const floating = open && box.bottom > innerHeight - FLOAT_GAP;
+      resultCard.classList.toggle("floating", floating);
+      resultCard.style.left = floating ? `${box.left}px` : "";
+      resultCard.style.width = floating ? `${box.width}px` : "";
+      // A field that takes the focus scrolls clear of the card, not under it.
+      document.documentElement.style.scrollPaddingBottom =
+        open ? `${resultCard.offsetHeight + 2 * FLOAT_GAP}px` : "";
+    }
+
+    function queuePlace() {
+      if (placeQueued) return;
+      placeQueued = true;
+      requestAnimationFrame(placeResult);
+    }
+    addEventListener("scroll", queuePlace, { passive: true });
+    addEventListener("resize", queuePlace);
+    // The place keeps the card's height while the card floats, so nothing
+    // below it moves. The card grows when a warning or an error appears.
+    new ResizeObserver(() => {
+      resultSlot.style.minHeight = `${resultCard.offsetHeight}px`;
+      queuePlace();
+    }).observe(resultCard);
+
+    showSteps();
+
+    // The card is rewritten on every result, so its link is listened for here.
+    resultCard.addEventListener("click", event => {
+      if (event.target.closest(".jump")) $("step-result").scrollIntoView({ block: "start" });
+    });
+
+    const jumpButton = '<button type="button" class="link-button jump">Details in step 5 &darr;</button>';
+
+    /** The result card: three numbers, a line under them, and the link to step 5. */
+    function showSummary(stats, meta, foot) {
+      $("summary-body").innerHTML = `
+    <div class="stats">${stats.map(s => `
+      <div class="stat${s.minor ? " minor" : ""}">
+        <div class="k">${s.k}</div>
+        <div class="v">${s.v}<span class="u">${s.u}</span></div>
+      </div>`).join("")}
+    </div>
+    ${meta ? `<p class="summary-meta">${meta}</p>` : ""}
+    <div class="summary-foot">${foot}${jumpButton}</div>`;
+    }
+
+    // One colour for each noise source, used by the chart and by the stacked
+    // bar in the result card, so the two read as the same object. These are the
+    // chart tokens the rest of the page uses; no new palette.
     const NOISE_COLORS = ["var(--series-1)", "var(--series-2)", "var(--series-3)",
       "var(--series-4)", "var(--series-5)"];
 
@@ -3064,8 +3652,7 @@ def spectra(spec_json):
       <div class="name">${c.name}</div>
       <div class="track"><div class="fill"
         style="width:${max > 0 ? (c.v / max) * 100 : 0}%;background:${c.color}"></div></div>
-      <div class="num">${sig(c.v)}</div>
-      <div class="row-gap"></div>`).join("");
+      <div class="num">${sig(c.v)}</div>`).join("");
 
       // The noise sources add in quadrature, so their squares are the parts of
       // the total and they sum to it exactly. That makes a stacked bar the one
@@ -3076,73 +3663,57 @@ def spectra(spec_json):
         style="width:${(variance[i] / varianceSum) * 100}%;background:${c.color}"
         title="${c.name} ${sig(c.v)} ppt"></i>`).join("") : "";
 
-      $("summary").hidden = false;
-      $("summary-body").innerHTML = `
-    <div class="stats">
-      <div class="stat lead">
-        <div class="k">Exposure time</div>
-        <div class="v">${expValue}</div>
-        <div class="u">${expUnit} per frame</div>
-      </div>
-      <div class="stat lead">
-        <div class="k">Binned precision</div>
-        <div class="v">${sig(ppt(data.binned_all))}</div>
-        <div class="u">ppt in ${data.binning} min</div>
-      </div>
-      <div class="stat">
-        <div class="k">One frame</div>
-        <div class="v">${sig(ppt(data.image_all))}</div>
-        <div class="u">ppt</div>
-      </div>
-    </div>
-    <div class="mini" role="img"
-      aria-label="Noise budget: ${comps.map(c => `${c.name} ${sig(c.v)}`).join(", ")} ppt">${mini}</div>
-    <p class="meta">
-      ${sig(data.frames_per_bin)} frames in each bin &middot;
-      the brightest pixel fills ${sig(data.well_fill * 100, 2)}% of the well
+      showSummary([
+        { k: "Exposure time", v: expValue, u: `${expUnit} per frame` },
+        { k: "Binned precision", v: sig(ppt(data.binned_all)), u: `ppt in ${data.binning} min` },
+        { k: "One frame", v: sig(ppt(data.image_all)), u: "ppt", minor: true },
+      ], `<span class="info">${sig(data.frames_per_bin)} frames in each bin &middot;
+      the brightest pixel fills ${sig(data.well_fill * 100, 2)}% of the well</span>
       ${data.frames_per_bin < 1
-          ? '<br><span class="warn">The bin is shorter than one exposure. Binning cannot improve the result.</span>' : ""}
-      ${data.gaia ? `<br>${gaiaSentence(data.gaia)}` : ""}
-    </p>`;
+          ? '<span class="warn">The bin is shorter than one exposure. Binning cannot improve the result.</span>' : ""}`,
+      `<div class="mini" role="img"
+        aria-label="Noise budget: ${comps.map(c => `${c.name} ${sig(c.v)}`).join(", ")} ppt">${mini}</div>`);
 
       showGaiaReport(data.gaia);
 
-      // The strip is sticky, so anything scrolled to has to clear it. Its height
-      // depends on the width and on how many lines the warnings take, so it is
-      // measured rather than guessed.
-      document.documentElement.style.scrollPaddingTop =
-        `${$("summary").offsetHeight + 8}px`;
-
       resultsEl.innerHTML = `
-    <h2>Noise</h2>
-    <figure>
-      <div class="fig-head">
-        <figcaption style="margin:0">
-          Each noise source, in parts per thousand. They add in quadrature.
-          This is why they do not sum to the total of ${sig(total)} ppt.
-        </figcaption>
+    <section class="section">
+      <div class="section-head">
+        <div>
+          <h4>Noise budget</h4>
+          <p class="section-desc">
+            Each noise source, in parts per thousand. The longest bar limits your
+            precision. The sources add in quadrature, so they do not sum to the
+            total of ${sig(total)} ppt.
+          </p>
+        </div>
         <div class="seg" role="group" aria-label="Which noise budget to show">
           <label><input type="radio" name="budget" value="binned" ${budgetView === "binned" ? "checked" : ""}> Binned</label>
-          <label><input type="radio" name="budget" value="image" ${budgetView === "image" ? "checked" : ""}> Frame</label>
+          <label><input type="radio" name="budget" value="image" ${budgetView === "image" ? "checked" : ""}> One frame</label>
         </div>
       </div>
       <div class="bars">${bars}</div>
-    </figure>
+      <details class="more">
+        <summary>Show these noise sources as a table</summary>
+        <table>
+          <thead><tr><th>Noise source</th><th>Frame [ppt]</th><th>Binned [ppt]</th></tr></thead>
+          <tbody>${data.components.map(c =>
+            `<tr><th scope="row">${c.name}</th><td>${sig(ppt(c.image))}</td><td>${sig(ppt(c.binned))}</td></tr>`).join("")}
+          </tbody>
+        </table>
+      </details>
+    </section>`;
 
-    <details style="margin-top:20px">
-      <summary>Show these noise sources as a table</summary>
-      <table>
-        <thead><tr><th>Noise source</th><th>Frame [ppt]</th><th>Binned [ppt]</th></tr></thead>
-        <tbody>${data.components.map(c =>
-        `<tr><th scope="row">${c.name}</th><td>${sig(ppt(c.image))}</td><td>${sig(ppt(c.binned))}</td></tr>`).join("")}
-        </tbody>
-      </table>
-    </details>
-    <h3 style="margin-top:20px">Calculated by the model</h3>
-    <p class="hint" style="margin:0 0 6px">The values you set are not repeated here.</p>
-    <table><tbody>${calculatedValues(data)
+      $("results-more").innerHTML = `
+    <section class="section">
+      <div class="section-text">
+        <h4>Calculated by the model</h4>
+        <p class="section-desc">The values you set are not repeated here.</p>
+      </div>
+      <table><tbody>${calculatedValues(data)
           .map(([k, v]) => `<tr><th scope="row">${k}</th><td>${sig(v)}</td></tr>`).join("")}
-    </tbody></table>`;
+      </tbody></table>
+    </section>`;
 
       for (const r of resultsEl.querySelectorAll('input[name="budget"]')) {
         r.addEventListener("change", e => {
@@ -3196,35 +3767,11 @@ def spectra(spec_json):
       $("target-report").textContent = `${data.target}: ${data.kind}, `
         + `${sig(data["major_axis [arcmin]"])}′ × ${sig(data["minor_axis [arcmin]"])}′.`;
 
-      $("summary").hidden = false;
-      $("summary-body").innerHTML = `
-    <div class="stats">
-      <div class="stat lead">
-        <div class="k">Sub-exposure</div>
-        <div class="v">${subValue}</div>
-        <div class="u">${subUnit} each</div>
-      </div>
-      <div class="stat lead">
-        <div class="k">Total exposure</div>
-        <div class="v">${totalValue}</div>
-        <div class="u">${totalUnit} for SNR ${sig(data["SNR target"])} per ${perWhat}</div>
-      </div>
-      <div class="stat">
-        <div class="k">Sub-exposures</div>
-        <div class="v">${data.subs}</div>
-        <div class="u">${wallValue} ${wallUnit} with readout</div>
-      </div>
-    </div>
-    <p class="meta">
-      ${subReason(data)}<br>
-      ${escapeHtml(data.target)} at airmass ${data.airmass.toFixed(2)}.
-      ${data["saturation magnitude [mag]"] === null ? ""
-        : `In one sub-exposure, stars brighter than ${data["saturation magnitude [mag]"].toFixed(1)} mag `
-          + `fill more than ${sig(100 * +$("well_fill").value, 2)}% of the well.`}
-    </p>`;
-
-      document.documentElement.style.scrollPaddingTop =
-        `${$("summary").offsetHeight + 8}px`;
+      showSummary([
+        { k: "Sub-exposure", v: subValue, u: `${subUnit} each` },
+        { k: "Total exposure", v: totalValue, u: `${totalUnit} for SNR ${sig(data["SNR target"])} per ${perWhat}` },
+        { k: "Sub-exposures", v: data.subs, u: `${wallValue} ${wallUnit} with readout`, minor: true },
+      ], "", "");
 
       const row = (name, value) =>
         `<tr><th scope="row">${name}</th><td>${value}</td></tr>`;
@@ -3232,36 +3779,54 @@ def spectra(spec_json):
       const lineTotal = lines.reduce((sum, [, v]) => sum + v, 0);
 
       resultsEl.innerHTML = `
-    <h2>Plan</h2>
-    <p class="hint" style="margin:0 0 10px">
-      ${escapeHtml(data.spectrum)}, scaled to ${escapeHtml(data["scaled to"])}.
-      Magnitudes are Vega magnitudes in this filter band.
-    </p>
-    <table><tbody>
-      ${row("Sub-exposure", `${sig(data["t_sub [s]"])} s`)}
-      ${row(`Brightest part of the target fills ${sig(100 * +$("well_fill").value, 2)}% of the well after`,
-          `${sig(data["t_saturation [s]"])} s`)}
-      ${data["saturation magnitude [mag]"] === null ? ""
-        : row(`Stars that fill more than ${sig(100 * +$("well_fill").value, 2)}% of the well in one sub-exposure`,
-          `brighter than ${data["saturation magnitude [mag]"].toFixed(1)} mag`)}
-      ${row(`SNR per ${perWhat} in one sub-exposure`, sig(data["SNR per sub"]))}
-      ${row(`Surface brightness for the SNR (${sliderFmt["mu-offset"]($("mu-offset").value)})`,
-        level(data["mu_target [mag/arcsec2]"], data["N_target [e/pix/s]"]))}
-      ${row("Brightest part", level(data["mu_peak [mag/arcsec2]"], data["N_peak [e/pix/s]"]))}
-      ${row("Sky", level(data["mu_sky [mag/arcsec2]"], data["N_sky [e/pix/s]"]))}
-    </tbody></table>
+    <section class="section">
+      <div class="section-text">
+        <h4>Exposure plan</h4>
+        <p class="section-desc">
+          ${subReason(data)}
+          ${escapeHtml(data.target)} is at airmass ${data.airmass.toFixed(2)}.
+          ${data["saturation magnitude [mag]"] === null ? ""
+            : `In one sub-exposure, stars brighter than ${data["saturation magnitude [mag]"].toFixed(1)} mag `
+            + `fill more than ${sig(100 * +$("well_fill").value, 2)}% of the well.`}
+        </p>
+      </div>
+      <p class="hint">
+        ${escapeHtml(data.spectrum)}, scaled to ${escapeHtml(data["scaled to"])}.
+        Magnitudes are Vega magnitudes in this filter band.
+      </p>
+      <table><tbody>
+        ${row("Sub-exposure", `${sig(data["t_sub [s]"])} s`)}
+        ${row(`Brightest part of the target fills ${sig(100 * +$("well_fill").value, 2)}% of the well after`,
+            `${sig(data["t_saturation [s]"])} s`)}
+        ${data["saturation magnitude [mag]"] === null ? ""
+          : row(`Stars that fill more than ${sig(100 * +$("well_fill").value, 2)}% of the well in one sub-exposure`,
+            `brighter than ${data["saturation magnitude [mag]"].toFixed(1)} mag`)}
+        ${row(`SNR per ${perWhat} in one sub-exposure`, sig(data["SNR per sub"]))}
+        ${row(`Surface brightness for the SNR (${sliderFmt["mu-offset"]($("mu-offset").value)})`,
+          level(data["mu_target [mag/arcsec2]"], data["N_target [e/pix/s]"]))}
+        ${row("Brightest part", level(data["mu_peak [mag/arcsec2]"], data["N_peak [e/pix/s]"]))}
+        ${row("Sky", level(data["mu_sky [mag/arcsec2]"], data["N_sky [e/pix/s]"]))}
+      </tbody></table>
+    </section>
     ${lines.length ? `
-    <h3 style="margin-top:20px">Emission lines in the filter band</h3>
-    <table>
-      <thead><tr><th>Line</th><th>e⁻/s/pixel</th><th>Part</th></tr></thead>
-      <tbody>${lines.map(([name, v]) => `<tr><th scope="row">${escapeHtml(name)}</th>
-        <td>${sig(v)}</td><td>${sig(100 * v / lineTotal, 2)}%</td></tr>`).join("")}</tbody>
-    </table>` : ""}
+    <section class="section">
+      <h4>Emission lines in the filter band</h4>
+      <table>
+        <thead><tr><th>Line</th><th>e⁻/s/pixel</th><th>Part</th></tr></thead>
+        <tbody>${lines.map(([name, v]) => `<tr><th scope="row">${escapeHtml(name)}</th>
+          <td>${sig(v)}</td><td>${sig(100 * v / lineTotal, 2)}%</td></tr>`).join("")}</tbody>
+      </table>
+    </section>` : ""}
     ${data.warnings.length ? `
-    <h3 style="margin-top:20px">Notes</h3>
-    <ul class="hint" style="margin:0;padding-left:18px">
-      ${data.warnings.map(w => `<li style="margin-bottom:4px">${escapeHtml(w)}</li>`).join("")}
-    </ul>` : ""}`;
+    <section class="section">
+      <h4>Notes</h4>
+      <ul class="notes">
+        ${data.warnings.map(w => `<li>${escapeHtml(w)}</li>`).join("")}
+      </ul>
+    </section>` : ""}`;
+
+      // The table of calculated values belongs to a star.
+      $("results-more").innerHTML = "";
     }
 
     // The archive answered, and these are the numbers it gave. Saying so matters
@@ -3363,7 +3928,7 @@ def spectra(spec_json):
       // is shown.
       const W = Math.max(260, Math.round((el.closest(".plot") || el).clientWidth));
       const H = Math.round(Math.min(280, Math.max(200, W * 0.5)));
-      const L = log ? 38 : 34, R = 12, T = 10, B = 36;
+      const L = log ? 44 : 38, R = 12, T = 10, B = 40;
 
       const peaks = series.map(s2 => Math.max(0, ...data[s2.key].filter(v => v !== null)));
       const top = Math.max(...peaks);
@@ -3439,12 +4004,12 @@ def spectra(spec_json):
       <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${aria}">
         ${yTicks.map(({ t, label }) => `<line x1="${L}" y1="${sy(t).toFixed(1)}" x2="${W - R}" y2="${sy(t).toFixed(1)}"
             stroke="var(--gridline)" stroke-width="1"/>
-          <text x="${L - 6}" y="${(sy(t) + 3).toFixed(1)}" text-anchor="end" font-size="9"
-            fill="var(--text-muted)">${label}</text>`).join("")}
-        ${xTicks.map(({ t, label }) => `<text x="${sx(t).toFixed(1)}" y="${H - 20}" text-anchor="middle"
-            font-size="9" fill="var(--text-muted)">${label}</text>`).join("")}
+          <text x="${L - 6}" y="${(sy(t) + 4).toFixed(1)}" text-anchor="end" font-size="11"
+            fill="var(--muted-foreground)">${label}</text>`).join("")}
+        ${xTicks.map(({ t, label }) => `<text x="${sx(t).toFixed(1)}" y="${H - 22}" text-anchor="middle"
+            font-size="11" fill="var(--muted-foreground)">${label}</text>`).join("")}
         <text x="${(L + (W - R - L) / 2).toFixed(0)}" y="${H - 6}" text-anchor="middle"
-              font-size="9" fill="var(--text-muted)">wavelength [µm]</text>
+              font-size="11" fill="var(--muted-foreground)">wavelength [µm]</text>
         ${series.filter(s2 => s2.fill).map(s2 =>
           `<path d="${area(s2.key)}" fill="${s2.color}" opacity="0.10"/>`).join("")}
         ${series.map(s2 => `<path d="${path(s2.key)}" fill="none" stroke="${s2.color}"
@@ -3452,7 +4017,7 @@ def spectra(spec_json):
         <line class="cross" x1="0" y1="${T}" x2="0" y2="${H - B}" stroke="var(--baseline)"
               stroke-width="1" opacity="0"/>
         ${series.map(s2 => `<circle class="hd" data-key="${s2.key}" r="4" fill="${s2.color}"
-            stroke="var(--surface-1)" stroke-width="2" opacity="0"/>`).join("")}
+            stroke="var(--card)" stroke-width="2" opacity="0"/>`).join("")}
         <rect class="hit" x="${L}" y="${T}" width="${W - L - R}" height="${H - T - B}" fill="transparent"/>
       </svg>
       <p class="readout">${resting}</p>
@@ -3492,14 +4057,13 @@ def spectra(spec_json):
 
     // ------------------------------------------------------ transmission, sky, star
     // One colour for each thing across the three charts. The atmosphere is
-    // green, the filter orange and the star gold, and blue is always the light
-    // that reaches the detector. The detector-plus-optics curve is grey: it is
-    // context, and no fifth colour stays apart from the rest for colour-blind
-    // readers. Purple is never beside blue, and gold never beside orange, for
-    // the same reason.
+    // green, the filter vermillion and the star orange, and blue is always the
+    // light that reaches the detector. The detector-plus-optics curve is grey:
+    // it is context, and no fifth colour stays apart from the rest for
+    // colour-blind readers. The colours are the Okabe-Ito set of the planner.
     const SPECTRUM_LINE = 1.25;   // 1 nm lines at about 5 points a pixel
     const TRANSMISSION_SERIES = [
-      { key: "eff", label: "Detector + optics", color: "var(--text-secondary)", width: 1.5 },
+      { key: "eff", label: "Detector + optics", color: "var(--muted-foreground)", width: 1.5 },
       { key: "filt", label: "Filter", color: "var(--series-2)" },
       { key: "atm", label: "Atmosphere", color: "var(--series-3)", width: SPECTRUM_LINE },
       {
@@ -3749,11 +4313,12 @@ def spectra(spec_json):
     function setBusy(busy) {
       $("summary-body").classList.toggle("busy", busy);
       resultsEl.classList.toggle("busy", busy);
+      $("results-more").classList.toggle("busy", busy);
     }
 
     boot().catch(err => {
       setStatus(`Could not start: ${err.message}`, "error");
-      resultsEl.innerHTML = `<p class="placeholder">Run <code>python web/build.py</code>, then serve the <code>web</code> directory.</p>`;
+      resultsEl.innerHTML = `<div class="section"><p class="placeholder">Run <code>python web/build.py</code>, then serve the <code>web</code> directory.</p></div>`;
     });
   </script>
 </body>
