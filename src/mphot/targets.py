@@ -15,8 +15,9 @@ CATALOGUE_FILE = "openngc.csv"
 ``resources/targets/build_targets.py``. OpenNGC is released under CC-BY-SA-4.0
 (https://github.com/mattiaverga/OpenNGC)."""
 
-NEBULA_LINES_FILE = "nebula_lines.csv"
-"""Observed Halpha flux and line ratios of nebulae, from the same script."""
+NEBULA_BRIGHTNESS_FILE = "nebula_brightness.csv"
+"""Mean and peak surface brightness of nebulae in B, V and R, measured by the
+same script on the images of the CTA-FRAM Sky Survey."""
 
 KINDS = {
     "G": "galaxy",
@@ -50,6 +51,9 @@ UNSUPPORTED_TYPES = {
 BANDS = ("B", "V", "J", "H", "K")
 """Catalogue bands of OpenNGC, in the order of their columns."""
 
+NEBULA_BANDS = ("B", "V", "R")
+"""Bands of the CTA-FRAM Sky Survey."""
+
 _MESSIER = re.compile(r"^M(?:ESSIER)?(\d{1,3})$")
 _NGC_IC = re.compile(r"^(NGC|IC)(\d{1,4})(.*)$")
 
@@ -80,16 +84,19 @@ class Target:
         position_angle (float | None): Position angle of the major axis
             [deg], from north through east. None if the catalogue has none,
             as for most nebulae.
-        magnitudes (dict): Total Vega magnitudes by band ("B", "V", "J", "H",
-            "K"), only for the bands the catalogue has. Nebulae have no J, H
-            and K, because OpenNGC gives those of a star in the nebula.
+        magnitudes (dict): Total Vega magnitudes of a galaxy by band ("B",
+            "V", "J", "H", "K"), only for the bands the catalogue has. Empty
+            for nebulae, because OpenNGC often gives those of a star in the
+            nebula.
         radial_velocity (float): Radial velocity [km/s]. 0 if unknown.
-        halpha_flux (float | None): Total observed Halpha flux of a nebula
-            [erg/s/cm2].
-        halpha_source (str | None): Where `halpha_flux` comes from.
-        line_ratios (dict): Measured observed line ratios to Halpha, by line key
-            (such as "oiii_5007"). Empty if none are known.
-        c_hbeta (float | None): Logarithmic extinction at Hbeta, if known.
+        surface_brightness (dict): Mean surface brightness of a nebula in the
+            catalogue ellipse [Vega mag/arcsec2], by band ("B", "V", "R"),
+            from the CTA-FRAM images with the stars removed. Empty for
+            galaxies.
+        peak_surface_brightness (dict): Surface brightness of the brightest
+            part of a nebula [Vega mag/arcsec2], by band, at the 14" pixels of
+            CTA-FRAM. Empty for a nebula less than 2.4' across, which these
+            images do not resolve.
     """
 
     name: str
@@ -103,10 +110,8 @@ class Target:
     position_angle: float | None = None
     magnitudes: dict = field(default_factory=dict)
     radial_velocity: float = 0.0
-    halpha_flux: float | None = None
-    halpha_source: str | None = None
-    line_ratios: dict = field(default_factory=dict)
-    c_hbeta: float | None = None
+    surface_brightness: dict = field(default_factory=dict)
+    peak_surface_brightness: dict = field(default_factory=dict)
 
     @property
     def area(self) -> float:
@@ -125,8 +130,8 @@ def _catalogue() -> pd.DataFrame:
 
 
 @cache
-def _nebula_lines() -> pd.DataFrame:
-    return pd.read_csv(TARGETS_DIR / NEBULA_LINES_FILE).set_index("name")
+def _nebula_brightness() -> pd.DataFrame:
+    return pd.read_csv(TARGETS_DIR / NEBULA_BRIGHTNESS_FILE).set_index("name")
 
 
 @cache
@@ -283,26 +288,18 @@ def resolve_target(name: str) -> Target:
         if np.isfinite(row[band.lower()])
     }
 
-    lines = _nebula_lines()
-    halpha_flux = halpha_source = c_hbeta = None
-    line_ratios = {}
-    if row["name"] in lines.index:
-        entry = lines.loc[row["name"]]
-        halpha_flux = _finite(entry["halpha_flux"])
-        halpha_source = entry["halpha_source"]
-        c_hbeta = _finite(entry["c_hbeta"])
-        line_ratios = {
-            key: float(entry[key])
-            for key in (
-                "hbeta",
-                "oiii_5007",
-                "hei_5876",
-                "nii_6584",
-                "sii_6717",
-                "sii_6731",
-            )
-            if np.isfinite(entry[key])
-        }
+    brightness = _nebula_brightness()
+    mean, peak = {}, {}
+    if row["name"] in brightness.index:
+        entry = brightness.loc[row["name"]]
+        mean, peak = (
+            {
+                band: float(entry[f"{band.lower()}_{part}"])
+                for band in NEBULA_BANDS
+                if np.isfinite(entry[f"{band.lower()}_{part}"])
+            }
+            for part in ("mean", "peak")
+        )
 
     velocity = row["radial_velocity"]
     return Target(
@@ -317,10 +314,8 @@ def resolve_target(name: str) -> Target:
         position_angle=_finite(row["position_angle"]),
         magnitudes=magnitudes,
         radial_velocity=float(velocity) if np.isfinite(velocity) else 0.0,
-        halpha_flux=halpha_flux,
-        halpha_source=halpha_source,
-        line_ratios=line_ratios,
-        c_hbeta=c_hbeta,
+        surface_brightness=mean,
+        peak_surface_brightness=peak,
     )
 
 

@@ -57,15 +57,14 @@ Options:
 - `area`: give the SNR for an area in arcsec², not for one pixel.
 - `flat_error`: the error after flat-fielding and sky subtraction, as a fraction of the sky. This error is the same in all sub-exposures, so it sets a maximum SNR. The default is 0.
 
-Galaxies have a stellar spectrum that agrees with their catalogue colours. Nebulae have emission lines. For stars and star clusters, use `get_precision`. See the notebook [Galaxies and nebulae](examples/Galaxies%20and%20nebulae.ipynb).
+Galaxies get their brightness from their catalogue magnitudes and have a stellar spectrum that agrees with their colours. Nebulae get their brightness from the B, V and R images of the CTA-FRAM Sky Survey, with the stars removed: the mean in the catalogue ellipse and the brightest part. For an emission nebula, *mphot* fits three parts to B, V and R: Hα with the lines tied to it by typical ratios, [OIII], and starlight that dust scatters. Narrowband filters and filters beyond 0.8 µm depend on the typical ratios, so the error there is larger. For stars and star clusters, use `get_precision`. See the notebook [Galaxies and nebulae](examples/Galaxies%20and%20nebulae.ipynb).
 
 Data sources, built by `resources/targets/build_targets.py`:
 
-- [OpenNGC](https://github.com/mattiaverga/OpenNGC) by Mattia Verga (CC-BY-SA-4.0): positions, sizes, magnitudes and types.
-- [Acker et al. (1992)](https://cdsarc.cds.unistra.fr/viz-bin/cat/V/84) and [Cahn, Kaler & Stanghellini (1992)](https://cdsarc.cds.unistra.fr/viz-bin/cat/J/A+AS/94/399): Hβ fluxes, line ratios and extinction of planetary nebulae.
-- [Finkbeiner (2003)](https://doi.org/10.1086/374411): Hα fluxes of other emission nebulae.
-- [SVO Filter Profile Service](http://svo2.cab.inta-csic.es/theory/fps/): Bessell B and V, and 2MASS J, H and Ks filter curves.
-
+- [OpenNGC](https://github.com/mattiaverga/OpenNGC) by Mattia Verga (CC-BY-SA-4.0): positions, sizes, types, and the magnitudes of galaxies.
+- [CTA-FRAM Sky Survey](https://ui.adsabs.harvard.edu/abs/2019EPJWC.19702008J/abstract) (Institute of Physics, Czech Academy of Sciences), through the [CDS hips2fits service](https://alasky.cds.unistra.fr/hips-image-services/hips2fits): B, V and R images of nebulae.
+- [Gaia DR3 synthetic photometry](https://cdsarc.cds.unistra.fr/viz-bin/cat/I/360) and [Hipparcos](https://cdsarc.cds.unistra.fr/viz-bin/cat/I/239): the zero point of each CTA-FRAM image, and the stars removed from it.
+- [SVO Filter Profile Service](http://svo2.cab.inta-csic.es/theory/fps/): Bessell B, V and R, and 2MASS J, H and Ks filter curves.
 
 ## Installation
 

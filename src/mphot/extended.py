@@ -14,9 +14,14 @@ The calculation has three steps:
    brightest part of the target must stay below well_fill.
 3. Find the number of sub-exposures that gives the requested SNR.
 
+Galaxies get their brightness from the catalogue magnitudes. Nebulae get it
+from B, V and R images of the CTA-FRAM Sky Survey, with the stars removed: the
+mean in the catalogue ellipse and the brightest part.
+
 Galaxies and reflection nebulae have a stellar spectrum that agrees with their
-catalogue colours. Planetary nebulae, emission nebulae and supernova remnants
-have emission lines only.
+colours. Planetary nebulae, emission nebulae and supernova remnants have
+emission lines with typical ratios. The spectrum is scaled to the catalogue or
+CTA-FRAM band nearest to the instrument band.
 """
 
 import math
@@ -25,7 +30,8 @@ from functools import cache
 import numpy as np
 import pandas as pd
 from scipy.integrate import trapezoid
-from scipy.optimize import brentq
+from scipy.optimize import brentq, nnls
+from scipy.special import expit
 
 from mphot.constants import (
     AIRMASS_VALUES,
@@ -46,11 +52,13 @@ CATALOGUE_BANDS = {
     # band: (response file, effective wavelength [micron])
     "B": ("bessell_b.csv", 0.438),
     "V": ("bessell_v.csv", 0.545),
+    "R": ("bessell_r.csv", 0.641),
     "J": ("2mass_j.csv", 1.235),
     "H": ("2mass_h.csv", 1.662),
     "K": ("2mass_ks.csv", 2.159),
 }
-"""Photon-counting response curves of the OpenNGC magnitudes."""
+"""Photon-counting response curves of the OpenNGC magnitudes and of the
+CTA-FRAM surface brightness."""
 
 HALPHA_UM = 0.65628
 
@@ -60,6 +68,10 @@ HYDROGEN_LINES = (
     ("Hgamma", 0.43405, 0.468 / 2.86),
     ("Hbeta", 0.48613, 1 / 2.86),
     ("Halpha", HALPHA_UM, 1.0),
+    ("Pa10", 0.90152, 0.0185 / 2.86),
+    ("Pa9", 0.92290, 0.0255 / 2.86),
+    ("Paepsilon", 0.95460, 0.0367 / 2.86),
+    ("Padelta", 1.00494, 0.0553 / 2.86),
     ("Pagamma", 1.09381, 0.090 / 2.86),
     ("Pabeta", 1.28181, 0.162 / 2.86),
     ("Paalpha", 1.87510, 0.332 / 2.86),
@@ -75,15 +87,20 @@ METAL_LINES = (
     ("nii_6584", "[NII] 6584", 0.65835),
     ("sii_6717", "[SII] 6717", 0.67164),
     ("sii_6731", "[SII] 6731", 0.67308),
+    ("ariii_7136", "[ArIII] 7136", 0.71358),
+    ("oii_7325", "[OII] 7325", 0.73250),
+    ("siii_9532", "[SIII] 9532", 0.95311),
+    ("hei_10830", "HeI 10830", 1.08303),
 )
 """Helium and forbidden lines. Their ratios to Halpha differ from nebula to
-nebula, so they come from `Target.line_ratios` or `TYPICAL_LINE_RATIOS`."""
+nebula. mphot uses `TYPICAL_LINE_RATIOS`."""
 
 DOUBLET_PARTNERS = (
     # key of the strong line, label, rest wavelength in air [micron], fraction
     ("oiii_5007", "[OIII] 4959", 0.49589, 1 / 2.98),
     ("nii_6584", "[NII] 6548", 0.65480, 1 / 3.05),
     ("oi_6300", "[OI] 6364", 0.63636, 1 / 3.0),
+    ("siii_9532", "[SIII] 9069", 0.90686, 1 / 2.44),
 )
 """The weaker line of each doublet, a fixed fraction of the stronger one."""
 
@@ -95,6 +112,10 @@ TYPICAL_LINE_RATIOS = {
         "nii_6584": 0.3,
         "sii_6717": 0.1,
         "sii_6731": 0.08,
+        "ariii_7136": 0.05,
+        "oii_7325": 0.03,
+        "siii_9532": 0.3,
+        "hei_10830": 0.15,
     },
     "planetary nebula": {
         "oiii_5007": 3.5,
@@ -103,6 +124,10 @@ TYPICAL_LINE_RATIOS = {
         "nii_6584": 0.5,
         "sii_6717": 0.03,
         "sii_6731": 0.04,
+        "ariii_7136": 0.08,
+        "oii_7325": 0.05,
+        "siii_9532": 0.3,
+        "hei_10830": 0.3,
     },
     "supernova remnant": {
         "oiii_5007": 0.7,
@@ -111,14 +136,48 @@ TYPICAL_LINE_RATIOS = {
         "nii_6584": 0.6,
         "sii_6717": 0.45,
         "sii_6731": 0.35,
+        "ariii_7136": 0.02,
+        "oii_7325": 0.1,
+        "siii_9532": 0.3,
+        "hei_10830": 0.1,
     },
 }
 """
-Rough observed line ratios to Halpha for nebulae without measured ones.
+Rough observed line ratios to Halpha of each kind of nebula.
 
-Real values can be 3 times higher or lower, most of all for [OIII]. A
-supernova remnant has [SII]/Halpha above approximately 0.4.
+Real values can be 3 times higher or lower. A supernova remnant has
+[SII]/Halpha above approximately 0.4. When a nebula has B, V and R, mphot fits
+[OIII] to them and does not use the typical [OIII] value.
 """
+
+OIII_LINES = ("[OIII] 5007", "[OIII] 4959")
+"""The lines that the fit to B, V and R gives their own level."""
+
+CONTINUUM_TEMPERATURE = 10000
+"""The continuum of a nebula is starlight that dust scatters. mphot gives it
+the spectrum of a hot star."""
+
+BEYOND_R_UM = 0.8
+"""Wavelength beyond which the CTA-FRAM bands measure almost nothing."""
+
+SURVEY_B_RED_EDGE_UM = 0.49
+"""
+Red edge of the CTA-FRAM B filter [micron].
+
+The filter passes almost no [OIII] 5007: planetary nebulae with strong [OIII],
+for example NGC 3242, NGC 7009 and M27, are 0.7 to 1.3 mag fainter in it than
+in the Johnson B of the catalogues. Its curve is not published. With the
+Bessell B curve cut at 0.49 micron, the fit reproduces B, V and R of these
+nebulae and of HII regions such as M8, M17 and M42. Without the cut, it misses
+them by up to 55%.
+"""
+
+FIT_TOLERANCE = 0.1
+"""Largest difference between a fitted and a measured band before a warning."""
+
+FIT_LIMIT = 0.25
+"""Largest difference between a fitted and a measured band for which mphot uses
+the fit. A larger difference is mostly a star in one band."""
 
 DEFAULT_TEMPERATURE = {"galaxy": 5000, "reflection nebula": 10000}
 """Spectrum used when a continuum source has only one catalogue magnitude."""
@@ -180,6 +239,26 @@ def _catalogue_band(band: str) -> np.ndarray:
 @cache
 def _vega_in_band(band: str) -> float:
     return _integral(_vega() * _catalogue_band(band))
+
+
+@cache
+def _survey_band(band: str) -> np.ndarray:
+    """
+    Photon-counting curve of a CTA-FRAM band, for emission lines.
+
+    The zero point of each image comes from stars, so for a continuum the
+    CTA-FRAM bands are the Johnson-Cousins bands. For lines, the edges of the
+    filters matter, and the B filter has a red edge that Bessell's B has not.
+    """
+    curve = _catalogue_band(band)
+    if band == "B":
+        curve = curve * expit((SURVEY_B_RED_EDGE_UM - _wavelengths()) / 0.002)
+    return curve
+
+
+@cache
+def _vega_in_survey_band(band: str) -> float:
+    return _integral(_vega() * _survey_band(band))
 
 
 def _stellar_spectrum(temperature: int) -> np.ndarray:
@@ -287,29 +366,66 @@ def extinction_curve(wavelength: float) -> float:
 # Source models
 
 
-def _continuum(target: Target, response: np.ndarray, band_centre: float) -> dict:
-    """Surface brightness of a continuum source in the instrument band."""
+def _surface_brightness(target: Target) -> dict:
+    """
+    Mean surface brightness in each band [mag/arcsec2].
 
-    magnitudes = target.magnitudes
-    if not magnitudes:
+    A nebula has it from the CTA-FRAM images. For a galaxy, it is the total
+    magnitude spread over the catalogue ellipse.
+    """
+
+    if target.kind != "galaxy":
+        if not target.surface_brightness:
+            raise ValueError(
+                f"The CTA-FRAM images give no surface brightness for "
+                f"{target.label}. mphot cannot calculate it."
+            )
+        return dict(target.surface_brightness)
+    if not target.magnitudes:
         raise ValueError(
             f"The catalogue gives no magnitude for {target.label}. mphot cannot "
             "calculate its surface brightness."
         )
+    area = 2.5 * math.log10(target.area)
+    return {band: m + area for band, m in target.magnitudes.items()}
+
+
+def _scaled_to(target: Target, band: str, mu: dict) -> str:
+    if target.kind == "galaxy":
+        return f"{band} = {target.magnitudes[band]:.2f} over the catalogue ellipse"
+    return f"{band} = {mu[band]:.2f} mag/arcsec2 in the CTA-FRAM images"
+
+
+def _continuum(
+    target: Target, response: np.ndarray, band_centre: float, mu: dict | None = None
+) -> dict:
+    """
+    Surface brightness of a continuum source in the instrument band.
+
+    `mu` is the surface brightness in each band [mag/arcsec2]. By default it is
+    the mean of the target.
+    """
+
+    mu = _surface_brightness(target) if mu is None else mu
+    kind = "catalogue" if target.kind == "galaxy" else "CTA-FRAM"
 
     warnings = []
-    temperature = _matching_temperature(magnitudes)
-    how = "from the catalogue colours"
+    temperature = _matching_temperature(mu)
+    how = f"from the {kind} colours"
     if temperature is None:
         default = DEFAULT_TEMPERATURE[target.kind]
         temperature = int(min(TEFF_VALUES, key=lambda t: abs(t - default)))
         how = "assumed"
+        source = (
+            "The catalogue gives only one magnitude"
+            if target.kind == "galaxy"
+            else "The CTA-FRAM images give only one band"
+        )
         warnings.append(
-            f"The catalogue gives only one magnitude for {target.label}. mphot "
-            f"uses a {temperature} K spectrum."
+            f"{source} for {target.label}. mphot uses a {temperature} K spectrum."
         )
 
-    centres = {b: CATALOGUE_BANDS[b][1] for b in magnitudes}
+    centres = {b: CATALOGUE_BANDS[b][1] for b in mu}
     band = min(centres, key=lambda b: abs(centres[b] - band_centre))
     distance = abs(centres[band] - band_centre)
     if distance > FAR_BAND_UM:
@@ -323,19 +439,18 @@ def _continuum(target: Target, response: np.ndarray, band_centre: float) -> dict
                 (b for b in centres if centres[b] >= band_centre), key=centres.get
             )
             warnings.append(
-                f"The filter band is between the catalogue bands {lower} and "
+                f"The filter band is between the {kind} bands {lower} and "
                 f"{upper}. The result depends on the spectrum between these bands."
             )
         else:
             warnings.append(
-                f"The nearest catalogue band ({band}) is {distance:.2f} micron from "
+                f"The nearest {kind} band ({band}) is {distance:.2f} micron from "
                 "the filter band. The error can be up to 1 mag."
             )
 
-    mu = magnitudes[band] + 2.5 * math.log10(target.area)
     spectrum = _stellar_spectrum(temperature)
     scale = (
-        10 ** (-0.4 * mu)
+        10 ** (-0.4 * mu[band])
         * _vega_in_band(band)
         / _integral(spectrum * _catalogue_band(band))
     )
@@ -343,131 +458,214 @@ def _continuum(target: Target, response: np.ndarray, band_centre: float) -> dict
     return {
         "rate": scale * _integral(spectrum * response),
         "spectrum": f"{temperature} K stellar spectrum ({how})",
-        "scaled to": f"{band} = {magnitudes[band]:.2f} over the catalogue ellipse",
+        "scaled to": _scaled_to(target, band, mu),
+        "band": band,
         "lines": {},
         "warnings": warnings,
     }
 
 
 def _line_list(target: Target, av: float) -> list[tuple]:
-    """(label, rest wavelength, observed energy ratio to Halpha, assumed?)."""
+    """(label, rest wavelength, observed energy ratio to Halpha, typical?)."""
 
-    typical = TYPICAL_LINE_RATIOS[target.kind]
-    ratios = {**typical, **target.line_ratios}
-    measured = set(target.line_ratios)
+    ratios = TYPICAL_LINE_RATIOS[target.kind]
     a_halpha = av * extinction_curve(HALPHA_UM)
 
     lines = []
     for label, wavelength, case_b in HYDROGEN_LINES:
-        if label == "Hbeta" and "hbeta" in ratios:
-            lines.append((label, wavelength, ratios["hbeta"], False))
-        else:
-            reddening = 10 ** (-0.4 * (av * extinction_curve(wavelength) - a_halpha))
-            lines.append((label, wavelength, case_b * reddening, False))
+        reddening = 10 ** (-0.4 * (av * extinction_curve(wavelength) - a_halpha))
+        lines.append((label, wavelength, case_b * reddening, False))
     for key, label, wavelength in METAL_LINES:
         if ratios.get(key, 0) > 0:
-            lines.append((label, wavelength, ratios[key], key not in measured))
+            lines.append((label, wavelength, ratios[key], True))
     for key, label, wavelength, fraction in DOUBLET_PARTNERS:
         if ratios.get(key, 0) > 0:
-            lines.append(
-                (label, wavelength, ratios[key] * fraction, key not in measured)
-            )
+            lines.append((label, wavelength, ratios[key] * fraction, True))
     return lines
 
 
-def _emission(
-    target: Target, response: np.ndarray, band_centre: float, av: float | None
-) -> dict:
-    """Surface brightness of an emission-line nebula in the instrument band."""
+@cache
+def _scattered_light() -> np.ndarray:
+    """Continuum of a nebula, 1 photon/s/m2/arcsec2 in the V band."""
+    temperature = int(min(TEFF_VALUES, key=lambda t: abs(t - CONTINUUM_TEMPERATURE)))
+    spectrum = _stellar_spectrum(temperature)
+    return spectrum / _integral(spectrum * _catalogue_band("V"))
 
+
+def _emission(
+    target: Target,
+    response: np.ndarray,
+    band_centre: float,
+    av: float | None,
+    mu: dict | None = None,
+) -> dict:
+    """
+    Surface brightness of an emission nebula in the instrument band.
+
+    The spectrum has three parts: Halpha with the lines tied to it by typical
+    ratios, [OIII], and a continuum of scattered starlight. With B, V and R, a
+    fit gives each part the level that reproduces the three bands. With fewer
+    bands, [OIII] has its typical ratio, there is no continuum, and the lines
+    get the level that gives the band nearest to the instrument band.
+
+    `mu` is the surface brightness in each band [mag/arcsec2]. By default it is
+    the mean of the target.
+    """
+
+    mu = _surface_brightness(target) if mu is None else mu
     warnings = []
-    if av is None:
-        av = 2.15 * target.c_hbeta if target.c_hbeta is not None else 0.0
-        extinction_known = target.c_hbeta is not None
-    else:
-        extinction_known = True
+    extinction_known = av is not None
+    av = av or 0.0
 
     lam = _wavelengths()
     shift = 1 + target.radial_velocity / C_KMS
     lines = _line_list(target, av)
+    oiii_5007 = next((r for label, _, r, _ in lines if label == OIII_LINES[0]), 0.0)
 
-    # Photons per line relative to Halpha. An energy ratio becomes a photon
-    # ratio when multiplied by the wavelength ratio.
-    photons = [ratio * wavelength / HALPHA_UM for _, wavelength, ratio, _ in lines]
-    observed = [wavelength * shift for _, wavelength, _, _ in lines]
-
-    if target.halpha_flux is not None:
-        # erg/s/cm2 -> W/m2 is a factor 1e-3.
-        halpha = (
-            target.halpha_flux * 1e-3 / target.area / (H_C / (HALPHA_UM * shift * 1e-6))
-        )
-        scaled_to = f"Halpha flux from {target.halpha_source}"
-        if target.halpha_source.startswith("Finkbeiner"):
-            warnings.append(
-                "The Halpha flux comes from an all-sky map. The error can be up to "
-                "a factor of 2."
-            )
-    else:
-        bands = [b for b in ("B", "V") if b in target.magnitudes]
-        if not bands:
-            raise ValueError(
-                f"The catalogue gives no Halpha flux and no B or V magnitude for "
-                f"{target.label}. mphot cannot calculate its surface brightness."
-            )
-        band = min(bands, key=lambda b: abs(CATALOGUE_BANDS[b][1] - band_centre))
-        mu = target.magnitudes[band] + 2.5 * math.log10(target.area)
-        in_band = sum(
-            n * np.interp(w, lam, _catalogue_band(band))
-            for n, w in zip(photons, observed, strict=True)
-        )
-        halpha = 10 ** (-0.4 * mu) * _vega_in_band(band) / in_band
-        scaled_to = f"{band} = {target.magnitudes[band]:.2f} over the catalogue ellipse"
-        warnings.append(
-            f"The Halpha flux of {target.label} is not known. mphot scales the "
-            f"lines to the {band} magnitude. The error can be a factor of 3 or more."
-        )
-        if target.object_type == "Cl+N":
-            # For NGC 2264, the magnitude gives 300 times the Halpha of the map.
-            warnings.append(
-                f"{target.label} is a star cluster with a nebula. The catalogue "
-                "magnitude includes the stars, thus the nebula is probably fainter."
-            )
-
-    counts = {
-        label: halpha * n * float(np.interp(w, lam, response))
-        for (label, _, _, _), n, w in zip(lines, photons, observed, strict=True)
+    # Each part is (lines, continuum). The lines map a label to the observed
+    # wavelength and the photons per photon of the leading line: Halpha, or
+    # [OIII] 5007. An energy ratio becomes a photon ratio when multiplied by
+    # the wavelength ratio.
+    parts = {
+        "Halpha": (
+            {
+                label: (wavelength * shift, ratio * wavelength / HALPHA_UM)
+                for label, wavelength, ratio, _ in lines
+                if label not in OIII_LINES
+            },
+            None,
+        ),
+        "[OIII]": (
+            {
+                label: (wavelength * shift, ratio / oiii_5007 * wavelength / 0.50068)
+                for label, wavelength, ratio, _ in lines
+                if label in OIII_LINES
+            },
+            None,
+        ),
+        "Continuum": ({}, _scattered_light()),
     }
+
+    def part_rate(part, curve) -> float:
+        part_lines, continuum = part
+        rate = sum(n * np.interp(w, lam, curve) for w, n in part_lines.values())
+        if continuum is not None:
+            rate += _integral(continuum * curve)
+        return float(rate)
+
+    measured = {b: 10 ** (-0.4 * m) * _vega_in_survey_band(b) for b, m in mu.items()}
+    band = min(mu, key=lambda b: abs(CATALOGUE_BANDS[b][1] - band_centre))
+    fit_miss = None
+    if {"B", "V", "R"} <= set(mu):
+        # Each row is one band, divided by its measured value, so that the fit
+        # weights the bands by their relative error.
+        names = ("B", "V", "R")
+        matrix = np.array(
+            [
+                [part_rate(p, _survey_band(b)) / measured[b] for p in parts.values()]
+                for b in names
+            ]
+        )
+        amplitudes, _ = nnls(matrix, np.ones(len(names)))
+        misses = dict(zip(names, np.abs(matrix @ amplitudes - 1), strict=True))
+        worst = max(misses, key=misses.get)
+        fit_miss = float(misses[worst])
+    fitted = fit_miss is not None and fit_miss <= FIT_LIMIT
+    if fitted:
+        if fit_miss > FIT_TOLERANCE:
+            warnings.append(
+                f"The fitted spectrum differs by {fit_miss:.0%} from the CTA-FRAM "
+                f"{worst} band. Halpha lines, [OIII] and scattered starlight do not "
+                f"describe {target.label} well."
+            )
+        spectrum = "Emission lines and scattered starlight, fitted to B, V and R"
+        scaled_to = (
+            ", ".join(f"{b} = {mu[b]:.2f}" for b in names)
+            + " mag/arcsec2 in the CTA-FRAM images"
+        )
+    else:
+        # [OIII] has its typical ratio, in photons per Halpha photon.
+        typical = np.array([1.0, oiii_5007 * 0.50068 / HALPHA_UM, 0.0])
+        rates = np.array([part_rate(p, _survey_band(band)) for p in parts.values()])
+        amplitudes = typical * measured[band] / (typical @ rates)
+        spectrum = "Emission lines with typical ratios"
+        scaled_to = _scaled_to(target, band, mu)
+        if fit_miss is None:
+            warnings.append(
+                f"The CTA-FRAM images give only {', '.join(mu)} for "
+                f"{target.label}. mphot uses the typical [OIII] ratio and no "
+                "continuum."
+            )
+        else:
+            warnings.append(
+                f"The CTA-FRAM colours of {target.label} do not fit Halpha lines, "
+                f"[OIII] and scattered starlight: the {worst} band misses by "
+                f"{fit_miss:.0%}. A star in the images can cause this. mphot scales "
+                f"lines with typical ratios to the {band} band instead."
+            )
+        if target.kind == "supernova remnant":
+            warnings.append(
+                "mphot calculates only the line emission. Some remnants, for "
+                "example M1, also have a strong continuum."
+            )
+    if av:
+        spectrum += f", A_V = {av:.2f}"
+
+    counts = {}
+    beyond_r = 0.0
+    for (name, (part_lines, continuum)), amplitude in zip(
+        parts.items(), amplitudes, strict=True
+    ):
+        for label, (wavelength, n) in part_lines.items():
+            counts[label] = amplitude * n * float(np.interp(wavelength, lam, response))
+            if wavelength > BEYOND_R_UM:
+                beyond_r += counts[label]
+        if continuum is not None:
+            counts[name] = amplitude * _integral(continuum * response)
+            beyond_r += amplitude * _integral(
+                np.where(lam > BEYOND_R_UM, continuum * response, 0.0)
+            )
     total = sum(counts.values())
 
-    if total > 0:
-        assumed = [
-            label
-            for label, _, _, is_assumed in lines
-            if is_assumed and counts[label] > CONTRIBUTION_WARNING * total
-        ]
-        if assumed:
-            warnings.append(
-                f"mphot uses typical {target.kind} values for {', '.join(assumed)}. "
-                "Real values can be 3 times higher or lower."
-            )
-        infrared = sum(
-            counts[label] for label, wavelength, _, _ in lines if wavelength > 1.0
-        )
-        if not extinction_known and infrared > CONTRIBUTION_WARNING * total:
-            warnings.append(
-                "The dust extinction is not known. The near-infrared hydrogen lines "
-                "can be brighter than calculated. Use av to correct them."
-            )
-    if target.kind == "supernova remnant":
+    if _integral(response) / response.max() < NARROW_BAND_UM:
         warnings.append(
-            "mphot calculates only the line emission. Some remnants, for "
-            "example M1, also have a strong continuum."
+            "The broad CTA-FRAM bands do not measure the line ratios inside a "
+            "narrowband filter, for example [NII]/Halpha. The error can be a "
+            "factor of 1.5."
         )
+    if total > 0:
+        typical_lines = [
+            label
+            for label, _, _, is_typical in lines
+            if is_typical
+            and not (fitted and label in OIII_LINES)
+            and counts[label] > CONTRIBUTION_WARNING * total
+        ]
+        if typical_lines:
+            warnings.append(
+                f"mphot uses typical {target.kind} values for "
+                f"{', '.join(typical_lines)}. Real values can be 3 times higher or "
+                "lower."
+            )
+        if beyond_r > CONTRIBUTION_WARNING * total:
+            note = (
+                f"{beyond_r / total:.0%} of the signal is at wavelengths beyond the "
+                "CTA-FRAM R band, where mphot uses typical line ratios and the "
+                "spectrum of a hot star. The error can be a factor of 2 or more."
+            )
+            if not extinction_known:
+                note += (
+                    " The hydrogen lines also depend on the dust extinction, which "
+                    "is not known. Use av to correct them."
+                )
+            warnings.append(note)
 
     return {
         "rate": total,
-        "spectrum": "Emission lines" + (f", A_V = {av:.2f}" if av else ""),
+        "spectrum": spectrum,
         "scaled to": scaled_to,
+        "band": band,
+        "fit miss": fit_miss,
         "lines": {
             label: value for label, value in counts.items() if value > 1e-3 * total
         },
@@ -548,7 +746,8 @@ def get_exposure_extended(
 
         peak_offset (float, optional): The surface brightness of the brightest
             part, in mag/arcsec2 brighter than the mean. By default, the centre
-            of an exponential disk for a galaxy, and 0 for a nebula.
+            of an exponential disk for a galaxy. For a nebula, the brightest
+            part in the CTA-FRAM images, or 0 for a nebula they do not resolve.
 
         h (float, optional): Altitude of the site [m]. Default is 2440 (Paranal).
 
@@ -557,8 +756,9 @@ def get_exposure_extended(
             error is the same in all sub-exposures, so it sets a maximum SNR.
             Default is 0 (no error).
 
-        av (float, optional): Dust extinction A_V [mag] of a nebula. By
-            default from the catalogue, or 0.
+        av (float, optional): Dust extinction A_V [mag] of a nebula. It
+            changes the near-infrared hydrogen lines relative to Halpha. By
+            default 0.
 
     Returns:
         dict: The result. The units are in the keys. Values per pixel are for
@@ -635,12 +835,35 @@ def get_exposure_extended(
                 "or nucleus is brighter and fills the well sooner. Use peak_offset "
                 "to change this."
             )
+        elif target.peak_surface_brightness:
+            # The brightest part has its own colours, so its spectrum is fitted
+            # to them in the same way as the mean.
+            peak_mu = target.peak_surface_brightness
+            if target.kind == "reflection nebula":
+                peak_source = _continuum(target, response, band_centre, peak_mu)
+            else:
+                peak_source = _emission(target, response, band_centre, av, peak_mu)
+            ratio = peak_source["rate"] / rate
+            peak_offset = max(2.5 * math.log10(ratio), 0.0) if ratio > 0 else 0.0
+            warnings.append(
+                "The brightest part comes from the CTA-FRAM images, which show no "
+                'detail smaller than about 40". Smaller bright parts fill the '
+                "well sooner. Use peak_offset to change this."
+            )
+            miss = peak_source.get("fit miss")
+            if miss is not None and miss > FIT_TOLERANCE:
+                warnings.append(
+                    f"The colours of the brightest part miss the fitted spectrum by "
+                    f"{miss:.0%} in one CTA-FRAM band. In this filter, the brightest "
+                    "part can be up to 2 times brighter or fainter than calculated."
+                )
         else:
             peak_offset = 0.0
             warnings.append(
-                "The catalogue gives no brightness profile for nebulae. mphot sets "
-                "the brightest part to the mean. Brighter parts fill the well "
-                "sooner. Use peak_offset to change this."
+                f"{target.label} is too small for the CTA-FRAM images to show its "
+                "brightest part. mphot sets the brightest part to the mean. "
+                "Brighter parts fill the well sooner. Use peak_offset to change "
+                "this."
             )
 
     mean = rate * per_pixel  # e/s/pixel

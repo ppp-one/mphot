@@ -3810,9 +3810,9 @@ def spectra(spec_json):
     </section>
     ${lines.length ? `
     <section class="section">
-      <h4>Emission lines in the filter band</h4>
+      <h4>Light in the filter band</h4>
       <table>
-        <thead><tr><th>Line</th><th>e⁻/s/pixel</th><th>Part</th></tr></thead>
+        <thead><tr><th>Line or continuum</th><th>e⁻/s/pixel</th><th>Part</th></tr></thead>
         <tbody>${lines.map(([name, v]) => `<tr><th scope="row">${escapeHtml(name)}</th>
           <td>${sig(v)}</td><td>${sig(100 * v / lineTotal, 2)}%</td></tr>`).join("")}</tbody>
       </table>

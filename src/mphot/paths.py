@@ -14,7 +14,7 @@ FLUX_CALIBRATION_DIR = DATAFILES_DIR / "flux_calibration"
 """Gaia and catalogue filter curves used for flux calibration."""
 
 TARGETS_DIR = DATAFILES_DIR / "targets"
-"""Messier, NGC and IC objects, and the line fluxes of nebulae."""
+"""Messier, NGC and IC objects, and the surface brightness of nebulae."""
 
 GRIDS_DIR = PACKAGE_DIR / "grids"
 """Precision grids, written the first time a system response is used."""

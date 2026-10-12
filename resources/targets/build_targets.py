@@ -1,8 +1,8 @@
 """
 Build the data files that `mphot.targets` and `mphot.extended` read.
 
-Run it from the repository root. It needs network access, and it takes a few
-minutes because it cuts out one Halpha map for each emission nebula:
+Run it from the repository root. It needs network access, and it takes about
+half an hour, because it cuts out three survey images for each nebula:
 
     python resources/targets/build_targets.py
 
@@ -12,31 +12,35 @@ It writes:
   objects of OpenNGC, trimmed to the columns mphot uses. OpenNGC is released
   under CC-BY-SA-4.0 (https://github.com/mattiaverga/OpenNGC), and so is this
   derived file.
-* ``src/mphot/datafiles/targets/nebula_lines.csv`` — the observed Halpha flux
-  and line ratios of the planetary and emission nebulae in that file.
-* ``src/mphot/datafiles/flux_calibration/{bessell_b,bessell_v,2mass_j,2mass_h,2mass_ks}.csv``
+* ``src/mphot/datafiles/targets/nebula_brightness.csv`` — the mean and peak
+  surface brightness of each nebula in that file, in B, V and R.
+* ``src/mphot/datafiles/flux_calibration/{bessell_b,bessell_v,bessell_r,2mass_j,2mass_h,2mass_ks}.csv``
   — the catalogue bands, as photon-counting response curves.
 
 Sources:
 
 * OpenNGC, pinned to one commit so that the build can be repeated.
-* Planetary nebulae: Hbeta fluxes and line intensities from the Strasbourg-ESO
-  catalogue (Acker et al. 1992, VizieR V/84), and Hbeta fluxes and extinction
-  constants from Cahn, Kaler & Stanghellini (1992, VizieR J/A+AS/94/399).
-* Other emission nebulae: the all-sky Halpha map of Finkbeiner (2003,
-  ApJS 146, 407), read through the CDS hips2fits service.
-* Filter curves: the SVO Filter Profile Service (Bessell 1990 B and V; Cohen
-  et al. 2003 2MASS J, H and Ks).
+* Nebulae: the B, V and R images of the CTA-FRAM Sky Survey (Janecek et al.
+  2019, EPJ Web Conf. 197, 02008), read through the CDS hips2fits service.
+  Gaia DR3 synthetic photometry (Gaia Collaboration, Montegriffo et al. 2023,
+  VizieR I/360) sets the zero point of each image and gives the stars that are
+  removed from it.
+* Filter curves: the SVO Filter Profile Service (Bessell 1990 B, V and R;
+  Cohen et al. 2003 2MASS J, H and Ks).
 """
 
 import io
+import math
 import sys
 import urllib.parse
 import urllib.request
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
+from scipy.ndimage import binary_dilation, binary_erosion
+from scipy.optimize import curve_fit
 
 REPO = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO / "src"))
@@ -62,31 +66,48 @@ SVO_FPS = "http://svo2.cab.inta-csic.es/theory/fps/getdata.php"
 FILTERS = (
     ("Generic/Bessell.B", "bessell_b.csv", True),
     ("Generic/Bessell.V", "bessell_v.csv", True),
+    ("Generic/Bessell.R", "bessell_r.csv", True),
     ("2MASS/2MASS.J", "2mass_j.csv", False),
     ("2MASS/2MASS.H", "2mass_h.csv", False),
     ("2MASS/2MASS.Ks", "2mass_ks.csv", False),
 )
 
 GALAXY_TYPES = {"G", "GPair", "GTrpl", "GGroup"}
-EMISSION_TYPES = {"HII", "EmN", "Cl+N", "Neb", "SNR"}
+NEBULA_TYPES = {"PN", "HII", "EmN", "Cl+N", "Neb", "SNR", "RfN"}
 
-# 1 Rayleigh is 1e10 / (4 pi) photons/s/m2/sr. Per arcsec2, times the energy of
-# an Halpha photon, and converted from W/m2 to erg/s/cm2 (a factor 1e3), that
-# is 5.66e-18 erg/s/cm2/arcsec2.
-ARCSEC2_PER_SR = 4.25452e10
-HALPHA_PHOTON_J = 6.62607e-34 * 2.99792e8 / 0.65628e-6
-RAYLEIGH_ERG = 1e10 / (4 * np.pi) / ARCSEC2_PER_SR * HALPHA_PHOTON_J * 1e3
+FRAM_HIPS = "fzu.cz/P/CTA-FRAM/survey/{}"
+FRAM_BANDS = ("B", "V", "R")
+FRAM_PIXEL = 14.0
+"""Pixel of the CTA-FRAM cameras [arcsec]. The cutouts use the same pixel."""
 
-# Beam of the Halpha map. SHASSA gives the map a 6' beam south of +15 deg.
-# Further north it is 6' only where VTSS covers the sky, and 1 deg (WHAM)
-# elsewhere.
-SHASSA_DEC_LIMIT = 15.0
-BEAM_ARCMIN = 6.0
+FRAM_FWHM = 36.0
+"""Typical FWHM of a star in the CTA-FRAM images [arcsec], in all three bands."""
+
+STARS_TABLE = "I/360/syntphot"
+"""Gaia DR3 synthetic photometry, with Johnson-Cousins B, V and R."""
+
+STAR_LIMIT = 16.0
+"""Stars brighter than this, in the band of the image, are subtracted [mag]."""
+
+BRIGHT_TABLE = "I/239/hip_main"
+"""Hipparcos. The Gaia synthetic photometry has no values for some of the
+brightest stars, for example iota Ori A (V = 2.8) near M42."""
+
+BRIGHT_LIMIT = 7.0
+"""Hipparcos stars brighter than this that have no Gaia value are masked [V]."""
+
+PEAK_PIXELS = 10
+"""The peak is the median of the 10 brightest pixels. This is approximately the
+area of two star images, so one star that is not fully removed cannot set the
+peak."""
+
+MIN_FIELD_ARCMIN = 40.0
+"""Smallest cutout. It holds enough stars to set the zero point."""
 
 
 def fetch(url: str) -> bytes:
     request = urllib.request.Request(url, headers={"User-Agent": "mphot build"})
-    with urllib.request.urlopen(request, timeout=180) as response:
+    with urllib.request.urlopen(request, timeout=300) as response:
         return response.read()
 
 
@@ -137,10 +158,14 @@ def build_openngc() -> pd.DataFrame:
     # in it: for M57, J = 16.4 is the central star. Only galaxies keep them.
     not_galaxy = ~table["type"].isin(GALAXY_TYPES)
     table.loc[not_galaxy, ["j", "h", "k"]] = np.nan
-
-    # Kept only for the joins below, not written out.
-    table["png"] = raw["Identifiers"].str.extract(r"PN G(\d{3}\.\d[+-]\d{2}\.\d)")[0]
+    # B and V of a nebula often include its stars too: for M42, V = 4.0 is
+    # mostly the Trapezium. Nebulae get their brightness from CTA-FRAM instead.
+    table.loc[table["type"].isin(NEBULA_TYPES), ["b", "v"]] = np.nan
     return table.reset_index(drop=True)
+
+
+# ----------------------------------------------------------------------------
+# Surface brightness of nebulae from the CTA-FRAM images
 
 
 def read_fits_image(data: bytes) -> np.ndarray:
@@ -156,201 +181,337 @@ def read_fits_image(data: bytes) -> np.ndarray:
             header[card[:8].strip()] = card[10:].split("/")[0].strip()
     start = ((offset + 2879) // 2880) * 2880
     nx, ny = int(header["NAXIS1"]), int(header["NAXIS2"])
-    if header["BITPIX"] != "-32":
-        raise ValueError(f"expected 32-bit float image, got BITPIX {header['BITPIX']}")
-    image = np.frombuffer(data[start : start + nx * ny * 4], dtype=">f4")
+    dtype = {"-32": ">f4", "-64": ">f8"}[header["BITPIX"]]
+    image = np.frombuffer(data[start:], dtype=dtype, count=nx * ny)
     return image.reshape(ny, nx).astype(float)
 
 
-def halpha_map_flux(row: pd.Series) -> tuple[float, str] | None:
-    """
-    Total observed Halpha flux of a nebula from the Finkbeiner map.
-
-    A nebula more than three beams across is measured as the mean inside its
-    ellipse. A smaller one is measured by adding up the flux in a circle grown
-    by 1.5 beams, because the beam spreads the flux beyond the nebula. Both
-    subtract the median of a surrounding annulus.
-
-    Two cases are left out, because a check against the catalogue magnitudes
-    showed they fail. A nebula smaller than the beam cannot be told apart from
-    the emission around it. And a small nebula north of the SHASSA survey may
-    sit in a 1 deg beam, where an aperture wide enough for its flux collects
-    the emission for degrees around: such values came out about 10 times too
-    bright, and up to several hundred times for the smallest.
-
-    Returns:
-        (flux in erg/s/cm2, method label), or None when the map cannot measure
-        the nebula.
-    """
-
-    a = row["major_axis"]
-    b = row["minor_axis"] if np.isfinite(row["minor_axis"]) else a
-    if not np.isfinite(a) or a < BEAM_ARCMIN:
-        return None
-
-    grown = a < 3 * BEAM_ARCMIN
-    if grown and row["dec"] >= SHASSA_DEC_LIMIT:
-        return None
-
-    beam = BEAM_ARCMIN
-    pix = 1.0  # arcmin
-    r_in = (a / 2 + 1.5 * beam) if grown else a / 2
-    r_out = r_in + 15.0
-    npix = int(np.ceil(2 * r_out / pix)) + 2
-
+def fram_cutout(band: str, ra: float, dec: float, n: int) -> np.ndarray:
+    """A square CTA-FRAM image, north up and east left."""
     query = urllib.parse.urlencode(
         {
-            "hips": "CDS/P/Finkbeiner",
-            "width": npix,
-            "height": npix,
-            "fov": npix * pix / 60,
-            "ra": row["ra"],
-            "dec": row["dec"],
+            "hips": FRAM_HIPS.format(band),
+            "width": n,
+            "height": n,
+            "fov": n * FRAM_PIXEL / 3600,
+            "ra": ra,
+            "dec": dec,
             "projection": "TAN",
             "format": "fits",
         }
     )
-    image = read_fits_image(fetch(f"{HIPS2FITS}?{query}"))
+    # FITS rows go from south to north.
+    return read_fits_image(fetch(f"{HIPS2FITS}?{query}"))[::-1]
 
-    y, x = np.indices(image.shape)
-    centre = (npix - 1) / 2
-    r = np.hypot(x - centre, y - centre) * pix
-    annulus = image[(r > r_in) & (r < r_out)]
-    background = np.nanmedian(annulus)
-    net = image - background
 
-    if grown:
-        inside = r <= r_in
-        flux_r_arcmin2 = np.nansum(net[inside]) * pix**2
-        method = "Finkbeiner 2003 map, flux in a grown aperture"
-    else:
-        # OpenNGC has no position angle for most nebulae, so the ellipse is
-        # replaced by a circle of the same area.
-        inside = r <= np.sqrt(a * b) / 2
-        flux_r_arcmin2 = np.nanmean(net[inside]) * np.pi / 4 * a * b
-        method = "Finkbeiner 2003 map, mean inside the nebula"
+def gnomonic(ra, dec, ra0: float, dec0: float):
+    """Standard coordinates [deg]: xi to the east, eta to the north."""
+    ra, dec, ra0, dec0 = map(np.radians, (ra, dec, ra0, dec0))
+    cos_c = np.sin(dec0) * np.sin(dec) + np.cos(dec0) * np.cos(dec) * np.cos(ra - ra0)
+    xi = np.cos(dec) * np.sin(ra - ra0) / cos_c
+    eta = (
+        np.cos(dec0) * np.sin(dec) - np.sin(dec0) * np.cos(dec) * np.cos(ra - ra0)
+    ) / cos_c
+    return np.degrees(xi), np.degrees(eta)
 
-    # The annulus scatter, scaled to the number of independent beams inside,
-    # gives a rough error. Nebulae below three times that are left out.
-    beams_inside = max(inside.sum() * pix**2 / (np.pi / 4 * beam**2), 1.0)
-    noise = np.nanstd(annulus) * np.sqrt(beams_inside) * np.pi / 4 * beam**2
-    if not flux_r_arcmin2 > 3 * noise:
+
+def field_stars(ra: float, dec: float, radius: float) -> pd.DataFrame:
+    """Gaia DR3 stars with synthetic B, V or R brighter than STAR_LIMIT."""
+    # The table also has Sloan "rmag". ADQL ignores case unless a name is
+    # quoted, so the Johnson-Cousins names are quoted.
+    rows = _tap_sync_csv(
+        VIZIER_TAP,
+        f'SELECT RA_ICRS, DE_ICRS, "Bmag", "Vmag", "Rmag" FROM "{STARS_TABLE}" '
+        f"WHERE 1 = CONTAINS(POINT('ICRS', RA_ICRS, DE_ICRS), "
+        f"CIRCLE('ICRS', {ra}, {dec}, {radius})) "
+        f'AND ("Bmag" < {STAR_LIMIT} OR "Vmag" < {STAR_LIMIT} '
+        f'OR "Rmag" < {STAR_LIMIT})',
+        timeout=600,
+    )
+    columns = ["RA_ICRS", "DE_ICRS", "Bmag", "Vmag", "Rmag"]
+    return pd.DataFrame(rows, columns=columns).apply(pd.to_numeric, errors="coerce")
+
+
+def bright_stars(ra: float, dec: float, radius: float) -> pd.DataFrame:
+    """Hipparcos stars brighter than BRIGHT_LIMIT, which Gaia can miss."""
+    rows = _tap_sync_csv(
+        VIZIER_TAP,
+        f'SELECT RAICRS, DEICRS, Vmag FROM "{BRIGHT_TABLE}" '
+        f"WHERE 1 = CONTAINS(POINT('ICRS', RAICRS, DEICRS), "
+        f"CIRCLE('ICRS', {ra}, {dec}, {radius})) AND Vmag < {BRIGHT_LIMIT}",
+        timeout=300,
+    )
+    columns = ["RAICRS", "DEICRS", "Vmag"]
+    return pd.DataFrame(rows, columns=columns).apply(pd.to_numeric, errors="coerce")
+
+
+def _gaussian(xy, amplitude, x0, y0, sigma, background):
+    x, y = xy
+    r2 = (x - x0) ** 2 + (y - y0) ** 2
+    return amplitude * np.exp(-r2 / (2 * sigma**2)) + background
+
+
+def calibrate(image, x, y, mag, keep_out) -> dict | None:
+    """
+    Fit isolated stars with a Gaussian.
+
+    Returns the star width, the shift of the image against the catalogue, and
+    two zero points. The Gaussian zero point turns a catalogue magnitude into
+    the amplitude of the Gaussian that removes the star. The aperture zero
+    point (4 pixels) turns the image into surface brightness.
+    """
+
+    n = image.shape[0]
+    yy, xx = np.indices(image.shape)
+    fits = []
+    for lo, hi in ((8.0, 12.0), (7.0, 13.0)):
+        for i in np.flatnonzero((mag > lo) & (mag < hi) & ~keep_out):
+            col, row = int(round(x[i])), int(round(y[i]))
+            if not (6 <= row < n - 6 and 6 <= col < n - 6):
+                continue
+            near = np.hypot(x - x[i], y - y[i])
+            if ((near > 0) & (near < 4) & (mag < mag[i] + 4)).any():
+                continue
+            box = (slice(row - 4, row + 5), slice(col - 4, col + 5))
+            data = image[box]
+            try:
+                p, _ = curve_fit(
+                    _gaussian,
+                    (xx[box].ravel(), yy[box].ravel()),
+                    data.ravel(),
+                    p0=[data.max(), x[i], y[i], 1.1, np.median(data)],
+                    maxfev=4000,
+                )
+            except (RuntimeError, ValueError):
+                continue
+            amplitude, x0, y0, sigma = p[0], p[1], p[2], abs(p[3])
+            if (
+                amplitude <= 0
+                or not 0.6 < sigma < 2.5
+                or math.hypot(x0 - x[i], y0 - y[i]) > 1.5
+            ):
+                continue
+            r = np.hypot(xx - x0, yy - y0)
+            aperture = (image[r < 4] - np.median(image[(r > 6) & (r < 9)])).sum()
+            fits.append(
+                (
+                    sigma,
+                    x0 - x[i],
+                    y0 - y[i],
+                    mag[i] + 2.5 * math.log10(2 * math.pi * sigma**2 * amplitude),
+                    mag[i] + 2.5 * math.log10(aperture) if aperture > 0 else np.nan,
+                )
+            )
+        if len(fits) >= 5:
+            break
+    if len(fits) < 3:
+        return None
+    f = np.array(fits)
+    return {
+        "sigma": float(np.median(f[:, 0])),
+        "dx": float(np.median(f[:, 1])),
+        "dy": float(np.median(f[:, 2])),
+        "zp_gauss": float(np.median(f[:, 3])),
+        "zp_aperture": float(np.nanmedian(f[:, 4])),
+    }
+
+
+def star_model(shape, x, y, flux, sigma) -> np.ndarray:
+    """The image of the stars, as Gaussians of the measured width."""
+    model = np.zeros(shape)
+    n = shape[0]
+    for xi, yi, fi in zip(x, y, flux, strict=True):
+        half = 15 if fi > 1e4 else 6
+        r0, c0 = int(round(yi)), int(round(xi))
+        rows = slice(max(r0 - half, 0), min(r0 + half + 1, n))
+        cols = slice(max(c0 - half, 0), min(c0 + half + 1, n))
+        if rows.start >= rows.stop or cols.start >= cols.stop:
+            continue
+        yy, xx = np.mgrid[rows, cols]
+        model[rows, cols] += (
+            fi
+            / (2 * math.pi * sigma**2)
+            * np.exp(-((xx - xi) ** 2 + (yy - yi) ** 2) / (2 * sigma**2))
+        )
+    return model
+
+
+def clipped_mean(values: np.ndarray) -> tuple[float, float]:
+    """Mean and standard deviation after removing outliers beyond 5 sigma."""
+    values = values[np.isfinite(values)]
+    for _ in range(3):
+        centre = np.median(values)
+        spread = 1.4826 * np.median(np.abs(values - centre))
+        if spread == 0:
+            break
+        values = values[np.abs(values - centre) < 5 * spread]
+    return float(values.mean()), float(values.std())
+
+
+def fram_brightness(row: pd.Series) -> dict | None:
+    """
+    Mean and peak surface brightness of a nebula in B, V and R.
+
+    The steps for each band:
+
+    1. Cut out the CTA-FRAM image, at least 40' wide, with sky around the
+       nebula.
+    2. Fit isolated Gaia stars. This gives the star width and the zero point of
+       this image.
+    3. Subtract all Gaia stars brighter than STAR_LIMIT. Where a star is so
+       bright that the image can be clipped, mask the pixels instead.
+    4. Subtract the sky: the mean of a ring around the nebula. The mean, not
+       the median, also removes the light of fainter stars, which is the same
+       inside and outside on average.
+    5. The mean is the mean in the catalogue ellipse. A nebula less than 2.4'
+       across (4 star widths) is measured in an aperture grown by 1.5 star
+       widths, and its total is divided by the catalogue area. It has no peak.
+    6. The peak is the median, in each band, of the 10 brightest pixels in R
+       that are at least 2 pixels from a mask.
+
+    Returns:
+        dict: "{band}_mean" and "{band}_peak" [mag/arcsec2, Vega]. A band
+            without a significant detection is NaN. None if the nebula has no
+            size.
+    """
+
+    a = row["major_axis"]
+    b = row["minor_axis"] if np.isfinite(row["minor_axis"]) else a
+    if not np.isfinite(a):
         return None
 
-    return flux_r_arcmin2 * 3600 * RAYLEIGH_ERG, method
+    fwhm = FRAM_FWHM / 60  # arcmin
+    resolved = math.sqrt(a * b) >= 4 * fwhm
+    grow = 0.0 if resolved else 1.5 * fwhm
+    reach = a / 2 + grow  # largest distance of the aperture from the centre
+    ring_in = reach + 2 * fwhm
+    ring_out = ring_in + max(5.0, 0.3 * ring_in)
+    n = int(math.ceil(max(2 * ring_out, MIN_FIELD_ARCMIN) * 60 / FRAM_PIXEL)) | 1
 
+    centre = (n - 1) / 2
+    yy, xx = np.indices((n, n))
+    east = (centre - xx) * FRAM_PIXEL / 60  # arcmin
+    north = (centre - yy) * FRAM_PIXEL / 60
+    radius = np.hypot(east, north)
+    pa = row["position_angle"]
+    if np.isfinite(pa) and resolved:
+        pa = math.radians(pa)
+        u = east * math.sin(pa) + north * math.cos(pa)
+        v = east * math.cos(pa) - north * math.sin(pa)
+        inside = (u / (a / 2)) ** 2 + (v / (b / 2)) ** 2 <= 1
+    else:
+        # OpenNGC has no position angle for most nebulae, so the ellipse
+        # becomes a circle of the same area.
+        inside = radius <= math.sqrt(a * b) / 2 + grow
+    ring = (radius > ring_in) & (radius < ring_out)
+    area_pixels = math.pi / 4 * a * b * 3600 / FRAM_PIXEL**2
 
-def vizier(table: str, columns: str) -> pd.DataFrame:
-    rows = _tap_sync_csv(VIZIER_TAP, f'SELECT {columns} FROM "{table}"', timeout=180)
-    return pd.DataFrame(rows)
+    stars = field_stars(row["ra"], row["dec"], n * FRAM_PIXEL / 3600 / math.sqrt(2))
+    xi, eta = gnomonic(stars["RA_ICRS"], stars["DE_ICRS"], row["ra"], row["dec"])
+    x0 = (centre - xi * 3600 / FRAM_PIXEL).to_numpy()
+    y0 = (centre - eta * 3600 / FRAM_PIXEL).to_numpy()
+    keep_out = np.hypot(x0 - centre, y0 - centre) * FRAM_PIXEL / 60 < reach + fwhm
 
+    # Bright stars that Gaia has no B, V and R for are masked. The radius grows
+    # with the brightness: 3 pixels at V = 7, 11 pixels at V = 3.
+    missing = np.zeros((n, n), dtype=bool)
+    hip = bright_stars(row["ra"], row["dec"], n * FRAM_PIXEL / 3600 / math.sqrt(2))
+    hip_xi, hip_eta = gnomonic(hip["RAICRS"], hip["DEICRS"], row["ra"], row["dec"])
+    for xi_h, eta_h, v_h in zip(hip_xi, hip_eta, hip["Vmag"], strict=True):
+        hx = centre - xi_h * 3600 / FRAM_PIXEL
+        hy = centre - eta_h * 3600 / FRAM_PIXEL
+        match = (np.hypot(x0 - hx, y0 - hy) < 20 / FRAM_PIXEL) & (
+            np.abs(stars["Vmag"].to_numpy() - v_h) < 1.5
+        )
+        if not match.any():
+            missing |= np.hypot(xx - hx, yy - hy) < 3 + 2 * (BRIGHT_LIMIT - v_h)
 
-def normalise_pn_name(name: str) -> str:
-    """'NGC  650-1' -> 'NGC0650', 'IC 418' -> 'IC0418'."""
-    name = name.strip().split("-")[0].replace(" ", "")
-    for prefix in ("NGC", "IC"):
-        if name.startswith(prefix) and name[len(prefix) :].isdigit():
-            return f"{prefix}{int(name[len(prefix) :]):04d}"
-    return name
+    def surface_brightness(counts, cal):
+        return cal["zp_aperture"] - 2.5 * math.log10(counts / FRAM_PIXEL**2)
 
-
-def planetary_lines(openngc: pd.DataFrame) -> pd.DataFrame:
-    """Observed Halpha flux and line ratios of the planetary nebulae."""
-
-    num = lambda s: pd.to_numeric(s, errors="coerce")  # noqa: E731
-
-    hbeta = vizier("V/84/hbeta", 'PNG, "log(Fbeta)" AS lf')
-    hbeta["PNG"] = hbeta["PNG"].str.strip()
-    hbeta["lf"] = num(hbeta["lf"])
-    hbeta = hbeta.groupby("PNG")["lf"].median()
-
-    lines = ["I5007", "I5876", "I6563", "I6584", "I6717", "I6731"]
-    intens = vizier("V/84/intens", "PNG, LineRef, n_I5007, " + ", ".join(lines))
-    intens["PNG"] = intens["PNG"].str.strip()
-    for line in lines:
-        intens[line] = num(intens[line])
-    # A star marks a measurement of 4959 because 5007 was saturated.
-    saturated = intens["n_I5007"].fillna("").str.strip() == "*"
-    intens.loc[saturated, "I5007"] *= 2.98
-
-    cks1 = vizier("J/A+AS/94/399/table1", 'Name, "log(FHb)" AS lf')
-    cks1["name"] = cks1["Name"].map(normalise_pn_name)
-    cks1 = cks1.groupby("name")["lf"].apply(lambda s: num(s).median())
-    cks2 = vizier("J/A+AS/94/399/table2", "Name, calpha")
-    cks2["name"] = cks2["Name"].map(normalise_pn_name)
-    cks2 = cks2.groupby("name")["calpha"].apply(lambda s: num(s).median())
-
-    out = []
-    for _, row in openngc[openngc["type"] == "PN"].iterrows():
-        png = row["png"]
-        c = cks2.get(row["name"], np.nan)
-
-        log_hbeta, source = np.nan, None
-        if isinstance(png, str) and np.isfinite(hbeta.get(png, np.nan)):
-            log_hbeta, source = hbeta[png], "Acker et al. 1992 Hbeta"
-        elif np.isfinite(cks1.get(row["name"], np.nan)):
-            log_hbeta, source = cks1[row["name"]], "Cahn et al. 1992 Hbeta"
-        if not np.isfinite(log_hbeta):
+    result = {}
+    measured = {}
+    for band in FRAM_BANDS:
+        image = fram_cutout(band, row["ra"], row["dec"], n)
+        mag = stars[f"{band}mag"].to_numpy()
+        cal = calibrate(image, x0, y0, np.nan_to_num(mag, nan=99.0), keep_out)
+        result[f"{band.lower()}_mean"] = result[f"{band.lower()}_peak"] = np.nan
+        if cal is None:
             continue
 
-        # Line intensities relative to Halpha, as the median of all
-        # observations. An observation made relative to Halpha gives no Hbeta.
-        obs = intens[intens["PNG"] == png] if isinstance(png, str) else intens[:0]
-        ratios = {}
-        with np.errstate(invalid="ignore", divide="ignore"):
-            to_halpha = obs[lines].div(obs["I6563"], axis=0)
-            hb_rel = (100 / obs["I6563"]).where(obs["LineRef"].str.strip() == "b")
-        for line, key in (
-            ("I5007", "oiii_5007"),
-            ("I5876", "hei_5876"),
-            ("I6584", "nii_6584"),
-            ("I6717", "sii_6717"),
-            ("I6731", "sii_6731"),
-        ):
-            ratios[key] = to_halpha[line].median()
-        hbeta_to_halpha = hb_rel.median()
+        bright = np.isfinite(mag) & (mag < STAR_LIMIT)
+        x, y = x0[bright] + cal["dx"], y0[bright] + cal["dy"]
+        flux = 10 ** (0.4 * (cal["zp_gauss"] - mag[bright]))
+        model = star_model(image.shape, x, y, flux, cal["sigma"])
+        clean = image - model
 
-        # Observed Halpha/Hbeta: measured if possible, otherwise the case B
-        # value reddened by the extinction constant c, since
-        # F(Ha)/F(Hb) = 2.86 * 10**(-c * f(Ha)) with f(Ha) = -0.323.
-        if np.isfinite(hbeta_to_halpha):
-            halpha_to_hbeta = 1 / hbeta_to_halpha
+        # Pixels where a star can be clipped. A small nebula keeps its own
+        # pixels, so that the subtraction of its central star does not mask it.
+        masked = binary_dilation(model > 0.3 * np.nanmax(image), iterations=2)
+        masked |= missing
+        if not resolved:
+            masked &= radius > reach
+        clean[masked] = np.nan
+
+        sky, sky_spread = clipped_mean(clean[ring])
+        net = clean - sky
+        pixels = inside & np.isfinite(net)
+        if pixels.sum() < 3:
+            continue
+        if resolved:
+            level = float(net[pixels].mean())
+            count = pixels.sum()
         else:
-            halpha_to_hbeta = 2.86 * 10 ** (0.323 * (c if np.isfinite(c) else 0.0))
-            hbeta_to_halpha = 1 / halpha_to_hbeta
+            level = float(np.nan_to_num(net[inside]).sum()) / area_pixels
+            count = area_pixels
+        beam = 2 * math.pi * cal["sigma"] ** 2  # pixels in one star image
+        noise = sky_spread * math.sqrt(beam / max(count, beam) + beam / ring.sum())
+        if not level > 3 * noise:
+            continue
 
-        out.append(
-            {
-                "name": row["name"],
-                "halpha_flux": 10**log_hbeta * halpha_to_hbeta,  # erg/s/cm2
-                "halpha_source": source,
-                "c_hbeta": c,
-                "hbeta": hbeta_to_halpha,
-                **ratios,
-                "ratio_source": "Acker et al. 1992" if len(obs) else None,
-            }
-        )
-    return pd.DataFrame(out)
+        result[f"{band.lower()}_mean"] = surface_brightness(level, cal)
+        measured[band] = (net, cal, level)
+
+    # The peak is the same pixels in every band, so that its colours belong to
+    # one place. They are the brightest pixels in R, where an emission nebula is
+    # brightest and the hot stars in it are faintest, else in V or B.
+    if resolved and measured:
+        # Next to a masked star, some of its light remains, and it would make
+        # the peak too blue. So the peak keeps 2 pixels away from the masks.
+        usable = inside.copy()
+        for net, _, _ in measured.values():
+            usable &= binary_erosion(np.isfinite(net), iterations=2, border_value=1)
+        reference = next(b for b in ("R", "V", "B") if b in measured)
+        if usable.sum() >= 3 * PEAK_PIXELS:
+            values = np.where(usable, measured[reference][0], -np.inf)
+            brightest = np.argsort(values, axis=None)[-PEAK_PIXELS:]
+            for band, (net, cal, level) in measured.items():
+                peak = float(np.median(net.ravel()[brightest]))
+                result[f"{band.lower()}_peak"] = surface_brightness(
+                    max(peak, level), cal
+                )
+    return result
 
 
-def emission_lines(openngc: pd.DataFrame) -> pd.DataFrame:
-    """Observed Halpha flux of the other emission nebulae, from the map."""
-
+def nebula_brightness(openngc: pd.DataFrame, workers: int = 8) -> pd.DataFrame:
+    rows = openngc[openngc["type"].isin(NEBULA_TYPES) & openngc["major_axis"].notna()]
     out = []
-    rows = openngc[openngc["type"].isin(EMISSION_TYPES)]
-    for i, (_, row) in enumerate(rows.iterrows()):
-        print(
-            f"\r  Halpha map {i + 1}/{len(rows)} {row['name']:<10}", end="", flush=True
-        )
+
+    def measure(row):
         try:
-            result = halpha_map_flux(row)
+            return row["name"], fram_brightness(row), None
         except Exception as e:  # one failed cutout should not stop the build
-            print(f"\n  {row['name']}: {type(e).__name__}: {e}")
-            continue
-        if result is None:
-            continue
-        flux, method = result
-        out.append({"name": row["name"], "halpha_flux": flux, "halpha_source": method})
+            return row["name"], None, f"{type(e).__name__}: {e}"
+
+    with ThreadPoolExecutor(workers) as pool:
+        for i, (name, result, error) in enumerate(
+            pool.map(measure, (r for _, r in rows.iterrows()))
+        ):
+            print(f"\r  CTA-FRAM {i + 1}/{len(rows)} {name:<10}", end="", flush=True)
+            if error:
+                print(f"\n  {name}: {error}")
+            if result and any(np.isfinite(v) for v in result.values()):
+                out.append({"name": name, **result})
     print()
     return pd.DataFrame(out)
 
@@ -384,20 +545,15 @@ def main() -> None:
 
     print("OpenNGC")
     openngc = build_openngc()
-    openngc.drop(columns="png").to_csv(TARGETS_DIR / "openngc.csv", index=False)
+    openngc.to_csv(TARGETS_DIR / "openngc.csv", index=False)
     print(f"  wrote openngc.csv, {len(openngc)} objects")
 
-    print("Planetary nebulae")
-    pn = planetary_lines(openngc)
-    print(f"  {len(pn)} of {(openngc['type'] == 'PN').sum()} with an Hbeta flux")
-
-    print("Emission nebulae")
-    em = emission_lines(openngc)
-    print(f"  {len(em)} of {openngc['type'].isin(EMISSION_TYPES).sum()} measured")
-
-    lines = pd.concat([pn, em], ignore_index=True)
-    lines.to_csv(TARGETS_DIR / "nebula_lines.csv", index=False, float_format="%.5g")
-    print(f"  wrote nebula_lines.csv, {len(lines)} nebulae")
+    print("Nebulae")
+    brightness = nebula_brightness(openngc)
+    brightness.to_csv(
+        TARGETS_DIR / "nebula_brightness.csv", index=False, float_format="%.3f"
+    )
+    print(f"  wrote nebula_brightness.csv, {len(brightness)} nebulae")
 
 
 if __name__ == "__main__":

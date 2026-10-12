@@ -52,6 +52,7 @@ def systems():
         ("ingaas_j", "speculoos_PIRT_1280SciCam_-60", "J"),
         ("cmos_halpha", "generic_IMX461", "halpha"),
         ("cmos_luminance", "generic_IMX461", "luminance"),
+        ("ccd_iz", "speculoos_Andor_iKon-L-936_-60", "I+z"),
     ):
         names[key], _ = mphot.generate_system_response(
             f"resources/systems/{efficiency}.csv", f"resources/filters/{band}.csv"
@@ -110,16 +111,23 @@ def test_galaxy_shape_comes_from_the_catalogue():
     assert resolve_target("M57").position_angle is None
 
 
-def test_nebulae_carry_line_data_and_no_stellar_infrared_magnitudes():
+def test_nebulae_carry_their_cta_fram_brightness():
     ring = resolve_target("M57")
     assert ring.kind == "planetary nebula"
-    assert ring.halpha_source == "Acker et al. 1992 Hbeta"
-    assert ring.halpha_flux > 0
-    # OpenNGC's J for M57 is the central star, so it must not be used.
-    assert "J" not in ring.magnitudes
+    # OpenNGC's magnitudes of a nebula are not used. For M57, J is the central
+    # star.
+    assert ring.magnitudes == {}
+    assert set(ring.surface_brightness) == {"B", "V", "R"}
+    # Spread back over the catalogue ellipse, V agrees with M57's published
+    # total of V = 8.8.
+    v_total = ring.surface_brightness["V"] - 2.5 * math.log10(ring.area)
+    assert v_total == pytest.approx(8.8, abs=0.3)
+    # M57 is 1.3' across, too small for CTA-FRAM to show its brightest part.
+    assert ring.peak_surface_brightness == {}
 
-    dumbbell = resolve_target("M27")
-    assert dumbbell.line_ratios["oiii_5007"] == pytest.approx(1106 / 262, rel=1e-3)
+    # The core of M42 is much brighter than the mean of its 90' x 60' ellipse.
+    orion = resolve_target("M42")
+    assert orion.surface_brightness["R"] - orion.peak_surface_brightness["R"] > 4
 
 
 # ----------------------------------------------------------------------------
@@ -151,25 +159,46 @@ def test_continuum_in_its_own_catalogue_band_gives_back_the_catalogue_magnitude(
     assert source["rate"] == pytest.approx(expected, rel=1e-9)
 
 
-def test_emission_turns_the_halpha_flux_into_photons():
-    flux = 1e-12  # erg/s/cm2
-    # [NII] is inside the top hat below, so its ratio is set to 0.
+def test_emission_with_one_band_gives_back_its_surface_brightness():
     target = _target(
-        kind="emission nebula",
-        object_type="HII",
-        halpha_flux=flux,
-        halpha_source="test",
-        line_ratios={"nii_6584": 0.0},
+        kind="emission nebula", object_type="HII", surface_brightness={"R": 20.0}
     )
-    lam = extended._wavelengths()
-    response = ((lam > 0.650) & (lam < 0.662)).astype(float)
+    band = extended._survey_band("R")
 
-    source = extended._emission(target, response, 0.656, 0.0)
+    source = extended._emission(target, band, 0.641, None)
 
-    photon_energy = 6.62607015e-34 * 2.99792458e8 / 0.65628e-6
-    expected = flux * 1e-3 / target.area / photon_energy
+    expected = 10 ** (-0.4 * 20.0) * extended._vega_in_survey_band("R")
     assert source["rate"] == pytest.approx(expected, rel=1e-9)
-    assert list(source["lines"]) == ["Halpha"]
+    assert source["spectrum"] == "Emission lines with typical ratios"
+    assert any("give only R" in w for w in source["warnings"])
+
+
+def test_colours_that_no_spectrum_fits_fall_back_to_one_band():
+    # B - V = -2.7 is not possible for gas and scattered starlight. Mostly, a
+    # hot star left in the B image causes it, as for IC 1396.
+    mu = {"B": 18.3, "V": 21.0, "R": 20.3}
+    target = _target(kind="emission nebula", object_type="HII", surface_brightness=mu)
+
+    source = extended._emission(target, extended._survey_band("R"), 0.641, None)
+
+    expected = 10 ** (-0.4 * mu["R"]) * extended._vega_in_survey_band("R")
+    assert source["rate"] == pytest.approx(expected, rel=1e-9)
+    assert source["spectrum"] == "Emission lines with typical ratios"
+    assert source["fit miss"] > extended.FIT_LIMIT
+    assert any("do not fit" in w for w in source["warnings"])
+
+
+@pytest.mark.parametrize("name", ["M42", "M8", "M57", "M27", "NGC 7009"])
+def test_fit_gives_back_all_three_bands(name):
+    # HII regions and planetary nebulae with weak and strong [OIII].
+    target = resolve_target(name)
+    for band, mu in target.surface_brightness.items():
+        curve = extended._survey_band(band)
+        centre = extended.CATALOGUE_BANDS[band][1]
+        source = extended._emission(target, curve, centre, None)
+        expected = 10 ** (-0.4 * mu) * extended._vega_in_survey_band(band)
+        assert source["rate"] == pytest.approx(expected, rel=0.02)
+        assert not any("differs" in w for w in source["warnings"])
 
 
 def test_extinction_curve():
@@ -324,13 +353,39 @@ def test_saturation_magnitude_of_stars(systems):
     assert no_seeing["saturation magnitude [mag]"] is None
 
 
-def test_nebula_in_a_broad_filter_matches_its_visual_magnitude(systems):
-    # M42's lines come from the Halpha map and typical line ratios. Spread over
-    # the catalogue ellipse, its V = 4.0 gives 21.96 mag/arcsec2. The two are
-    # independent, so they need only agree roughly.
-    props = {**CMOS, "name": systems["cmos_luminance"]}
+def test_nebula_peak_comes_from_cta_fram(systems):
+    props = {**CCD, "name": systems["ccd_r"]}
     result = get_exposure_extended("M42", props, {"pwv": 2.5, "airmass": 1.1})
-    assert result["mu_mean [mag/arcsec2]"] == pytest.approx(21.96, abs=0.5)
+
+    # The peak has its own fit. In r, it is close to the peak in R, which is
+    # more than 4 mag brighter than the mean of the 90' x 60' ellipse.
+    orion = resolve_target("M42")
+    offset = orion.surface_brightness["R"] - orion.peak_surface_brightness["R"]
+    assert offset > 4
+    assert result["mu_mean [mag/arcsec2]"] - result[
+        "mu_peak [mag/arcsec2]"
+    ] == pytest.approx(offset, abs=0.3)
+    assert result["scaled to"].startswith("B = ")
+    assert any("CTA-FRAM images, which show no" in w for w in result["warnings"])
+
+    # A nebula that CTA-FRAM does not resolve has its peak at the mean.
+    ring = get_exposure_extended("M57", props, {"pwv": 2.5, "airmass": 1.1})
+    assert ring["mu_peak [mag/arcsec2]"] == ring["mu_mean [mag/arcsec2]"]
+    assert any("too small for the CTA-FRAM" in w for w in ring["warnings"])
+
+
+def test_nebula_in_the_near_infrared(systems):
+    # Between 0.7 and 1.1 micron, an HII region has scattered starlight and
+    # [SIII], but few other lines. Without them, M42 needed millions of
+    # sub-exposures.
+    props = {**CCD, "name": systems["ccd_iz"]}
+    result = get_exposure_extended("M42", props, {"pwv": 2.5, "airmass": 1.1})
+
+    lines = dict(result["line counts [e/pix/s]"])
+    assert lines.pop("Continuum") > 0
+    assert max(lines, key=lines.get) == "[SIII] 9532"
+    assert result["subs"] < 1000
+    assert any("beyond the CTA-FRAM R band" in w for w in result["warnings"])
 
 
 def test_high_dark_current_keeps_the_readout_below_ten_percent(systems):
