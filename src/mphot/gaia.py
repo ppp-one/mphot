@@ -177,13 +177,16 @@ def _read_url_emscripten(url: str) -> str:
     """
     Read a URL from inside a browser, where sockets do not exist.
 
-    WebAssembly has no sockets, so `urllib` cannot reach the network. Pyodide
-    offers a synchronous reader built on the browser's own HTTP stack, which
-    keeps the calling code unchanged.
+    WebAssembly has no sockets, so `urllib` cannot reach the network. A
+    synchronous XMLHttpRequest uses the browser's own HTTP stack and keeps the
+    calling code unchanged. Pyodide's `open_url` does the same, but it ignores
+    the HTTP status: an empty error page would read as a source that is not in
+    the catalogue, and stop the fallback to the next service.
 
     Note that the browser applies its same-origin policy, so the service must
-    send an `Access-Control-Allow-Origin` header. VizieR does; the ESA archive
-    does not, and needs a proxy.
+    send exactly one `Access-Control-Allow-Origin` header. The ESA archive
+    sends none. VizieR sends it twice, which the browser also rejects. Both
+    need a proxy on the page's own origin.
 
     Args:
         url (str): The URL to read.
@@ -193,18 +196,27 @@ def _read_url_emscripten(url: str) -> str:
 
     Raises:
         RuntimeError: If the request fails, usually because the service sends
-            no CORS header.
+            no usable CORS header, or if the service returns an HTTP error.
     """
 
-    from pyodide.http import open_url
+    from js import XMLHttpRequest
 
+    request = XMLHttpRequest.new()
+    request.open("GET", url, False)
     try:
-        return open_url(url).getvalue()
+        request.send()
     except Exception as e:
         raise RuntimeError(
             f"the browser could not fetch the TAP service ({type(e).__name__}). "
             "The service must allow cross-origin requests."
         ) from e
+
+    if request.status != 200:
+        detail = request.responseText.strip().replace("\n", " ")
+        raise RuntimeError(
+            f"HTTP {request.status} from the TAP service: {detail[:200]}"
+        )
+    return request.responseText
 
 
 def _tap_sync_csv(base_url: str, adql: str, timeout: float | None) -> list[dict]:

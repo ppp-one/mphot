@@ -315,10 +315,21 @@ transport needs sockets. WebAssembly has no sockets.
 
 **The Gaia query.** WebAssembly has no sockets, so `urllib` cannot reach the
 network. `mphot.gaia` sees `sys.platform == "emscripten"` and uses the browser
-to make the request instead. The archive must then allow cross-origin requests.
-VizieR sends `Access-Control-Allow-Origin: *`, so it works. The ESA archive
-sends no such header, so the browser blocks it. To reach ESA from a page you
-need a proxy. mphot tries VizieR first, so the normal path works.
+to make the request instead. The archive must then allow cross-origin requests
+with exactly one `Access-Control-Allow-Origin` header. Neither archive does.
+The ESA archive sends no such header. VizieR sends `Access-Control-Allow-Origin:
+*` twice, and the browser rejects a repeated header just as it rejects a missing
+one.
+
+So `netlify.toml` proxies both archives under the page's own origin:
+`/tap/vizier/` and `/tap/esa/`. A request to the same origin needs no CORS
+header. The page adds the two proxies to `mphot.gaia.GAIA_TAP_URLS` and tries
+them first, then the direct addresses. The values are the same bits as a
+direct query.
+
+`python -m http.server` has no proxy, so Gaia mode fails on a local server
+while VizieR repeats the header. Use `netlify dev` to run the page with the
+proxies.
 
 **First load** downloads about 47 MB: 29.5 MB of Pyodide with numpy, pandas and
 scipy from the CDN, and 17.5 MB of ours.

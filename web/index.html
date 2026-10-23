@@ -2876,9 +2876,23 @@
     // ------------------------------------------------------------------- Pyodide
     const PY = `
 import json
+from urllib.parse import urljoin
+
+from js import location
+
 import mphot
 
 _NAMES = {}
+
+# The browser blocks both archives when the page asks them directly: VizieR
+# sends Access-Control-Allow-Origin twice, which the browser rejects, and ESA
+# sends none. netlify.toml proxies both under tap/ on the page's own origin,
+# where the browser checks no CORS header. A plain local server has no proxy,
+# so the direct addresses stay behind it as a fallback.
+for _name in ("vizier", "esa"):
+    mphot.gaia.GAIA_TAP_URLS[f"{_name}-proxy"] = urljoin(location.href, f"tap/{_name}")
+    mphot.gaia._GAIA_TAP_TABLES[f"{_name}-proxy"] = mphot.gaia._GAIA_TAP_TABLES[_name]
+_TAP_SOURCES = ("vizier-proxy", "esa-proxy", "vizier", "esa")
 
 # Every control recomputes, so the page would query VizieR on each move. Read
 # each star once and keep the answer.
@@ -2888,7 +2902,7 @@ _query = mphot.gaia.query_gaia_source
 def _query_once(source_id, **kwargs):
     key = int(source_id)
     if key not in _GAIA:
-        _GAIA[key] = _query(source_id, **kwargs)
+        _GAIA[key] = _query(source_id, **dict(kwargs, tap_sources=_TAP_SOURCES))
     return _GAIA[key]
 
 mphot.gaia.query_gaia_source = _query_once

@@ -12,6 +12,22 @@
   # mphot needs Python 3.11 or later. The build image default is older.
   PYTHON_VERSION = "3.11"
 
+# The page reads Gaia DR3 through these proxies. The browser blocks a direct
+# request to either archive: VizieR sends Access-Control-Allow-Origin twice,
+# and ESA sends none. A request to the page's own origin needs no CORS header.
+# Netlify passes the query string through.
+[[redirects]]
+  from = "/tap/vizier/*"
+  to = "https://tapvizier.cds.unistra.fr/TAPVizieR/tap/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/tap/esa/*"
+  to = "https://gea.esac.esa.int/tap-server/tap/:splat"
+  status = 200
+  force = true
+
 # A wheel name holds the project version, so the file never changes.
 [[headers]]
   for = "/dist/*.whl"

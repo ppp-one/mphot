@@ -205,6 +205,43 @@ def test_tap_sync_csv_reports_an_http_error(monkeypatch):
         mphot.gaia._tap_sync_csv("https://example.org/tap", "SELECT 1", 1)
 
 
+def _fake_browser(monkeypatch, status, text):
+    """Stand in for Pyodide's `js` module, with an XMLHttpRequest that answers."""
+
+    class FakeRequest:
+        @classmethod
+        def new(cls):
+            return cls()
+
+        def open(self, method, url, is_async):
+            self.url = url
+
+        def send(self):
+            self.status = status
+            self.responseText = text
+
+    monkeypatch.setattr(mphot.gaia.sys, "platform", "emscripten")
+    monkeypatch.setitem(sys.modules, "js", type(sys)("js", "fake js module"))
+    sys.modules["js"].XMLHttpRequest = FakeRequest
+
+
+def test_tap_sync_csv_in_a_browser_parses_rows(monkeypatch):
+    _fake_browser(monkeypatch, 200, "parallax,teff_gspphot\n80.2,5000\n")
+
+    rows = mphot.gaia._tap_sync_csv("https://example.org/tap", "SELECT 1", 30)
+
+    assert rows == [{"parallax": "80.2", "teff_gspphot": "5000"}]
+
+
+def test_tap_sync_csv_in_a_browser_reports_an_http_error(monkeypatch):
+    # An empty body must not read as zero rows, or the missing source would
+    # stop the fallback to the next service.
+    _fake_browser(monkeypatch, 502, "")
+
+    with pytest.raises(RuntimeError, match="HTTP 502"):
+        mphot.gaia._tap_sync_csv("https://example.org/tap", "SELECT 1", 30)
+
+
 def test_query_gaia_tap_maps_columns_and_reports_a_missing_source(monkeypatch):
     monkeypatch.setattr(
         mphot.gaia,
