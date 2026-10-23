@@ -5,6 +5,7 @@ temp/
 atmospheres_2400m.zip
 **/atmospheres_2400m
 **/stellar_spectra
+svo/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
